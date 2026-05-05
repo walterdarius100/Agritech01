@@ -3,7 +3,7 @@
 
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const EMAILJS_CONFIG = {
-    publicKey: 'VOTRE_PUBLIC_KEY',
+    publicKey: 'xzT43D37TupeVoqqq',
     serviceId: 'VOTRE_SERVICE_ID',
     templateId: 'VOTRE_TEMPLATE_ID',
     autoReplyTemplateId: '',
