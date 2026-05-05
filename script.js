@@ -3,14 +3,14 @@
 
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const EMAILJS_CONFIG = {
-    publicKey: 'xzT43D37TupeVoqqq',
-    serviceId: '01zbxge',
-    templateId: 'a4pr1hq',
+    publicKey: 'FIM6Dgp1FXsfD9fJf',
+    serviceId: 'service_z856n3l',
+    templateId: 'template_pzsnmea',
     autoReplyTemplateId: '',
     sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw8az8ZK2FHqats3ukKjLgVu-90tkcv1CtoI8dyCmxm1Qg_Z2ucDWP89NBJUpc2CFYc/exec'
   };
 
-  if (window.emailjs && EMAILJS_CONFIG.publicKey !== 'xzT43D37TupeVoqqq') {
+  if (window.emailjs && EMAILJS_CONFIG.publicKey !== 'FIM6Dgp1FXsfD9fJf') {
     emailjs.init({
       publicKey: EMAILJS_CONFIG.publicKey,
       blockHeadless: true,
