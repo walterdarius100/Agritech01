@@ -10,13 +10,13 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw8az8ZK2FHqats3ukKjLgVu-90tkcv1CtoI8dyCmxm1Qg_Z2ucDWP89NBJUpc2CFYc/exec'
   };
 
-  if (window.emailjs && EMAILJS_CONFIG.publicKey !== 'FIM6Dgp1FXsfD9fJf') {
-    emailjs.init({
-      publicKey: EMAILJS_CONFIG.publicKey,
-      blockHeadless: true,
-      limitRate: { id: 'agritech-contact-form', throttle: 10000 }
-    });
-  }
+if (window.emailjs) {
+  emailjs.init({
+    publicKey: EMAILJS_CONFIG.publicKey,
+    blockHeadless: true,
+    limitRate: { id: 'agritech-contact-form', throttle: 10000 }
+  });
+}
 
   const services = [
     { title: 'Poulet de chair', category: 'Élevage', image: 'assets/images/poulet-chair.jpg', text: 'Conception de poulailler, plan de production, équipements et accompagnement technique.' },
@@ -90,11 +90,13 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     return String(value).replace(/[^0-9+\s-]/g, '').trim();
   }
 
-  function isEmailJsConfigured() {
-    return EMAILJS_CONFIG.publicKey !== 'FIM6Dgp1FXsfD9fJfY' &&
-      EMAILJS_CONFIG.serviceId !== 'service_z856n3l' &&
-      EMAILJS_CONFIG.templateId !== 'template_pzsnmea';
-  }
+function isEmailJsConfigured(){
+  return Boolean(
+    EMAILJS_CONFIG.publicKey &&
+    EMAILJS_CONFIG.serviceId &&
+    EMAILJS_CONFIG.templateId
+  );
+}
 
   function setFormStatus(type, message) {
     if (!elements.formStatus) return;
