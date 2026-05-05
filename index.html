@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta name="description" content="Agri-Tech accompagne les projets agricoles en Haïti : élevage, irrigation, pépinière, biogaz, apiculture, pisciculture et équipements." />
+  <meta name="theme-color" content="#0f3d2e" />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Agri-Tech | Solutions agricoles modernes en Haïti" />
+  <meta property="og:description" content="Conception, formation, installation et accompagnement de projets agricoles modernes." />
+  <meta property="og:type" content="website" />
+
+  <title>Agri-Tech | Solutions agricoles modernes en Haïti</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Aller au contenu principal</a>
+
+  <header class="site-header" id="top">
+    <nav class="navbar" aria-label="Navigation principale">
+      <a class="brand" href="#top" aria-label="Accueil Agri-Tech">
+        <span class="brand-mark">A</span>
+        <span><strong>Agri-Tech</strong><small>Solutions agricoles</small></span>
+      </a>
+
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#services">Services</a>
+        <a href="#cours">Cours en ligne</a>
+        <a href="#processus">Méthode</a>
+        <a href="#preuves">Crédibilité</a>
+        <a href="#temoignages">Témoignages</a>
+        <a href="#contact" class="nav-cta">Demander un devis</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero section-pad">
+      <div class="reveal is-visible">
+        <span class="eyebrow">Agriculture • Élevage • Technologies rurales</span>
+        <h1>Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.</h1>
+        <p>Agri-Tech accompagne les entrepreneurs, institutions et producteurs dans la conception, l’installation et le suivi de projets agricoles modernes en Haïti.</p>
+
+        <div class="hero-actions">
+          <a href="#contact" class="btn primary">Obtenir une consultation</a>
+          <a href="#services" class="btn secondary">Voir nos domaines</a>
+        </div>
+
+        <div class="trust-row" aria-label="Arguments de confiance">
+          <span><strong>12+</strong> domaines</span>
+          <span><strong>Projet</strong> clé en main</span>
+          <span><strong>Suivi</strong> technique</span>
+        </div>
+      </div>
+
+      <aside class="hero-card reveal is-visible reveal-delay-1">
+        <div class="card-top"><span class="status-dot"></span>Diagnostic agricole rapide</div>
+        <h2>Besoin d’un projet solide ?</h2>
+        <p>Répondez à quelques questions et recevez une orientation claire pour démarrer.</p>
+        <ul>
+          <li>Choix du modèle de production</li>
+          <li>Estimation des besoins techniques</li>
+          <li>Plan d’action réaliste</li>
+        </ul>
+        <a href="#contact" class="btn primary full">Commencer maintenant</a>
+      </aside>
+    </section>
+
+    <section class="section-pad logos-strip reveal" aria-label="Prestations principales">
+      <span>Conception de projets</span>
+      <span>Formation pratique</span>
+      <span>Installation</span>
+      <span>Accompagnement</span>
+      <span>Équipements</span>
+    </section>
+
+    <section class="section-pad" id="services">
+      <div class="section-head reveal">
+        <span class="eyebrow">Nos domaines d’intervention</span>
+        <h2>Des solutions agricoles adaptées au terrain haïtien.</h2>
+        <p>Filtrez les services et identifiez rapidement l’accompagnement dont vous avez besoin.</p>
+      </div>
+      <div class="filters reveal reveal-delay-1" id="filters" aria-label="Filtres de services"></div>
+      <div class="service-grid" id="serviceGrid"></div>
+    </section>
+
+    <section class="section-pad" id="cours">
+      <div class="section-head reveal">
+        <span class="eyebrow">Académie Agri-Tech</span>
+        <h2>Apprenez à lancer et rentabiliser votre activité agricole.</h2>
+        <p>Des formations pratiques basées sur le terrain, avec accompagnement pour vous aider à passer à l’action rapidement.</p>
+      </div>
+
+      <div class="course-carousel reveal reveal-delay-1" aria-label="Carousel des formations">
+        <div class="course-viewport">
+          <div class="course-track" id="courseGrid"></div>
+        </div>
+
+        <div class="course-actions">
+          <button class="course-nav" id="coursePrev" type="button" aria-label="Formation précédente">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5-1.5-1.5L5.25 12l9 9 1.5-1.5Z"/></svg>
+          </button>
+          <button class="course-nav" id="courseNext" type="button" aria-label="Formation suivante">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.25 4.5 15.75 12l-7.5 7.5 1.5 1.5 9-9-9-9-1.5 1.5Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad split-section" id="processus">
+      <div class="section-head left reveal">
+        <span class="eyebrow">Notre méthode</span>
+        <h2>Un processus simple pour éviter les projets improvisés.</h2>
+        <p>Un projet agricole échoue rarement par manque d’idée. Il échoue souvent par manque de diagnostic, de plan technique et de suivi.</p>
+      </div>
+
+      <div class="steps reveal reveal-delay-1">
+        <article><strong>01</strong><h3>Diagnostic</h3><p>Analyse de votre objectif, terrain, budget, contraintes et marché.</p></article>
+        <article><strong>02</strong><h3>Conception</h3><p>Préparation du modèle technique, équipements, calendrier et besoins.</p></article>
+        <article><strong>03</strong><h3>Installation</h3><p>Mise en place, formation pratique et lancement de l’activité.</p></article>
+        <article><strong>04</strong><h3>Suivi</h3><p>Accompagnement pour corriger, optimiser et rentabiliser le projet.</p></article>
+      </div>
+    </section>
+
+    <section class="section-pad proof" id="preuves">
+      <div class="proof-card reveal">
+        <h2>Pourquoi un client devrait faire confiance à Agri-Tech ?</h2>
+        <p>Parce que nous ne vendons pas seulement une idée. Nous transformons une intention en démarche structurée : diagnostic, plan, installation, formation et suivi.</p>
+        <div class="metrics">
+          <div><strong>Technique</strong><span>Approche terrain</span></div>
+          <div><strong>Moderne</strong><span>Solutions adaptées</span></div>
+          <div><strong>Clair</strong><span>Parcours client simple</span></div>
+          <div><strong>+10</strong><span>projets accompagnés</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-pad" id="temoignages">
+      <div class="section-head reveal">
+        <span class="eyebrow">Témoignages</span>
+        <h2>Ce que disent les personnes accompagnées.</h2>
+        <p>Des retours simples pour montrer la valeur de l’accompagnement Agri-Tech.</p>
+      </div>
+
+      <div class="testimonial-carousel reveal reveal-delay-1" aria-label="Carousel de témoignages">
+        <button class="carousel-btn prev" id="prevBtn" type="button" aria-label="Témoignage précédent">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5-1.5-1.5L5.25 12l9 9 1.5-1.5Z"/></svg>
+        </button>
+        <div class="carousel-viewport"><div class="carousel-track" id="testimonialTrack"></div></div>
+        <button class="carousel-btn next" id="nextBtn" type="button" aria-label="Témoignage suivant">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.25 4.5 15.75 12l-7.5 7.5 1.5 1.5 9-9-9-9-1.5 1.5Z"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="section-pad contact-section" id="contact">
+      <div class="contact-copy reveal">
+        <span class="eyebrow">Conversion client</span>
+        <h2>Demandez une consultation pour votre projet agricole.</h2>
+        <p>Le formulaire envoie votre demande directement à Agri-Tech et permet de conserver vos informations pour le suivi.</p>
+      </div>
+
+      <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
+        <label for="name">Nom complet
+          <input type="text" id="name" name="name" placeholder="Votre nom" autocomplete="name" required />
+        </label>
+
+        <label for="email">Email
+          <input type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email" required />
+        </label>
+
+        <label for="phone">Téléphone
+          <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
+        </label>
+
+        <label for="need">Domaine souhaité
+          <select id="need" name="need" required></select>
+        </label>
+
+        <label for="message">Décrivez brièvement votre projet
+          <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>
+        </label>
+
+        <label class="consent-label" for="consent">
+          <input type="checkbox" id="consent" required />
+          <span class="consent-text">J’accepte d’être recontacté par Agri-Tech</span>
+        </label>
+
+        <label class="hidden-field" aria-hidden="true">Ne pas remplir
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+        </label>
+
+        <button class="btn primary full" type="submit" id="submitBtn">Envoyer la demande</button>
+        <div class="form-status" id="formStatus" role="status"></div>
+        <p class="form-note">Vos informations seront envoyées à Agri-Tech et stockées dans votre système de suivi.</p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer reveal">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h4>Agri-Tech</h4>
+        <p>Nous accompagnons les projets agricoles en Haïti avec une approche moderne, pratique et orientée résultats.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.7v-2.9h2.7V9.8c0-2.7 1.6-4.2 4-4.2 1.2 0 2.4.2 2.4.2v2.6h-1.3c-1.3 0-1.7.8-1.7 1.6v1.9h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg></a>
+          <a href="#" aria-label="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11 11 0 0 0 3.7 17.8L2 22l4.4-1.6A11 11 0 1 0 20.5 3.5Zm-8.6 16a8.9 8.9 0 0 1-4.5-1.2l-.3-.2-2.6.9.9-2.5-.2-.3A8.9 8.9 0 1 1 11.9 19.5Zm4.9-6.7c-.3-.2-1.7-.8-2-.9s-.5-.2-.7.2-.8.9-1 .1a7.3 7.3 0 0 1-2.2-2.7c-.2-.4 0-.6.2-.8l.3-.3c.1-.1.2-.2.3-.4s0-.4 0-.6-.7-1.7-1-2.3c-.3-.6-.5-.5-.7-.5h-.6a1.1 1.1 0 0 0-.8.4 3.2 3.2 0 0 0-1 2.4 5.6 5.6 0 0 0 1.2 3c.2.3 2.1 3.2 5 4.5 2.9 1.2 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.4Z"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3a5 5 0 0 0 5 5v3a8 8 0 0 1-5-1.8V15a6 6 0 1 1-6-6c.3 0 .7 0 1 .1v3a3 3 0 1 0 3 3V3h2Z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 12s0-3.5-.5-5.2a2.7 2.7 0 0 0-1.9-1.9C18.8 4.5 12 4.5 12 4.5s-6.8 0-8.6.4a2.7 2.7 0 0 0-1.9 1.9C1 8.5 1 12 1 12s0 3.5.5 5.2a2.7 2.7 0 0 0 1.9 1.9c1.8.4 8.6.4 8.6.4s6.8 0 8.6-.4a2.7 2.7 0 0 0 1.9-1.9C23 15.5 23 12 23 12ZM10 15.5v-7l6 3.5-6 3.5Z"/></svg></a>
+        </div>
+      </div>
+
+      <div class="footer-col"><h4>Navigation</h4><a href="#services">Services</a><a href="#cours">Cours</a><a href="#processus">Méthode</a><a href="#temoignages">Témoignages</a></div>
+      <div class="footer-col"><h4>Ressources</h4><a href="#cours">Formations</a><a href="#services">Conseils agricoles</a><a href="#contact">Demander un devis</a></div>
+
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="contact-list">
+          <div class="contact-item"><span class="contact-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg></span><span>Haïti</span></div>
+          <div class="contact-item"><span class="contact-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.2 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.4a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .6 3.6 1 1 0 0 1-.2 1l-2.2 2.2Z"/></svg></span><span>+509 XXXX XXXX</span></div>
+          <div class="contact-item"><span class="contact-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm8 8 8-5V7l-8 5-8-5v1l8 5Z"/></svg></span><span>contact@agritech.ht</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Agri-Tech — Tous droits réservés</div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="script.js" defer></script>
+</body>
+</html>
