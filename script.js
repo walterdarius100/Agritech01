@@ -110,25 +110,25 @@ function isEmailJsConfigured(){
     elements.submitBtn.textContent = isLoading ? 'Envoi en cours...' : 'Envoyer la demande';
   }
 
-async function storeLead(payload) {
-  if (!EMAILJS_CONFIG.sheetEndpoint) return;
+async function storeLead(payload){
+  if(!EMAILJS_CONFIG.sheetEndpoint)return;
 
-  try {
+  try{
     const formData = new URLSearchParams();
 
     Object.keys(payload).forEach(key => {
       formData.append(key, payload[key]);
     });
 
-    await fetch(EMAILJS_CONFIG.sheetEndpoint, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
+    await fetch(EMAILJS_CONFIG.sheetEndpoint,{
+      method:'POST',
+      mode:'no-cors',
+      body:formData
     });
 
     console.log('Lead envoyé vers Google Sheets.');
-  } catch (error) {
-    console.warn('Stockage du lead non confirmé:', error);
+  }catch(error){
+    console.warn('Stockage du lead non confirmé:',error);
   }
 }
 
