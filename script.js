@@ -91,9 +91,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function isEmailJsConfigured() {
-    return EMAILJS_CONFIG.publicKey !== 'VOTRE_PUBLIC_KEY' &&
-      EMAILJS_CONFIG.serviceId !== 'VOTRE_SERVICE_ID' &&
-      EMAILJS_CONFIG.templateId !== 'VOTRE_TEMPLATE_ID';
+    return EMAILJS_CONFIG.publicKey !== 'FIM6Dgp1FXsfD9fJfY' &&
+      EMAILJS_CONFIG.serviceId !== 'service_z856n3l' &&
+      EMAILJS_CONFIG.templateId !== 'template_pzsnmea';
   }
 
   function setFormStatus(type, message) {
