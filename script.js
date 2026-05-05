@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     serviceId: 'service_z856n3l',
     templateId: 'template_pzsnmea',
     autoReplyTemplateId: '',
-    sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw8az8ZK2FHqats3ukKjLgVu-90tkcv1CtoI8dyCmxm1Qg_Z2ucDWP89NBJUpc2CFYc/exec'
+    sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw6LvUrYSGt7pyWOK9E4UY_bJpAP9FbhyvfSK5clxBfDSQUPuBVa750vS5y59ybFApJ/exec'
   };
 
 if (window.emailjs) {
