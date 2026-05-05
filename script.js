@@ -4,8 +4,8 @@
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const EMAILJS_CONFIG = {
     publicKey: 'xzT43D37TupeVoqqq',
-    serviceId: 'service_01zbxge',
-    templateId: 'template_a4pr1hq',
+    serviceId: '01zbxge',
+    templateId: 'a4pr1hq',
     autoReplyTemplateId: '',
     sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw8az8ZK2FHqats3ukKjLgVu-90tkcv1CtoI8dyCmxm1Qg_Z2ucDWP89NBJUpc2CFYc/exec'
   };
