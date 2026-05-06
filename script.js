@@ -34,14 +34,14 @@ if (window.emailjs) {
   ];
 
   const courses = [
-    { title: 'Cuniculture rentable (de 0 à revenus)', image: 'assets/images/formation-cuniculture.jpg', level: 'Débutant', duration: '4 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Apprenez à lancer un élevage de lapins rentable avec une méthode claire étape par étape.', bonus: 'Support WhatsApp 7 jours' },
+    { title: 'Cuniculture rentable (de 0 à 50 000 HT)', image: 'assets/images/formation-cuniculture.jpg', level: 'Débutant', duration: '4 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Apprenez à lancer un élevage de lapins rentable avec une méthode claire étape par étape.', bonus: 'Support WhatsApp 7 jours' },
     { title: 'Poulet de chair : produire et vendre efficacement', image: 'assets/images/formation-poulet.jpg', level: 'Intermédiaire', duration: '5 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Maîtrisez tout le cycle de production : installation, alimentation, santé et vente.', bonus: 'Plan de production inclus' },
     { title: 'Apiculture moderne simplifiée', image: 'assets/images/formation-apiculture.jpg', level: 'Débutant', duration: '3 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Comprenez les bases pour démarrer un rucher et produire du miel.', bonus: 'Liste du matériel fournie' }
   ];
 
   const testimonials = [
     { name: 'Participant formation', role: 'Cuniculture', image: 'assets/images/temoignage-1.jpg', text: 'L’accompagnement m’a permis de mieux comprendre les étapes avant de lancer mon élevage. Les explications étaient claires et pratiques.' },
-    { name: 'Porteur de projet', role: 'Poulet de chair', image: 'assets/images/temoignage-2.jpg', text: 'Agri-Tech m’a aidé à structurer mon idée et à voir les erreurs que je devais éviter avant d’investir.' },
+    { name: 'Porteur de projet', role: 'Poulet de chair', image: 'assets/images/temoignage-2.jpg', text: 'Agri-tech m’a aidé à structurer mon idée et à voir les erreurs que je devais éviter avant d’investir.' },
     { name: 'Jeune entrepreneur agricole', role: 'Projet agricole', image: 'assets/images/temoignage-3.jpg', text: 'Ce que j’ai apprécié, c’est l’approche directe : diagnostic, conseils techniques et orientation claire pour avancer.' }
   ];
 
