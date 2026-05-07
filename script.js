@@ -169,9 +169,11 @@ async function storeLead(payload){
     elements.serviceGrid.innerHTML = visibleServices
       .map((service, index) => `
         <article class="service-card reveal ${getDelayClass(index)}">
-          <img src="${escapeHtml(service.image)}" alt="${escapeHtml(service.title)}" class="service-image" loading="lazy" />
+          <div class="service-header">
+            <img src="${escapeHtml(service.image)}" alt="${escapeHtml(service.title)}" class="service-image" loading="lazy" />
+            <span class="tag service-badge">${escapeHtml(service.category)}</span>
+          </div>
           <div class="service-content">
-            <span class="tag">${escapeHtml(service.category)}</span>
             <h3>${escapeHtml(service.title)}</h3>
             <p>${escapeHtml(service.text)}</p>
             <a href="#contact" data-need="${escapeHtml(service.title)}">Demander ce service →</a>

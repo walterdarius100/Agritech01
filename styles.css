@@ -58,10 +58,13 @@ h3{font-size:1.1rem;margin-bottom:8px}
 .course-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .service-card,.course-card,.testimonial-card{box-shadow:none;transition:transform .2s ease,box-shadow .2s ease;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:28px}
 .service-card:hover,.course-card:hover,.testimonial-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-.service-image{width:100%;height:190px;display:block;object-fit:cover;background:var(--green-100)}
+.service-header{height:190px;position:relative;display:flex;align-items:flex-end;padding:14px;overflow:hidden;background:var(--green-900)}
+.service-header::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.68),rgba(0,0,0,.08))}
+.service-image{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;background:var(--green-100)}
 .service-content,.course-body{padding:22px}
 .service-card p,.testimonial-text,.course-card p{color:var(--muted);font-size:.96rem}
 .tag{display:inline-block;font-size:.78rem;font-weight:900;color:var(--green-700);background:var(--green-100);padding:6px 9px;border-radius:999px}
+.service-badge{position:relative;z-index:1;background:#fff;color:var(--green-900)}
 .course-header{height:165px;position:relative;display:flex;align-items:flex-end;padding:14px;overflow:hidden;background:var(--green-900)}
 .course-header img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .course-header::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.68),rgba(0,0,0,.08))}
