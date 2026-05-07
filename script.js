@@ -57,6 +57,7 @@ if (window.emailjs) {
     needSelect: document.querySelector('#need'),
     menuBtn: document.querySelector('#menuBtn'),
     navLinks: document.querySelector('#navLinks'),
+    brandHome: document.querySelector('[data-scroll-top]'),
     form: document.querySelector('#leadForm'),
     submitBtn: document.querySelector('#submitBtn'),
     formStatus: document.querySelector('#formStatus')
@@ -353,6 +354,27 @@ async function storeLead(payload){
       elements.needSelect.value = link.dataset.need;
     });
 
+    if (elements.brandHome) {
+      elements.brandHome.addEventListener('click', (event) => {
+        event.preventDefault();
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        window.scrollTo({
+          top: 0,
+          behavior: prefersReducedMotion ? 'auto' : 'smooth'
+        });
+
+        if (window.location.hash !== '#top') {
+          window.history.pushState(null, '', '#top');
+        }
+
+        if (elements.navLinks && elements.menuBtn) {
+          elements.navLinks.classList.remove('open');
+          elements.menuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
     if (elements.menuBtn && elements.navLinks) {
       elements.menuBtn.addEventListener('click', () => {
         const isOpen = elements.navLinks.classList.toggle('open');
@@ -441,6 +463,7 @@ async function storeLead(payload){
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
+    console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
   }
 
