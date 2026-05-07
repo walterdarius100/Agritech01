@@ -114,10 +114,10 @@ input:focus,textarea:focus,select:focus{border-color:var(--green-700);box-shadow
 .site-footer{background:var(--green-900);color:#fff;margin-top:60px}
 .footer-container{max-width:1180px;margin:auto;padding:60px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
 .footer-col h4{margin-bottom:12px;font-size:1rem}
-.footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.footer-brand h4{margin-bottom:0}
-.footer-brand-mark{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);overflow:hidden}
-.footer-brand-mark img{width:28px;height:28px;display:block;object-fit:contain}
+.footer-brand{display:flex;align-items:center;gap:12px;margin-bottom:12px;line-height:1}
+.footer-brand h4{margin:0;line-height:1;font-size:1.05rem}
+.footer-brand-mark{width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:transparent}
+.footer-brand-mark img{width:34px;height:34px;display:block;object-fit:contain}
 .footer-col p,.footer-col a{color:rgba(255,255,255,.8);font-size:.9rem}
 .footer-col a{display:block;margin-bottom:6px}
 .footer-col a:hover{color:#fff}
