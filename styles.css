@@ -13,6 +13,7 @@ img{max-width:100%}
 .navbar{max-width:1180px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
 .brand{display:flex;gap:12px;align-items:center}
 .brand-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--green-900);color:#fff;font-weight:900}
+.brand-mark img{width:28px;height:28px;display:block;object-fit:contain}
 .brand small{display:block;color:var(--muted);margin-top:-4px}
 .nav-links{display:flex;align-items:center;gap:24px;font-weight:700}
 .nav-links a:hover{color:var(--green-700)}
