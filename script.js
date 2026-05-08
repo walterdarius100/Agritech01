@@ -53,6 +53,7 @@ if (window.emailjs) {
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
+    partnershipTrack: document.querySelector('#partnershipTrack'),
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
     filters: document.querySelector('#filters'),
@@ -70,6 +71,8 @@ if (window.emailjs) {
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
+  let partnershipIndex = 0;
+  let partnershipTimer = null;
   let courseIndex = 0;
 
   function escapeHtml(value) {
@@ -270,7 +273,9 @@ async function storeLead(payload){
       .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}`;
+    const partnershipOption = '<option value="Partenariat">Partenariat</option>';
+
+    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}${partnershipOption}`;
     updateMessageFieldVisibility();
   }
 
@@ -300,6 +305,47 @@ async function storeLead(payload){
     const maxIndex = Math.max(0, courses.length - visible);
     courseIndex = Math.min(Math.max(courseIndex + direction, 0), maxIndex);
     updateCourseCarousel();
+  }
+
+
+  function updatePartnershipCarousel() {
+    if (!elements.partnershipTrack) return;
+    elements.partnershipTrack.style.transform = `translateX(-${partnershipIndex * 100}%)`;
+  }
+
+  function goNextPartnership() {
+    if (!elements.partnershipTrack) return;
+    const cardCount = elements.partnershipTrack.children.length;
+    if (cardCount <= 1) return;
+    partnershipIndex = (partnershipIndex + 1) % cardCount;
+    updatePartnershipCarousel();
+  }
+
+  function startPartnershipCarousel() {
+    if (partnershipTimer || !elements.partnershipTrack || elements.partnershipTrack.children.length <= 1) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    partnershipTimer = window.setInterval(goNextPartnership, 6500);
+  }
+
+  function stopPartnershipCarousel() {
+    if (!partnershipTimer) return;
+    window.clearInterval(partnershipTimer);
+    partnershipTimer = null;
+  }
+
+  function setupPartnershipCarousel() {
+    if (!elements.partnershipTrack) return;
+
+    const carousel = elements.partnershipTrack.closest('.partnership-carousel');
+    if (carousel) {
+      carousel.addEventListener('mouseenter', stopPartnershipCarousel);
+      carousel.addEventListener('mouseleave', startPartnershipCarousel);
+      carousel.addEventListener('focusin', stopPartnershipCarousel);
+      carousel.addEventListener('focusout', startPartnershipCarousel);
+    }
+
+    updatePartnershipCarousel();
+    startPartnershipCarousel();
   }
 
   function updateTestimonialCarousel() {
@@ -510,6 +556,8 @@ async function storeLead(payload){
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
+    console.assert(elements.partnershipTrack === null || elements.partnershipTrack.children.length === 3, 'Test échoué : 3 cartes partenariats attendues.');
+    console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === 'Partenariat'), 'Test échoué : option partenariat manquante.');
   }
 
   renderFilters();
@@ -519,6 +567,7 @@ async function storeLead(payload){
   populateSelect();
   setupEvents();
   setupCourseCarousel();
+  setupPartnershipCarousel();
   setupTestimonialCarousel();
   setupScrollReveal();
   runSmokeTests();
