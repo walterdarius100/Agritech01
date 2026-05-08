@@ -67,6 +67,7 @@ if (window.emailjs) {
     formStatus: document.querySelector('#formStatus')
   };
 
+  const partnershipNeed = 'Partenariat';
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
@@ -270,7 +271,9 @@ async function storeLead(payload){
       .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}`;
+    const partnershipOption = `<option value="${partnershipNeed}">${partnershipNeed}</option>`;
+
+    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${partnershipOption}${courseOptions}`;
     updateMessageFieldVisibility();
   }
 
@@ -379,7 +382,7 @@ async function storeLead(payload){
       const link = event.target.closest('[data-need]');
       if (!link) return;
       if (elements.needSelect) {
-        if (![...elements.needSelect.options].some((option) => option.value === link.dataset.need)) {
+        if (link.dataset.need && ![...elements.needSelect.options].some((option) => option.value === link.dataset.need)) {
           elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
         }
         elements.needSelect.value = link.dataset.need;
@@ -510,6 +513,7 @@ async function storeLead(payload){
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
+    console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
   }
 
   renderFilters();
