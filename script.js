@@ -36,7 +36,8 @@ if (window.emailjs) {
   const courses = [
     { title: 'Cuniculture rentable (de 0 à 50 000 HT)', image: 'assets/images/formation-cuniculture.jpg', level: 'Débutant', duration: '4 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Apprenez à lancer un élevage de lapins rentable avec une méthode claire étape par étape.', bonus: 'Support WhatsApp 7 jours' },
     { title: 'Poulet de chair : produire et vendre efficacement', image: 'assets/images/formation-poulet.jpg', level: 'Intermédiaire', duration: '5 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Maîtrisez tout le cycle de production : installation, alimentation, santé et vente.', bonus: 'Plan de production inclus' },
-    { title: 'Apiculture moderne simplifiée', image: 'assets/images/formation-apiculture.jpg', level: 'Débutant', duration: '3 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Comprenez les bases pour démarrer un rucher et produire du miel.', bonus: 'Liste du matériel fournie' }
+    { title: 'Apiculture moderne simplifiée', image: 'assets/images/formation-apiculture.jpg', level: 'Débutant', duration: '3 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Comprenez les bases pour démarrer un rucher et produire du miel.', bonus: 'Liste du matériel fournie' },
+    { title: 'Formation en élevage de poules pondeuses', image: 'assets/images/poule-pondeuse.jpg', level: 'Élevage', duration: '4 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Apprenez les bases essentielles pour démarrer et gérer un élevage de poules pondeuses de manière structurée et rentable.', bonus: 'Alerte au lancement', cta: 'Accéder à la formation', need: 'Formation poule pondeuse', cardLink: true }
   ];
 
   const testimonials = [
@@ -188,7 +189,7 @@ async function storeLead(payload){
 
     elements.courseGrid.innerHTML = courses
       .map((course, index) => `
-        <article class="course-card reveal ${getDelayClass(index)}">
+        <article class="course-card reveal ${getDelayClass(index)}"${course.cardLink ? ` data-need="${escapeHtml(course.need)}" data-contact-card="true"` : ''}>
           <div class="course-header">
             <img src="${escapeHtml(course.image)}" alt="${escapeHtml(course.title)}" loading="lazy" />
             <span class="course-badge">Formation</span>
@@ -203,7 +204,7 @@ async function storeLead(payload){
             </div>
             <div class="course-price">${escapeHtml(course.price)}</div>
             <p class="bonus">🎁 ${escapeHtml(course.bonus)}</p>
-            <a href="#contact" data-need="Cours en ligne - ${escapeHtml(course.title)}" class="btn primary full">Accéder à la formation</a>
+            <a href="#contact" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="btn primary full">${escapeHtml(course.cta || 'Accéder à la formation')}</a>
           </div>
         </article>
       `)
@@ -241,7 +242,7 @@ async function storeLead(payload){
       .join('');
 
     const courseOptions = courses
-      .map((course) => `<option value="Cours en ligne - ${escapeHtml(course.title)}">Cours en ligne - ${escapeHtml(course.title)}</option>`)
+      .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
     elements.needSelect.innerHTML = `<option value="">Sélectionnez un domaine</option>${serviceOptions}${courseOptions}`;
@@ -350,8 +351,17 @@ async function storeLead(payload){
 
     document.addEventListener('click', (event) => {
       const link = event.target.closest('[data-need]');
-      if (!link || !elements.needSelect) return;
-      elements.needSelect.value = link.dataset.need;
+      if (!link) return;
+      if (elements.needSelect) {
+        if (![...elements.needSelect.options].some((option) => option.value === link.dataset.need)) {
+          elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
+        }
+        elements.needSelect.value = link.dataset.need;
+      }
+
+      if (link.dataset.contactCard === 'true') {
+        window.location.hash = 'contact';
+      }
     });
 
     if (elements.brandHome) {
