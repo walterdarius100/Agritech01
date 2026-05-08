@@ -71,6 +71,20 @@ h3{font-size:1.1rem;margin-bottom:8px}
 .course-meta span{font-size:.78rem;font-weight:900;color:var(--green-700);background:var(--green-100);padding:6px 9px;border-radius:999px}
 .course-price{font-weight:900;color:var(--green-900);margin:12px 0 16px}
 .bonus{font-size:.9rem;color:var(--muted)}
+
+.partnerships-section{overflow:hidden}
+.partnership-carousel{position:relative;overflow:hidden;margin:6px auto 0;padding:4px;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.partnership-track{display:flex;gap:18px;width:max-content;animation:partnership-scroll 34s linear infinite;will-change:transform}
+.partnership-carousel:hover .partnership-track,.partnership-carousel:focus-within .partnership-track{animation-play-state:paused}
+.partnership-card{position:relative;isolation:isolate;overflow:hidden;min-width:320px;height:210px;border-radius:26px;background:var(--green-900);border:1px solid rgba(255,255,255,.24);box-shadow:0 18px 42px rgba(6,40,31,.12);display:flex;align-items:flex-end;color:#fff}
+.partnership-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transform:scale(1.01);transition:transform .45s ease;filter:saturate(1.04)}
+.partnership-card::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.68) 62%,rgba(0,0,0,.82))}
+.partnership-card:hover img{transform:scale(1.08)}
+.partnership-card-content{padding:20px;max-width:295px}
+.partnership-badge{display:inline-flex;align-items:center;width:max-content;margin-bottom:8px;padding:5px 10px;border:1px solid rgba(255,255,255,.62);border-radius:999px;color:#fff;font-size:.74rem;font-weight:800;letter-spacing:.04em;background:rgba(255,255,255,.08);backdrop-filter:blur(8px)}
+.partnership-card p{margin:0;color:rgba(255,255,255,.9);font-size:.92rem;font-weight:500;line-height:1.42}
+.partnership-cta{display:flex;justify-content:center;margin-top:28px}
+@keyframes partnership-scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 9px))}}
 .testimonial-carousel{position:relative;max-width:900px;margin:0 auto}
 .carousel-viewport{overflow:hidden}
 .carousel-track{display:flex;transition:transform .4s ease}
@@ -138,6 +152,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--green-700);box-shadow
 .reveal-delay-1{transition-delay:.08s}
 .reveal-delay-2{transition-delay:.16s}
 .reveal-delay-3{transition-delay:.24s}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.course-track,.carousel-track{transition:none}.btn:hover,.service-card:hover,.course-card:hover,.testimonial-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.course-track,.carousel-track,.partnership-track{transition:none;animation:none}.btn:hover,.service-card:hover,.course-card:hover,.testimonial-card:hover,.partnership-card:hover img{transform:none}}
 @media(max-width:900px){.footer-container{grid-template-columns:repeat(2,1fr)}.hero,.split-section,.contact-section{grid-template-columns:1fr}.service-grid{grid-template-columns:repeat(2,1fr)}.course-card{min-width:calc((100% - 18px)/2)}.metrics{grid-template-columns:repeat(2,1fr)}.nav-links{display:none;position:absolute;top:73px;left:20px;right:20px;background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px;flex-direction:column;align-items:stretch;box-shadow:var(--shadow)}.nav-links.open{display:flex}.menu-btn{display:block}}
-@media(max-width:620px){.footer-container{grid-template-columns:1fr}.section-pad{padding:58px 16px}.service-grid,.steps,.metrics{grid-template-columns:1fr}.course-card{min-width:100%}.hero{min-height:auto;padding-top:52px}.carousel-btn.prev{left:0}.carousel-btn.next{right:0}}
+@media(max-width:620px){.footer-container{grid-template-columns:1fr}.section-pad{padding:58px 16px}.service-grid,.steps,.metrics{grid-template-columns:1fr}.course-card{min-width:100%}.partnership-carousel{mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}.partnership-card{min-width:264px;height:196px}.partnership-card-content{padding:17px;max-width:244px}.partnership-card p{font-size:.88rem}.hero{min-height:auto;padding-top:52px}.carousel-btn.prev{left:0}.carousel-btn.next{right:0}}
