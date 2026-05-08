@@ -165,8 +165,8 @@
     <section class="section-pad contact-section" id="contact">
       <div class="contact-copy reveal">
         <span class="eyebrow">Contactez-nous</span>
-        <h2>Demandez une consultation pour votre projet agricole.</h2>
-        <p>Le formulaire envoie votre demande directement à Agri-tech et permet de conserver vos informations pour le suivi.</p>
+        <h2>Discutons de votre projet agricole</h2>
+        <p>Décrivez brièvement votre projet, vos besoins ou vos objectifs. Notre équipe vous recontactera pour échanger sur les meilleures solutions adaptées à votre réalité.</p>
       </div>
 
       <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
@@ -182,11 +182,17 @@
           <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
         </label>
 
-        <label for="need">Domaine souhaité
+        <div class="contact-trust" aria-label="Garanties de contact">
+          <span>Réponse sous 24 à 48h</span>
+          <span>Accompagnement adapté à votre budget</span>
+          <span>Échange sans engagement</span>
+        </div>
+
+        <label for="need">Type de projet ou formation
           <select id="need" name="need" required></select>
         </label>
 
-        <label for="message">Décrivez brièvement votre projet
+        <label for="message" id="messageField">Décrivez brièvement votre projet
           <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>
         </label>
 
@@ -199,9 +205,9 @@
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
         </label>
 
-        <button class="btn primary full" type="submit" id="submitBtn">Envoyer la demande</button>
+        <button class="btn primary full" type="submit" id="submitBtn">Demander une consultation</button>
         <div class="form-status" id="formStatus" role="status"></div>
-        <p class="form-note">Vos informations seront envoyées à Agri-tech et stockées dans votre système de suivi.</p>
+        <p class="form-note">Vos informations restent confidentielles et sont utilisées uniquement dans le cadre de votre demande.</p>
       </form>
     </section>
   </main>
