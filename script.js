@@ -41,6 +41,14 @@ if (window.emailjs) {
     { title: 'Formation en pisciculture', image: 'assets/images/pisciculture.jpg', level: 'Élevage', duration: '4 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Apprenez les bases essentielles pour démarrer et gérer un projet piscicole de manière structurée, rentable et adaptée à votre réalité.', bonus: 'Alerte au lancement', cta: 'Accéder à la formation', need: 'Formation en pisciculture', cardLink: true }
   ];
 
+  const partnershipNeed = 'Partenariat';
+
+  const partnerships = [
+    { title: 'Entreprises', text: 'Accompagnement technique et mise en place de solutions agricoles adaptées aux besoins des entreprises et initiatives privées.' },
+    { title: 'ONG locales', text: 'Collaboration pour des projets agricoles à impact social orientés vers les communautés, les jeunes et l’autonomisation économique.' },
+    { title: 'Associations', text: 'Partenariats pour l’organisation de formations, activités pratiques et projets agricoles communautaires.' }
+  ];
+
   const testimonials = [
     { name: 'Participant formation', role: 'Cuniculture', image: 'assets/images/temoignage-1.jpg', text: 'L’accompagnement m’a permis de mieux comprendre les étapes avant de lancer mon élevage. Les explications étaient claires et pratiques.' },
     { name: 'Porteur de projet', role: 'Poulet de chair', image: 'assets/images/temoignage-2.jpg', text: 'Agri-tech m’a aidé à structurer mon idée et à voir les erreurs que je devais éviter avant d’investir.' },
@@ -52,6 +60,9 @@ if (window.emailjs) {
     courseGrid: document.querySelector('#courseGrid'),
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
+    partnershipTrack: document.querySelector('#partnershipTrack'),
+    partnershipPrev: document.querySelector('#partnershipPrev'),
+    partnershipNext: document.querySelector('#partnershipNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
@@ -71,6 +82,7 @@ if (window.emailjs) {
   let testimonialIndex = 0;
   let testimonialTimer = null;
   let courseIndex = 0;
+  let partnershipIndex = 0;
 
   function escapeHtml(value) {
     return String(value)
@@ -239,6 +251,24 @@ async function storeLead(payload){
     updateCourseCarousel();
   }
 
+  function renderPartnerships() {
+    if (!elements.partnershipTrack) return;
+
+    elements.partnershipTrack.innerHTML = partnerships
+      .map((partnership, index) => `
+        <a class="partnership-card reveal ${getDelayClass(index)}" href="#contact" data-need="${escapeHtml(partnershipNeed)}">
+          <span class="partnership-number">0${index + 1}</span>
+          <h3>${escapeHtml(partnership.title)}</h3>
+          <p>${escapeHtml(partnership.text)}</p>
+          <span class="partnership-link">Proposer un partenariat →</span>
+        </a>
+      `)
+      .join('');
+
+    setupScrollReveal(elements.partnershipTrack.querySelectorAll('.reveal'));
+    updatePartnershipCarousel();
+  }
+
   function renderTestimonials() {
     if (!elements.testimonialTrack) return;
 
@@ -270,8 +300,38 @@ async function storeLead(payload){
       .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}`;
+    const partnershipOption = `<option value="${escapeHtml(partnershipNeed)}">${escapeHtml(partnershipNeed)}</option>`;
+
+    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${partnershipOption}${serviceOptions}${courseOptions}`;
     updateMessageFieldVisibility();
+  }
+
+  function getVisiblePartnershipCount() {
+    if (window.innerWidth <= 620) return 1;
+    if (window.innerWidth <= 900) return 2;
+    return 3;
+  }
+
+  function updatePartnershipCarousel() {
+    if (!elements.partnershipTrack) return;
+
+    const visible = getVisiblePartnershipCount();
+    const maxIndex = Math.max(0, partnerships.length - visible);
+
+    if (partnershipIndex > maxIndex) partnershipIndex = maxIndex;
+
+    const gap = 18;
+    elements.partnershipTrack.style.transform = `translateX(calc(-${partnershipIndex} * ((100% - ${(visible - 1) * gap}px) / ${visible} + ${gap}px)))`;
+
+    if (elements.partnershipPrev) elements.partnershipPrev.disabled = partnershipIndex === 0;
+    if (elements.partnershipNext) elements.partnershipNext.disabled = partnershipIndex === maxIndex;
+  }
+
+  function movePartnershipCarousel(direction) {
+    const visible = getVisiblePartnershipCount();
+    const maxIndex = Math.max(0, partnerships.length - visible);
+    partnershipIndex = Math.min(Math.max(partnershipIndex + direction, 0), maxIndex);
+    updatePartnershipCarousel();
   }
 
   function getVisibleCourseCount() {
@@ -326,6 +386,15 @@ async function storeLead(payload){
     if (!testimonialTimer) return;
     window.clearInterval(testimonialTimer);
     testimonialTimer = null;
+  }
+
+  function setupPartnershipCarousel() {
+    if (!elements.partnershipTrack || !elements.partnershipPrev || !elements.partnershipNext) return;
+
+    elements.partnershipPrev.addEventListener('click', () => movePartnershipCarousel(-1));
+    elements.partnershipNext.addEventListener('click', () => movePartnershipCarousel(1));
+    window.addEventListener('resize', updatePartnershipCarousel);
+    updatePartnershipCarousel();
   }
 
   function setupCourseCarousel() {
@@ -501,6 +570,7 @@ async function storeLead(payload){
     console.assert(services.length === 12, 'Test échoué : 12 services attendus.');
     console.assert(courses.length >= 3, 'Test échoué : au moins 3 cours attendus.');
     console.assert(testimonials.length === 3, 'Test échoué : 3 témoignages attendus.');
+    console.assert(partnerships.length === 3, 'Test échoué : 3 partenariats attendus.');
     console.assert(services.every((service) => service.image.startsWith('assets/images/')), 'Test échoué : images services locales attendues.');
     console.assert(courses.every((course) => course.image.startsWith('assets/images/')), 'Test échoué : images formations locales attendues.');
     console.assert(testimonials.every((testimonial) => testimonial.image.startsWith('assets/images/')), 'Test échoué : images témoignages locales attendues.');
@@ -508,17 +578,22 @@ async function storeLead(payload){
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
+    console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
+    console.assert(elements.partnershipTrack === null || elements.partnershipTrack.children.length === partnerships.length, 'Test échoué : tous les partenariats doivent être rendus.');
+    console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat attendue.');
   }
 
   renderFilters();
   renderServices();
   renderCourses();
+  renderPartnerships();
   renderTestimonials();
   populateSelect();
   setupEvents();
   setupCourseCarousel();
+  setupPartnershipCarousel();
   setupTestimonialCarousel();
   setupScrollReveal();
   runSmokeTests();
