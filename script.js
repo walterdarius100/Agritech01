@@ -67,6 +67,7 @@ if (window.emailjs) {
     formStatus: document.querySelector('#formStatus')
   };
 
+  const PARTNERSHIP_NEED = 'Partenariat';
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
@@ -270,7 +271,9 @@ async function storeLead(payload){
       .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}`;
+    const partnershipOption = `<option value="${PARTNERSHIP_NEED}">${PARTNERSHIP_NEED}</option>`;
+
+    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}${partnershipOption}`;
     updateMessageFieldVisibility();
   }
 
@@ -510,6 +513,7 @@ async function storeLead(payload){
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
+    console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === PARTNERSHIP_NEED), 'Test échoué : option Partenariat attendue.');
   }
 
   renderFilters();
