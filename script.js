@@ -171,7 +171,7 @@ async function storeLead(payload){
     elements.serviceGrid.innerHTML = visibleServices
       .map((service, index) => `
         <article class="service-card reveal ${getDelayClass(index)}">
-          <img src="${escapeHtml(service.image)}" alt="${escapeHtml(service.title)}" class="service-image" loading="lazy" />
+          <img src="${escapeHtml(service.image)}" alt="${escapeHtml(service.title)}" class="service-image" width="1200" height="800" loading="lazy" decoding="async" />
           <div class="service-content">
             <span class="tag">${escapeHtml(service.category)}</span>
             <h3>${escapeHtml(service.title)}</h3>
@@ -192,7 +192,7 @@ async function storeLead(payload){
       .map((course, index) => `
         <article class="course-card reveal ${getDelayClass(index)}"${course.cardLink ? ` data-need="${escapeHtml(course.need)}" data-contact-card="true"` : ''}>
           <div class="course-header">
-            <img src="${escapeHtml(course.image)}" alt="${escapeHtml(course.title)}" loading="lazy" />
+            <img src="${escapeHtml(course.image)}" alt="${escapeHtml(course.title)}" width="1200" height="800" loading="lazy" decoding="async" />
             <span class="course-badge">Formation</span>
           </div>
           <div class="course-body">
@@ -221,7 +221,7 @@ async function storeLead(payload){
     elements.testimonialTrack.innerHTML = testimonials
       .map((testimonial) => `
         <article class="testimonial-card">
-          <img src="${escapeHtml(testimonial.image)}" alt="${escapeHtml(testimonial.name)}" class="testimonial-image" loading="lazy" />
+          <img src="${escapeHtml(testimonial.image)}" alt="${escapeHtml(testimonial.name)}" class="testimonial-image" width="1200" height="800" loading="lazy" decoding="async" />
           <div class="testimonial-content">
             <div class="testimonial-author">
               <strong>${escapeHtml(testimonial.name)}</strong>
