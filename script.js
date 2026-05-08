@@ -61,6 +61,8 @@ if (window.emailjs) {
     navLinks: document.querySelector('#navLinks'),
     brandHome: document.querySelector('[data-scroll-top]'),
     form: document.querySelector('#leadForm'),
+    messageField: document.querySelector('#messageField'),
+    messageInput: document.querySelector('#message'),
     submitBtn: document.querySelector('#submitBtn'),
     formStatus: document.querySelector('#formStatus')
   };
@@ -110,7 +112,29 @@ function isEmailJsConfigured(){
   function setSubmitState(isLoading) {
     if (!elements.submitBtn) return;
     elements.submitBtn.disabled = isLoading;
-    elements.submitBtn.textContent = isLoading ? 'Envoi en cours...' : 'Envoyer la demande';
+    elements.submitBtn.textContent = isLoading ? 'Envoi en cours...' : 'Demander une consultation';
+  }
+
+  function isFormationNeed(value) {
+    if (!value) return false;
+
+    return courses.some((course) => {
+      const courseNeed = course.need || `Cours en ligne - ${course.title}`;
+      return value === courseNeed;
+    }) || /formation|cours en ligne/i.test(value);
+  }
+
+  function updateMessageFieldVisibility() {
+    if (!elements.messageField || !elements.messageInput || !elements.needSelect) return;
+
+    const isFormation = isFormationNeed(elements.needSelect.value);
+    elements.messageField.classList.toggle('message-field-hidden', isFormation);
+    elements.messageInput.required = !isFormation;
+    elements.messageInput.disabled = isFormation;
+
+    if (isFormation) {
+      elements.messageInput.value = '';
+    }
   }
 
 async function storeLead(payload){
@@ -246,7 +270,8 @@ async function storeLead(payload){
       .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
       .join('');
 
-    elements.needSelect.innerHTML = `<option value="">Sélectionnez un domaine</option>${serviceOptions}${courseOptions}`;
+    elements.needSelect.innerHTML = `<option value="">Sélectionnez un type de projet ou formation</option>${serviceOptions}${courseOptions}`;
+    updateMessageFieldVisibility();
   }
 
   function getVisibleCourseCount() {
@@ -358,6 +383,7 @@ async function storeLead(payload){
           elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
         }
         elements.needSelect.value = link.dataset.need;
+        updateMessageFieldVisibility();
       }
 
       if (link.dataset.contactCard === 'true') {
@@ -399,6 +425,10 @@ async function storeLead(payload){
       });
     }
 
+    if (elements.needSelect) {
+      elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
+    }
+
     if (elements.form) {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -407,14 +437,17 @@ async function storeLead(payload){
         const email = document.querySelector('#email')?.value.trim() || '';
         const phone = sanitizePhone(document.querySelector('#phone')?.value || '');
         const need = elements.needSelect?.value || '';
-        const message = document.querySelector('#message')?.value.trim() || '';
+        const isFormationRequest = isFormationNeed(need);
+        const message = isFormationRequest
+          ? 'Demande liée à une formation sélectionnée.'
+          : elements.messageInput?.value.trim() || '';
         const consent = document.querySelector('#consent')?.checked || false;
         const website = document.querySelector('#website')?.value.trim() || '';
 
         if (website) return;
 
-        if (!name || !email || !phone || !need || !message || !consent) {
-          setFormStatus('error', 'Veuillez remplir tous les champs et accepter d’être recontacté.');
+        if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
+          setFormStatus('error', 'Veuillez remplir les champs requis et accepter d’être recontacté.');
           return;
         }
 
@@ -452,6 +485,7 @@ async function storeLead(payload){
           await storeLead(payload);
 
           elements.form.reset();
+          updateMessageFieldVisibility();
           setFormStatus('success', 'Votre demande a été envoyée avec succès. Agri-Tech vous recontactera bientôt.');
         } catch (error) {
           console.error('Erreur EmailJS:', error);
