@@ -81,7 +81,7 @@ h3{font-size:1.1rem;margin-bottom:8px}
 .partnership-card:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 24px 58px rgba(6,40,31,.22)}
 .partnership-card:hover::before{transform:scale(1.08)}
 .partnership-badge{position:relative;color:#fff;border:1px solid rgba(255,255,255,.52);background:rgba(0,0,0,.16);backdrop-filter:blur(8px);font-size:.73rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
-.partnership-card p{color:rgba(255,255,255,.94);font-weight:400;font-size:.9rem;line-height:1.4;margin:0;max-width:250px;text-shadow:0 2px 18px rgba(0,0,0,.42)}
+.partnership-card p{color:rgba(255,255,255,.94);font-weight:500;font-size:.94rem;line-height:1.4;margin:0;max-width:250px;text-shadow:0 2px 18px rgba(0,0,0,.42)}
 .partnership-actions{display:flex;justify-content:center;margin-top:28px}
 @keyframes partnership-scroll{from{transform:translateX(0)}to{transform:translateX(calc(((var(--partnership-card-width) * 3) + (var(--partnership-gap) * 3)) * -1))}}
 .testimonial-carousel{position:relative;max-width:900px;margin:0 auto}
