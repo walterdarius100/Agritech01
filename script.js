@@ -56,6 +56,7 @@ if (window.emailjs) {
     partnershipTrack: document.querySelector('#partnershipTrack'),
     partnershipPrev: document.querySelector('#partnershipPrev'),
     partnershipNext: document.querySelector('#partnershipNext'),
+    partnershipDots: document.querySelector('#partnershipDots'),
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
     filters: document.querySelector('#filters'),
@@ -345,20 +346,35 @@ async function storeLead(payload){
     return elements.partnershipTrack.querySelectorAll('.partnership-card:not([aria-hidden="true"])').length;
   }
 
+  function updatePartnershipDots(slideCount = getPartnershipSlideCount()) {
+    if (!elements.partnershipDots) return;
+
+    const dots = elements.partnershipDots.querySelectorAll('.partnership-dot');
+    dots.forEach((dot, index) => {
+      const isActive = index === partnershipIndex && index < slideCount;
+      dot.classList.toggle('is-active', isActive);
+      dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+      dot.disabled = index >= slideCount;
+    });
+  }
+
   function updatePartnershipCarousel() {
     if (!elements.partnershipTrack) return;
+
+    const slideCount = getPartnershipSlideCount();
 
     if (!isMobilePartnershipCarousel()) {
       partnershipIndex = 0;
       elements.partnershipTrack.style.transform = '';
+      updatePartnershipDots(slideCount);
       return;
     }
 
-    const slideCount = getPartnershipSlideCount();
     if (!slideCount) return;
 
     partnershipIndex = Math.min(Math.max(partnershipIndex, 0), slideCount - 1);
     elements.partnershipTrack.style.transform = `translateX(-${partnershipIndex * 100}%)`;
+    updatePartnershipDots(slideCount);
   }
 
   function goNextPartnership() {
@@ -436,6 +452,17 @@ async function storeLead(payload){
       goPrevPartnership();
       startPartnershipCarousel();
     });
+
+    if (elements.partnershipDots) {
+      elements.partnershipDots.querySelectorAll('.partnership-dot').forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+          stopPartnershipCarousel();
+          partnershipIndex = index;
+          updatePartnershipCarousel();
+          startPartnershipCarousel();
+        });
+      });
+    }
 
     const carousel = elements.partnershipTrack.closest('.partnership-carousel');
     if (carousel) {
