@@ -78,6 +78,9 @@ if (window.emailjs) {
   let partnershipIndex = 0;
   let partnershipTimer = null;
   let courseIndex = 0;
+  let formResetTimer = null;
+  const FORM_SUCCESS_MESSAGE = 'Votre demande a bien été envoyée. Notre équipe vous recontactera dans les meilleurs délais.';
+  const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
 
   function escapeHtml(value) {
     return String(value)
@@ -110,10 +113,15 @@ function isEmailJsConfigured(){
   );
 }
 
-  function setFormStatus(type, message) {
+  function setFormStatus(type, message, shouldScroll = false) {
     if (!elements.formStatus) return;
+
     elements.formStatus.className = `form-status show ${type}`;
     elements.formStatus.textContent = message;
+
+    if (shouldScroll) {
+      elements.formStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   function setSubmitState(isLoading) {
@@ -563,6 +571,11 @@ async function storeLead(payload){
         const consent = document.querySelector('#consent')?.checked || false;
         const website = document.querySelector('#website')?.value.trim() || '';
 
+        if (formResetTimer) {
+          window.clearTimeout(formResetTimer);
+          formResetTimer = null;
+        }
+
         if (website) return;
 
         if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
@@ -603,12 +616,16 @@ async function storeLead(payload){
 
           await storeLead(payload);
 
-          elements.form.reset();
-          updateMessageFieldVisibility();
-          setFormStatus('success', 'Votre demande a été envoyée avec succès. Agri-Tech vous recontactera bientôt.');
+          setFormStatus('success', FORM_SUCCESS_MESSAGE, true);
+
+          formResetTimer = window.setTimeout(() => {
+            elements.form.reset();
+            updateMessageFieldVisibility();
+            formResetTimer = null;
+          }, 500);
         } catch (error) {
           console.error('Erreur EmailJS:', error);
-          setFormStatus('error', 'Une erreur est survenue. Veuillez réessayer ou contacter Agri-Tech directement.');
+          setFormStatus('error', FORM_ERROR_MESSAGE, true);
         } finally {
           setSubmitState(false);
         }
