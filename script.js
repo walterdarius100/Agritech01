@@ -79,6 +79,8 @@ if (window.emailjs) {
   let partnershipTimer = null;
   let courseIndex = 0;
   let formResetTimer = null;
+  let formStatusTimer = null;
+  const FORM_STATUS_DURATION = 10000;
   const FORM_SUCCESS_MESSAGE = 'Votre demande a bien été envoyée. Notre équipe vous recontactera dans les meilleurs délais.';
   const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
 
@@ -113,21 +115,55 @@ function isEmailJsConfigured(){
   );
 }
 
-  function setFormStatus(type, message, shouldScroll = false) {
+  function clearFormStatusTimer() {
+    if (!formStatusTimer) return;
+
+    window.clearTimeout(formStatusTimer);
+    formStatusTimer = null;
+  }
+
+  function clearFormStatus() {
     if (!elements.formStatus) return;
 
+    elements.formStatus.className = 'form-status';
+    elements.formStatus.textContent = '';
+  }
+
+  function setFormStatus(type, message, shouldScroll = false, shouldAutoHide = false) {
+    if (!elements.formStatus) return;
+
+    clearFormStatusTimer();
     elements.formStatus.className = `form-status show ${type}`;
     elements.formStatus.textContent = message;
 
     if (shouldScroll) {
       elements.formStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    if (shouldAutoHide) {
+      formStatusTimer = window.setTimeout(() => {
+        clearFormStatus();
+        formStatusTimer = null;
+      }, FORM_STATUS_DURATION);
+    }
+  }
+
+  function getSubmitButtonLabel() {
+    return isFormationNeed(elements.needSelect?.value || '')
+      ? 'Réservez votre place'
+      : 'Demander une consultation';
+  }
+
+  function updateSubmitButtonLabel() {
+    if (!elements.submitBtn || elements.submitBtn.disabled) return;
+
+    elements.submitBtn.textContent = getSubmitButtonLabel();
   }
 
   function setSubmitState(isLoading) {
     if (!elements.submitBtn) return;
     elements.submitBtn.disabled = isLoading;
-    elements.submitBtn.textContent = isLoading ? 'Envoi en cours...' : 'Demander une consultation';
+    elements.submitBtn.textContent = isLoading ? 'Envoi en cours...' : getSubmitButtonLabel();
   }
 
   function isFormationNeed(value) {
@@ -150,6 +186,8 @@ function isEmailJsConfigured(){
     if (isFormation) {
       elements.messageInput.value = '';
     }
+
+    updateSubmitButtonLabel();
   }
 
 async function storeLead(payload){
@@ -576,6 +614,8 @@ async function storeLead(payload){
           formResetTimer = null;
         }
 
+        clearFormStatusTimer();
+
         if (website) return;
 
         if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
@@ -616,7 +656,7 @@ async function storeLead(payload){
 
           await storeLead(payload);
 
-          setFormStatus('success', FORM_SUCCESS_MESSAGE, true);
+          setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
 
           formResetTimer = window.setTimeout(() => {
             elements.form.reset();
@@ -625,7 +665,7 @@ async function storeLead(payload){
           }, 500);
         } catch (error) {
           console.error('Erreur EmailJS:', error);
-          setFormStatus('error', FORM_ERROR_MESSAGE, true);
+          setFormStatus('error', FORM_ERROR_MESSAGE, true, true);
         } finally {
           setSubmitState(false);
         }
