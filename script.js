@@ -53,6 +53,9 @@ if (window.emailjs) {
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
+    partnershipTrack: document.querySelector('#partnershipTrack'),
+    partnershipPrev: document.querySelector('#partnershipPrev'),
+    partnershipNext: document.querySelector('#partnershipNext'),
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
     filters: document.querySelector('#filters'),
@@ -71,6 +74,8 @@ if (window.emailjs) {
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
+  let partnershipIndex = 0;
+  let partnershipTimer = null;
   let courseIndex = 0;
 
   function escapeHtml(value) {
@@ -331,6 +336,57 @@ async function storeLead(payload){
     testimonialTimer = null;
   }
 
+  function isMobilePartnershipCarousel() {
+    return window.matchMedia('(max-width: 620px)').matches;
+  }
+
+  function getPartnershipSlideCount() {
+    if (!elements.partnershipTrack) return 0;
+    return elements.partnershipTrack.querySelectorAll('.partnership-card:not([aria-hidden="true"])').length;
+  }
+
+  function updatePartnershipCarousel() {
+    if (!elements.partnershipTrack) return;
+
+    if (!isMobilePartnershipCarousel()) {
+      partnershipIndex = 0;
+      elements.partnershipTrack.style.transform = '';
+      return;
+    }
+
+    const slideCount = getPartnershipSlideCount();
+    if (!slideCount) return;
+
+    partnershipIndex = Math.min(Math.max(partnershipIndex, 0), slideCount - 1);
+    elements.partnershipTrack.style.transform = `translateX(-${partnershipIndex * 100}%)`;
+  }
+
+  function goNextPartnership() {
+    const slideCount = getPartnershipSlideCount();
+    if (!slideCount) return;
+    partnershipIndex = (partnershipIndex + 1) % slideCount;
+    updatePartnershipCarousel();
+  }
+
+  function goPrevPartnership() {
+    const slideCount = getPartnershipSlideCount();
+    if (!slideCount) return;
+    partnershipIndex = (partnershipIndex - 1 + slideCount) % slideCount;
+    updatePartnershipCarousel();
+  }
+
+  function startPartnershipCarousel() {
+    if (partnershipTimer || !isMobilePartnershipCarousel() || getPartnershipSlideCount() <= 1) return;
+    partnershipTimer = window.setInterval(goNextPartnership, 5500);
+  }
+
+  function stopPartnershipCarousel() {
+    if (!partnershipTimer) return;
+    window.clearInterval(partnershipTimer);
+    partnershipTimer = null;
+  }
+
+
   function setupCourseCarousel() {
     if (!elements.courseGrid || !elements.coursePrev || !elements.courseNext) return;
 
@@ -364,6 +420,39 @@ async function storeLead(payload){
     }
 
     startTestimonialCarousel();
+  }
+
+  function setupPartnershipCarousel() {
+    if (!elements.partnershipTrack || !elements.partnershipPrev || !elements.partnershipNext) return;
+
+    elements.partnershipNext.addEventListener('click', () => {
+      stopPartnershipCarousel();
+      goNextPartnership();
+      startPartnershipCarousel();
+    });
+
+    elements.partnershipPrev.addEventListener('click', () => {
+      stopPartnershipCarousel();
+      goPrevPartnership();
+      startPartnershipCarousel();
+    });
+
+    const carousel = elements.partnershipTrack.closest('.partnership-carousel');
+    if (carousel) {
+      carousel.addEventListener('mouseenter', stopPartnershipCarousel);
+      carousel.addEventListener('mouseleave', startPartnershipCarousel);
+      carousel.addEventListener('focusin', stopPartnershipCarousel);
+      carousel.addEventListener('focusout', startPartnershipCarousel);
+    }
+
+    window.addEventListener('resize', () => {
+      stopPartnershipCarousel();
+      updatePartnershipCarousel();
+      startPartnershipCarousel();
+    });
+
+    updatePartnershipCarousel();
+    startPartnershipCarousel();
   }
 
   function setupEvents() {
@@ -511,6 +600,8 @@ async function storeLead(payload){
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
+    console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
+    console.assert(elements.partnershipTrack === null || getPartnershipSlideCount() === 3, 'Test échoué : 3 cartes partenariats attendues.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
     console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
@@ -524,6 +615,7 @@ async function storeLead(payload){
   setupEvents();
   setupCourseCarousel();
   setupTestimonialCarousel();
+  setupPartnershipCarousel();
   setupScrollReveal();
   runSmokeTests();
 });
