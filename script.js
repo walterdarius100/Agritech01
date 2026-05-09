@@ -54,7 +54,6 @@ if (window.emailjs) {
     courseNext: document.querySelector('#courseNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
     partnershipTrack: document.querySelector('#partnershipTrack'),
-    partnershipPrev: document.querySelector('#partnershipPrev'),
     partnershipNext: document.querySelector('#partnershipNext'),
     partnershipDots: document.querySelector('#partnershipDots'),
     prevBtn: document.querySelector('#prevBtn'),
@@ -430,12 +429,6 @@ async function storeLead(payload){
     updatePartnershipCarousel();
   }
 
-  function goPrevPartnership() {
-    const slideCount = getPartnershipSlideCount();
-    if (!slideCount) return;
-    partnershipIndex = (partnershipIndex - 1 + slideCount) % slideCount;
-    updatePartnershipCarousel();
-  }
 
   function startPartnershipCarousel() {
     if (partnershipTimer || !isMobilePartnershipCarousel() || getPartnershipSlideCount() <= 1) return;
@@ -485,7 +478,7 @@ async function storeLead(payload){
   }
 
   function setupPartnershipCarousel() {
-    if (!elements.partnershipTrack || !elements.partnershipPrev || !elements.partnershipNext) return;
+    if (!elements.partnershipTrack || !elements.partnershipNext) return;
 
     elements.partnershipNext.addEventListener('click', () => {
       stopPartnershipCarousel();
@@ -493,11 +486,6 @@ async function storeLead(payload){
       startPartnershipCarousel();
     });
 
-    elements.partnershipPrev.addEventListener('click', () => {
-      stopPartnershipCarousel();
-      goPrevPartnership();
-      startPartnershipCarousel();
-    });
 
     if (elements.partnershipDots) {
       elements.partnershipDots.querySelectorAll('.partnership-dot').forEach((dot, index) => {
