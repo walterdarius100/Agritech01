@@ -10,13 +10,13 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw6LvUrYSGt7pyWOK9E4UY_bJpAP9FbhyvfSK5clxBfDSQUPuBVa750vS5y59ybFApJ/exec'
   };
 
-if (window.emailjs) {
-  emailjs.init({
-    publicKey: EMAILJS_CONFIG.publicKey,
-    blockHeadless: true,
-    limitRate: { id: 'agritech-contact-form', throttle: 10000 }
-  });
-}
+  if (window.emailjs) {
+    window.emailjs.init({
+      publicKey: EMAILJS_CONFIG.publicKey,
+      blockHeadless: true,
+      limitRate: { id: 'agritech-contact-form', throttle: 10000 }
+    });
+  }
 
   const services = [
     { title: 'Poulet de chair', category: 'Élevage', image: 'assets/images/poulet-chair.jpg', text: 'Conception de poulailler, plan de production, équipements et accompagnement technique.' },
@@ -67,7 +67,12 @@ if (window.emailjs) {
     messageField: document.querySelector('#messageField'),
     messageInput: document.querySelector('#message'),
     submitBtn: document.querySelector('#submitBtn'),
-    formStatus: document.querySelector('#formStatus')
+    formStatus: document.querySelector('#formStatus'),
+    nameInput: document.querySelector('#name'),
+    emailInput: document.querySelector('#email'),
+    phoneInput: document.querySelector('#phone'),
+    consentInput: document.querySelector('#consent'),
+    honeypotInput: document.querySelector('#website')
   };
 
   const partnershipNeed = 'Partenariat';
@@ -77,6 +82,7 @@ if (window.emailjs) {
   let partnershipIndex = 0;
   let partnershipTimer = null;
   let courseIndex = 0;
+  let resizeFrame = null;
   let formResetTimer = null;
   let formStatusTimer = null;
   const FORM_STATUS_DURATION = 10000;
@@ -106,13 +112,13 @@ if (window.emailjs) {
     return String(value).replace(/[^0-9+\s-]/g, '').trim();
   }
 
-function isEmailJsConfigured(){
-  return Boolean(
-    EMAILJS_CONFIG.publicKey &&
-    EMAILJS_CONFIG.serviceId &&
-    EMAILJS_CONFIG.templateId
-  );
-}
+  function isEmailJsConfigured() {
+    return Boolean(
+      EMAILJS_CONFIG.publicKey &&
+      EMAILJS_CONFIG.serviceId &&
+      EMAILJS_CONFIG.templateId
+    );
+  }
 
   function clearFormStatusTimer() {
     if (!formStatusTimer) return;
@@ -189,27 +195,25 @@ function isEmailJsConfigured(){
     updateSubmitButtonLabel();
   }
 
-async function storeLead(payload){
-  if(!EMAILJS_CONFIG.sheetEndpoint)return;
+  async function storeLead(payload) {
+    if (!EMAILJS_CONFIG.sheetEndpoint) return;
 
-  try{
-    const formData = new URLSearchParams();
+    try {
+      const formData = new URLSearchParams();
 
-    Object.keys(payload).forEach(key => {
-      formData.append(key, payload[key]);
-    });
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
 
-    await fetch(EMAILJS_CONFIG.sheetEndpoint,{
-      method:'POST',
-      mode:'no-cors',
-      body:formData
-    });
-
-    console.log('Lead envoyé vers Google Sheets.');
-  }catch(error){
-    console.warn('Stockage du lead non confirmé:',error);
+      await fetch(EMAILJS_CONFIG.sheetEndpoint, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: formData
+      });
+    } catch (error) {
+      console.warn('Stockage du lead non confirmé:', error);
+    }
   }
-}
 
   function setupScrollReveal(items = document.querySelectorAll('.reveal')) {
     const revealItems = Array.from(items);
@@ -441,13 +445,23 @@ async function storeLead(payload){
     partnershipTimer = null;
   }
 
+  function scheduleCarouselResizeUpdate() {
+    if (resizeFrame) return;
+
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = null;
+      updateCourseCarousel();
+      stopPartnershipCarousel();
+      updatePartnershipCarousel();
+      startPartnershipCarousel();
+    });
+  }
 
   function setupCourseCarousel() {
     if (!elements.courseGrid || !elements.coursePrev || !elements.courseNext) return;
 
     elements.coursePrev.addEventListener('click', () => moveCourseCarousel(-1));
     elements.courseNext.addEventListener('click', () => moveCourseCarousel(1));
-    window.addEventListener('resize', updateCourseCarousel);
     updateCourseCarousel();
   }
 
@@ -486,7 +500,6 @@ async function storeLead(payload){
       startPartnershipCarousel();
     });
 
-
     if (elements.partnershipDots) {
       elements.partnershipDots.querySelectorAll('.partnership-dot').forEach((dot, index) => {
         dot.addEventListener('click', () => {
@@ -505,12 +518,6 @@ async function storeLead(payload){
       carousel.addEventListener('focusin', stopPartnershipCarousel);
       carousel.addEventListener('focusout', startPartnershipCarousel);
     }
-
-    window.addEventListener('resize', () => {
-      stopPartnershipCarousel();
-      updatePartnershipCarousel();
-      startPartnershipCarousel();
-    });
 
     updatePartnershipCarousel();
     startPartnershipCarousel();
@@ -582,20 +589,22 @@ async function storeLead(payload){
       elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
     }
 
+    window.addEventListener('resize', scheduleCarouselResizeUpdate, { passive: true });
+
     if (elements.form) {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const name = document.querySelector('#name')?.value.trim() || '';
-        const email = document.querySelector('#email')?.value.trim() || '';
-        const phone = sanitizePhone(document.querySelector('#phone')?.value || '');
+        const name = elements.nameInput?.value.trim() || '';
+        const email = elements.emailInput?.value.trim() || '';
+        const phone = sanitizePhone(elements.phoneInput?.value || '');
         const need = elements.needSelect?.value || '';
         const isFormationRequest = isFormationNeed(need);
         const message = isFormationRequest
           ? 'Demande liée à une formation sélectionnée.'
           : elements.messageInput?.value.trim() || '';
-        const consent = document.querySelector('#consent')?.checked || false;
-        const website = document.querySelector('#website')?.value.trim() || '';
+        const consent = elements.consentInput?.checked || false;
+        const website = elements.honeypotInput?.value.trim() || '';
 
         if (formResetTimer) {
           window.clearTimeout(formResetTimer);
@@ -636,10 +645,10 @@ async function storeLead(payload){
           setSubmitState(true);
           setFormStatus('success', 'Envoi de votre demande en cours...');
 
-          await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
+          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
 
           if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
+            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
           }
 
           await storeLead(payload);
