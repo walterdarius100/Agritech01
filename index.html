@@ -139,49 +139,64 @@
       </div>
 
       <div class="partnership-carousel reveal reveal-delay-1" aria-label="Types de partenariats Agri-tech">
-        <div class="partnership-track">
-          <article class="partnership-card">
-            <img src="assets/images/irrigation.jpg" alt="Système d’irrigation dans un champ agricole" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">Entreprises</span>
-              <p>Solutions agricoles adaptées aux entreprises et initiatives privées.</p>
-            </div>
-          </article>
-          <article class="partnership-card">
-            <img src="assets/images/pepiniere.jpg" alt="Jeunes plants en pépinière agricole" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">ONG locales</span>
-              <p>Projets agricoles à impact social pour communautés et jeunes locaux.</p>
-            </div>
-          </article>
-          <article class="partnership-card">
-            <img src="assets/images/apiculture.jpg" alt="Rucher utilisé pour un projet agricole communautaire" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">Associations</span>
-              <p>Formations et projets agricoles pour initiatives communautaires locales.</p>
-            </div>
-          </article>
-          <article class="partnership-card" aria-hidden="true">
-            <img src="assets/images/irrigation.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">Entreprises</span>
-              <p>Solutions agricoles adaptées aux entreprises et initiatives privées.</p>
-            </div>
-          </article>
-          <article class="partnership-card" aria-hidden="true">
-            <img src="assets/images/pepiniere.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">ONG locales</span>
-              <p>Projets agricoles à impact social pour communautés et jeunes locaux.</p>
-            </div>
-          </article>
-          <article class="partnership-card" aria-hidden="true">
-            <img src="assets/images/apiculture.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
-            <div class="partnership-card-content">
-              <span class="partnership-badge">Associations</span>
-              <p>Formations et projets agricoles pour initiatives communautaires locales.</p>
-            </div>
-          </article>
+        <div class="partnership-viewport">
+          <div class="partnership-track" id="partnershipTrack">
+            <article class="partnership-card">
+              <img src="assets/images/irrigation.jpg" alt="Système d’irrigation dans un champ agricole" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">Entreprises</span>
+                <p>Solutions agricoles adaptées aux entreprises et initiatives privées.</p>
+              </div>
+            </article>
+            <article class="partnership-card">
+              <img src="assets/images/pepiniere.jpg" alt="Jeunes plants en pépinière agricole" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">ONG locales</span>
+                <p>Projets agricoles à impact social pour communautés et jeunes locaux.</p>
+              </div>
+            </article>
+            <article class="partnership-card">
+              <img src="assets/images/apiculture.jpg" alt="Rucher utilisé pour un projet agricole communautaire" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">Associations</span>
+                <p>Formations et projets agricoles pour initiatives communautaires locales.</p>
+              </div>
+            </article>
+            <article class="partnership-card" aria-hidden="true">
+              <img src="assets/images/irrigation.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">Entreprises</span>
+                <p>Solutions agricoles adaptées aux entreprises et initiatives privées.</p>
+              </div>
+            </article>
+            <article class="partnership-card" aria-hidden="true">
+              <img src="assets/images/pepiniere.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">ONG locales</span>
+                <p>Projets agricoles à impact social pour communautés et jeunes locaux.</p>
+              </div>
+            </article>
+            <article class="partnership-card" aria-hidden="true">
+              <img src="assets/images/apiculture.jpg" alt="" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="partnership-card-content">
+                <span class="partnership-badge">Associations</span>
+                <p>Formations et projets agricoles pour initiatives communautaires locales.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <button class="carousel-btn partnership-carousel-btn prev" id="partnershipPrev" type="button" aria-label="Partenariat précédent">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.75 19.5 8.25 12l7.5-7.5-1.5-1.5L5.25 12l9 9 1.5-1.5Z"/></svg>
+        </button>
+        <button class="carousel-btn partnership-carousel-btn next" id="partnershipNext" type="button" aria-label="Partenariat suivant">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.25 4.5 15.75 12l-7.5 7.5 1.5 1.5 9-9-9-9-1.5 1.5Z"/></svg>
+        </button>
+
+        <div class="partnership-dots" id="partnershipDots" aria-label="Pagination des partenariats">
+          <button class="partnership-dot is-active" type="button" aria-label="Afficher le partenariat Entreprises" aria-current="true"></button>
+          <button class="partnership-dot" type="button" aria-label="Afficher le partenariat ONG locales"></button>
+          <button class="partnership-dot" type="button" aria-label="Afficher le partenariat Associations"></button>
         </div>
       </div>
 
