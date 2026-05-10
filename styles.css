@@ -30,7 +30,7 @@ h3{font-size:1.1rem;margin-bottom:8px}
 .hero-actions,.trust-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:28px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:13px 20px;border-radius:999px;font-weight:900;border:1px solid transparent;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease}
 .btn:hover{transform:translateY(-2px)}
-.btn:focus-visible,.filter-btn:focus-visible,.course-nav:focus-visible,.carousel-btn:focus-visible,.menu-btn:focus-visible,.nav-links a:focus-visible,.social-links a:focus-visible{outline:3px solid rgba(242,184,75,.62);outline-offset:3px}
+.btn:focus-visible,.filter-btn:focus-visible,.course-nav:focus-visible,.carousel-btn:focus-visible,.testimonial-dot:focus-visible,.menu-btn:focus-visible,.nav-links a:focus-visible,.social-links a:focus-visible{outline:3px solid rgba(242,184,75,.62);outline-offset:3px}
 .btn:disabled{opacity:.65;cursor:not-allowed;transform:none}
 .primary{background:var(--green-900);color:#fff;box-shadow:0 14px 30px rgba(15,61,46,.22)}
 .secondary{background:#fff;border-color:var(--border)}
@@ -96,6 +96,10 @@ h3{font-size:1.1rem;margin-bottom:8px}
 .carousel-btn:hover{opacity:1}
 .carousel-btn.prev{left:-10px}
 .carousel-btn.next{right:-10px}
+.testimonial-dots{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:18px}
+.testimonial-dot{width:9px;height:9px;padding:0;border:0;border-radius:999px;background:rgba(15,61,46,.24);box-shadow:0 0 0 1px rgba(255,255,255,.72);cursor:pointer;transition:width .25s ease,background-color .25s ease,transform .25s ease,box-shadow .25s ease}
+.testimonial-dot:hover{transform:translateY(-1px);background:rgba(15,61,46,.42)}
+.testimonial-dot.is-active{width:26px;background:var(--green-900);box-shadow:0 7px 16px rgba(15,61,46,.18)}
 .testimonial-image{width:88px;height:88px;margin:0 auto 16px;border-radius:50%;display:block;object-fit:cover;background:var(--green-100);border:5px solid var(--green-100);box-shadow:0 12px 30px rgba(15,61,46,.16)}
 .testimonial-content{padding:0}
 .testimonial-author{margin-bottom:12px}

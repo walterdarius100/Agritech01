@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
+    testimonialDots: document.querySelector('#testimonialDots'),
     partnershipTrack: document.querySelector('#partnershipTrack'),
     partnershipNext: document.querySelector('#partnershipNext'),
     partnershipDots: document.querySelector('#partnershipDots'),
@@ -313,6 +314,14 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         </article>
       `)
       .join('');
+
+    if (elements.testimonialDots) {
+      elements.testimonialDots.innerHTML = testimonials
+        .map((testimonial, index) => `
+          <button class="testimonial-dot" type="button" aria-label="Afficher le témoignage ${index + 1} de ${escapeHtml(testimonial.name)}"></button>
+        `)
+        .join('');
+    }
   }
 
   function populateSelect() {
@@ -363,6 +372,14 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   function updateTestimonialCarousel() {
     if (!elements.testimonialTrack) return;
     elements.testimonialTrack.style.transform = `translateX(-${testimonialIndex * 100}%)`;
+
+    if (elements.testimonialDots) {
+      elements.testimonialDots.querySelectorAll('.testimonial-dot').forEach((dot, index) => {
+        const isActive = index === testimonialIndex;
+        dot.classList.toggle('is-active', isActive);
+        dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+      });
+    }
   }
 
   function goNextTestimonial() {
@@ -468,6 +485,17 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   function setupTestimonialCarousel() {
     if (!elements.testimonialTrack || !elements.prevBtn || !elements.nextBtn) return;
 
+    if (elements.testimonialDots) {
+      elements.testimonialDots.querySelectorAll('.testimonial-dot').forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+          stopTestimonialCarousel();
+          testimonialIndex = index;
+          updateTestimonialCarousel();
+          startTestimonialCarousel();
+        });
+      });
+    }
+
     elements.nextBtn.addEventListener('click', () => {
       stopTestimonialCarousel();
       goNextTestimonial();
@@ -488,6 +516,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       carousel.addEventListener('focusout', startTestimonialCarousel);
     }
 
+    updateTestimonialCarousel();
     startTestimonialCarousel();
   }
 
@@ -674,6 +703,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(services.length === 12, 'Test échoué : 12 services attendus.');
     console.assert(courses.length >= 3, 'Test échoué : au moins 3 cours attendus.');
     console.assert(testimonials.length === 3, 'Test échoué : 3 témoignages attendus.');
+    console.assert(elements.testimonialDots === null || elements.testimonialDots.children.length === testimonials.length, 'Test échoué : indicateurs témoignages incomplets.');
     console.assert(services.every((service) => service.image.startsWith('assets/images/')), 'Test échoué : images services locales attendues.');
     console.assert(courses.every((course) => course.image.startsWith('assets/images/')), 'Test échoué : images formations locales attendues.');
     console.assert(testimonials.every((testimonial) => testimonial.image.startsWith('assets/images/')), 'Test échoué : images témoignages locales attendues.');
