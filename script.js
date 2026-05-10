@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
+    testimonialDots: document.querySelector('#testimonialDots'),
     partnershipTrack: document.querySelector('#partnershipTrack'),
     partnershipNext: document.querySelector('#partnershipNext'),
     partnershipDots: document.querySelector('#partnershipDots'),
@@ -313,6 +314,16 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         </article>
       `)
       .join('');
+
+    if (elements.testimonialDots) {
+      elements.testimonialDots.innerHTML = testimonials
+        .map((testimonial, index) => `
+          <button class="testimonial-dot" type="button" aria-label="Afficher le témoignage ${index + 1} : ${escapeHtml(testimonial.name)}" data-testimonial-index="${index}"></button>
+        `)
+        .join('');
+    }
+
+    updateTestimonialCarousel();
   }
 
   function populateSelect() {
@@ -362,7 +373,24 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
   function updateTestimonialCarousel() {
     if (!elements.testimonialTrack) return;
+    testimonialIndex = Math.min(Math.max(testimonialIndex, 0), testimonials.length - 1);
     elements.testimonialTrack.style.transform = `translateX(-${testimonialIndex * 100}%)`;
+    updateTestimonialDots();
+  }
+
+  function updateTestimonialDots() {
+    if (!elements.testimonialDots) return;
+
+    elements.testimonialDots.querySelectorAll('.testimonial-dot').forEach((dot, index) => {
+      const isActive = index === testimonialIndex;
+      dot.classList.toggle('is-active', isActive);
+      dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
+  }
+
+  function goToTestimonial(index) {
+    testimonialIndex = Math.min(Math.max(index, 0), testimonials.length - 1);
+    updateTestimonialCarousel();
   }
 
   function goNextTestimonial() {
@@ -467,6 +495,17 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
   function setupTestimonialCarousel() {
     if (!elements.testimonialTrack || !elements.prevBtn || !elements.nextBtn) return;
+
+    if (elements.testimonialDots) {
+      elements.testimonialDots.addEventListener('click', (event) => {
+        const dot = event.target.closest('.testimonial-dot');
+        if (!dot) return;
+
+        stopTestimonialCarousel();
+        goToTestimonial(Number(dot.dataset.testimonialIndex));
+        startTestimonialCarousel();
+      });
+    }
 
     elements.nextBtn.addEventListener('click', () => {
       stopTestimonialCarousel();
@@ -681,6 +720,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
+    console.assert(elements.testimonialDots === null || elements.testimonialDots.children.length === testimonials.length, 'Test échoué : indicateurs témoignages manquants.');
     console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
     console.assert(elements.partnershipTrack === null || getPartnershipSlideCount() === 3, 'Test échoué : 3 cartes partenariats attendues.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
