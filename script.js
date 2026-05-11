@@ -155,9 +155,12 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function getSubmitButtonLabel() {
-    return isFormationNeed(elements.needSelect?.value || '')
-      ? 'Réservez votre place'
-      : 'Demander une consultation';
+    const selectedNeed = elements.needSelect?.value || '';
+
+    if (isFormationNeed(selectedNeed)) return 'Réservez votre place';
+    if (isPartnershipNeed(selectedNeed)) return 'Discuter d’un partenariat';
+
+    return 'Demander une consultation';
   }
 
   function updateSubmitButtonLabel() {
@@ -179,6 +182,12 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       const courseNeed = course.need || `Cours en ligne - ${course.title}`;
       return value === courseNeed;
     }) || /formation|cours en ligne/i.test(value);
+  }
+
+  function isPartnershipNeed(value) {
+    if (!value) return false;
+
+    return value === partnershipNeed || /partenariat/i.test(value);
   }
 
   function updateMessageFieldVisibility() {
@@ -726,6 +735,15 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
     console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
+    if (elements.needSelect && elements.submitBtn) {
+      const originalNeed = elements.needSelect.value;
+      elements.needSelect.value = partnershipNeed;
+      console.assert(getSubmitButtonLabel() === 'Discuter d’un partenariat', 'Test échoué : libellé partenariat attendu.');
+      elements.needSelect.value = services[0].title;
+      console.assert(getSubmitButtonLabel() === 'Demander une consultation', 'Test échoué : libellé consultation attendu.');
+      elements.needSelect.value = originalNeed;
+      updateMessageFieldVisibility();
+    }
   }
 
   renderFilters();
