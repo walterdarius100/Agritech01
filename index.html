@@ -12,9 +12,18 @@
   <meta property="og:description" content="Conception, formation, installation et accompagnement de projets agricoles modernes." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="fr_HT" />
+  <meta property="og:url" content="https://agritech509ht.com/" />
+  <meta property="og:image" content="https://agritech509ht.com/assets/images/logo-agritech.png" />
+  <meta property="og:image:alt" content="Logo Agri-Tech" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Agri-Tech | Solutions agricoles modernes en Haïti" />
+  <meta name="twitter:description" content="Conception, formation, installation et accompagnement de projets agricoles modernes." />
+  <meta name="twitter:image" content="https://agritech509ht.com/assets/images/logo-agritech.png" />
 
   <title>Agri-tech | Solutions agricoles modernes en Haïti</title>
 
+  <link rel="canonical" href="https://agritech509ht.com/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -311,6 +320,44 @@
     <div class="footer-bottom">© 2026 Agri-tech — Tous droits réservés</div>
   </footer>
 
+  <!-- Analytics léger : remplacez GA_MEASUREMENT_ID dans ANALYTICS_CONFIG pour activer GA4.
+       Le script n'est pas chargé tant que le placeholder n'est pas remplacé. -->
+  <script>
+    window.ANALYTICS_CONFIG = {
+      gaMeasurementId: 'G-XJ8ZJX3128',
+      clarityProjectId: 'CLARITY_PROJECT_ID'
+    };
+  </script>
+  <script>
+    // Google Analytics 4 minimal : page_view automatique uniquement, aucun événement personnalisé ici.
+    (function () {
+      var measurementId = window.ANALYTICS_CONFIG && window.ANALYTICS_CONFIG.gaMeasurementId;
+      if (!measurementId || measurementId === 'GA_MEASUREMENT_ID') return;
+
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function gtag(){ window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('config', measurementId, { anonymize_ip: true });
+
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+      document.head.appendChild(script);
+    }());
+  </script>
+  <script>
+    // Microsoft Clarity minimal : session analytics uniquement après remplacement du Project ID.
+    (function () {
+      var projectId = window.ANALYTICS_CONFIG && window.ANALYTICS_CONFIG.clarityProjectId;
+      if (!projectId || projectId === 'CLARITY_PROJECT_ID') return;
+
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, 'clarity', 'script', projectId);
+    }());
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
   <script src="script.js" defer></script>
 </body>
