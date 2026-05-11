@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://agritech509ht.com/sitemap.xml
