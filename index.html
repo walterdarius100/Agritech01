@@ -320,8 +320,8 @@
     <div class="footer-bottom">© 2026 Agri-tech — Tous droits réservés</div>
   </footer>
 
-  <!-- Analytics léger : remplacez GA_MEASUREMENT_ID dans ANALYTICS_CONFIG pour activer GA4.
-       Le script n'est pas chargé tant que le placeholder n'est pas remplacé. -->
+  <!-- Analytics léger : GA4 et Microsoft Clarity sont activés uniquement si les IDs réels
+       remplacent les placeholders documentés dans ANALYTICS_SETUP.md. -->
   <script>
     window.ANALYTICS_CONFIG = {
       gaMeasurementId: 'G-XJ8ZJX3128',
@@ -332,7 +332,7 @@
     // Google Analytics 4 minimal : page_view automatique uniquement, aucun événement personnalisé ici.
     (function () {
       var measurementId = window.ANALYTICS_CONFIG && window.ANALYTICS_CONFIG.gaMeasurementId;
-      if (!measurementId || measurementId === 'G-XJ8ZJX3128') return;
+      if (!measurementId || measurementId === 'GA_MEASUREMENT_ID') return;
 
       window.dataLayer = window.dataLayer || [];
       window.gtag = function gtag(){ window.dataLayer.push(arguments); };
@@ -349,7 +349,7 @@
     // Microsoft Clarity minimal : session analytics uniquement après remplacement du Project ID.
     (function () {
       var projectId = window.ANALYTICS_CONFIG && window.ANALYTICS_CONFIG.clarityProjectId;
-      if (!projectId || projectId === 'wpmfu7lkb1') return;
+      if (!projectId || projectId === 'CLARITY_PROJECT_ID') return;
 
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
