@@ -599,6 +599,14 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       }
     });
 
+    function setMobileMenuState(isOpen) {
+      if (!elements.navLinks || !elements.menuBtn) return;
+
+      elements.navLinks.classList.toggle('open', isOpen);
+      elements.menuBtn.setAttribute('aria-expanded', String(isOpen));
+      elements.menuBtn.setAttribute('aria-label', isOpen ? 'Fermer le menu' : 'Ouvrir le menu');
+    }
+
     if (elements.brandHome) {
       elements.brandHome.addEventListener('click', (event) => {
         event.preventDefault();
@@ -613,23 +621,19 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           window.history.pushState(null, '', '#top');
         }
 
-        if (elements.navLinks && elements.menuBtn) {
-          elements.navLinks.classList.remove('open');
-          elements.menuBtn.setAttribute('aria-expanded', 'false');
-        }
+        setMobileMenuState(false);
       });
     }
 
     if (elements.menuBtn && elements.navLinks) {
       elements.menuBtn.addEventListener('click', () => {
-        const isOpen = elements.navLinks.classList.toggle('open');
-        elements.menuBtn.setAttribute('aria-expanded', String(isOpen));
+        const isOpen = !elements.navLinks.classList.contains('open');
+        setMobileMenuState(isOpen);
       });
 
       elements.navLinks.addEventListener('click', (event) => {
         if (!event.target.closest('a')) return;
-        elements.navLinks.classList.remove('open');
-        elements.menuBtn.setAttribute('aria-expanded', 'false');
+        setMobileMenuState(false);
       });
     }
 
