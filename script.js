@@ -74,7 +74,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     emailInput: document.querySelector('#email'),
     phoneInput: document.querySelector('#phone'),
     consentInput: document.querySelector('#consent'),
-    honeypotInput: document.querySelector('#website')
+    honeypotInput: document.querySelector('#website'),
+    newsletterForm: document.querySelector('#newsletterForm'),
+    newsletterEmailInput: document.querySelector('#newsletterEmail'),
+    newsletterSubmitBtn: document.querySelector('#newsletterSubmit'),
+    newsletterStatus: document.querySelector('#newsletterStatus')
   };
 
   const partnershipNeed = 'Partenariat';
@@ -87,9 +91,12 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let resizeFrame = null;
   let formResetTimer = null;
   let formStatusTimer = null;
+  let newsletterStatusTimer = null;
   const FORM_STATUS_DURATION = 10000;
   const FORM_SUCCESS_MESSAGE = 'Votre demande a bien été envoyée. Notre équipe vous recontactera dans les meilleurs délais.';
   const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
+  const NEWSLETTER_SUCCESS_MESSAGE = 'Merci, votre inscription à la newsletter est confirmée.';
+  const NEWSLETTER_ERROR_MESSAGE = 'Inscription impossible pour le moment. Veuillez réessayer.';
 
   function escapeHtml(value) {
     return String(value)
@@ -154,6 +161,42 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       }, FORM_STATUS_DURATION);
     }
   }
+  function clearNewsletterStatusTimer() {
+    if (!newsletterStatusTimer) return;
+
+    window.clearTimeout(newsletterStatusTimer);
+    newsletterStatusTimer = null;
+  }
+
+  function clearNewsletterStatus() {
+    if (!elements.newsletterStatus) return;
+
+    elements.newsletterStatus.className = 'newsletter-status';
+    elements.newsletterStatus.textContent = '';
+  }
+
+  function setNewsletterStatus(type, message, shouldAutoHide = false) {
+    if (!elements.newsletterStatus) return;
+
+    clearNewsletterStatusTimer();
+    elements.newsletterStatus.className = `newsletter-status show ${type}`;
+    elements.newsletterStatus.textContent = message;
+
+    if (shouldAutoHide) {
+      newsletterStatusTimer = window.setTimeout(() => {
+        clearNewsletterStatus();
+        newsletterStatusTimer = null;
+      }, FORM_STATUS_DURATION);
+    }
+  }
+
+  function setNewsletterSubmitState(isLoading) {
+    if (!elements.newsletterSubmitBtn) return;
+
+    elements.newsletterSubmitBtn.disabled = isLoading;
+    elements.newsletterSubmitBtn.textContent = isLoading ? 'Inscription...' : 'S’inscrire';
+  }
+
 
   function getSubmitButtonLabel() {
     const selectedNeed = elements.needSelect?.value || '';
@@ -720,6 +763,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           message,
           consent: consent ? 'Oui' : 'Non',
           source: 'Site Agri-Tech',
+          SOURCE: 'Formulaire de contact',
+          TYPE_CONTACT: 'Contact',
           date: new Date().toISOString()
         };
 
@@ -750,6 +795,60 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         }
       });
     }
+
+
+    if (elements.newsletterForm) {
+      elements.newsletterForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const email = elements.newsletterEmailInput?.value.trim() || '';
+        clearNewsletterStatusTimer();
+
+        if (!email) {
+          setNewsletterStatus('error', 'Veuillez entrer votre adresse email.');
+          return;
+        }
+
+        if (!isEmailValid(email)) {
+          setNewsletterStatus('error', 'Veuillez entrer une adresse email valide.');
+          return;
+        }
+
+        if (!window.emailjs || !isEmailJsConfigured()) {
+          setNewsletterStatus('error', 'EmailJS n’est pas encore configuré.');
+          return;
+        }
+
+        const payload = {
+          from_name: 'Abonné newsletter',
+          from_email: email,
+          phone: '',
+          need: 'Newsletter',
+          message: 'Inscription à la newsletter depuis le footer.',
+          consent: 'Oui',
+          source: 'Footer newsletter',
+          SOURCE: 'Footer newsletter',
+          TYPE_CONTACT: 'Newsletter',
+          date: new Date().toISOString()
+        };
+
+        try {
+          setNewsletterSubmitState(true);
+          setNewsletterStatus('success', 'Inscription en cours...');
+
+          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
+          await storeLead(payload);
+
+          setNewsletterStatus('success', NEWSLETTER_SUCCESS_MESSAGE, true);
+          elements.newsletterForm.reset();
+        } catch (error) {
+          console.error('Erreur newsletter:', error);
+          setNewsletterStatus('error', NEWSLETTER_ERROR_MESSAGE, true);
+        } finally {
+          setNewsletterSubmitState(false);
+        }
+      });
+    }
   }
 
   function runSmokeTests() {
@@ -762,6 +861,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(escapeHtml('<test>') === '&lt;test&gt;', 'Test échoué : protection HTML.');
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
+    console.assert(elements.newsletterForm === null || elements.newsletterEmailInput !== null, 'Test échoué : email newsletter manquant.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
     console.assert(elements.testimonialDots === null || elements.testimonialDots.children.length === testimonials.length, 'Test échoué : indicateurs témoignages manquants.');
     console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
