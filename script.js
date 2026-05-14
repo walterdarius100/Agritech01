@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     courseGrid: document.querySelector('#courseGrid'),
     coursePrev: document.querySelector('#coursePrev'),
     courseNext: document.querySelector('#courseNext'),
+    courseDots: document.querySelector('#courseDots'),
     testimonialTrack: document.querySelector('#testimonialTrack'),
     testimonialDots: document.querySelector('#testimonialDots'),
     partnershipTrack: document.querySelector('#partnershipTrack'),
@@ -371,6 +372,24 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
     if (elements.coursePrev) elements.coursePrev.disabled = courseIndex === 0;
     if (elements.courseNext) elements.courseNext.disabled = courseIndex === maxIndex;
+    updateCourseDots(maxIndex);
+  }
+
+  function updateCourseDots(maxIndex = Math.max(0, courses.length - getVisibleCourseCount())) {
+    if (!elements.courseDots) return;
+
+    const pages = maxIndex + 1;
+    if (elements.courseDots.children.length !== pages) {
+      elements.courseDots.innerHTML = Array.from({ length: pages }, (_, index) => `
+        <button class="course-dot" type="button" aria-label="Afficher les formations ${index + 1}" data-course-index="${index}"></button>
+      `).join('');
+    }
+
+    elements.courseDots.querySelectorAll('.course-dot').forEach((dot, index) => {
+      const isActive = index === courseIndex;
+      dot.classList.toggle('is-active', isActive);
+      dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
   }
 
   function moveCourseCarousel(direction) {
@@ -499,6 +518,17 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
     elements.coursePrev.addEventListener('click', () => moveCourseCarousel(-1));
     elements.courseNext.addEventListener('click', () => moveCourseCarousel(1));
+
+    if (elements.courseDots) {
+      elements.courseDots.addEventListener('click', (event) => {
+        const dot = event.target.closest('[data-course-index]');
+        if (!dot) return;
+
+        courseIndex = Number(dot.dataset.courseIndex);
+        updateCourseCarousel();
+      });
+    }
+
     updateCourseCarousel();
   }
 
