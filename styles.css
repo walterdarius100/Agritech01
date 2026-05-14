@@ -180,8 +180,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--green-700);box-shadow
 .newsletter-row input{width:100%;min-width:0;border:0;border-radius:6px;background:rgba(255,255,255,.96);color:var(--ink);padding:14px 14px;outline:none}
 .newsletter-row input::placeholder{color:#7a877f}
 .newsletter-row input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(242,184,75,.18)}
-.newsletter-row .btn{width:max-content;min-width:148px;border:1px solid rgba(255,255,255,.34);white-space:nowrap;padding:14px 20px;cursor:pointer;font-weight:950;background:linear-gradient(135deg,var(--gold),#ffd66f);color:var(--green-950);box-shadow:0 10px 24px rgba(242,184,75,.2)}
-.newsletter-row .btn:hover{box-shadow:0 14px 28px rgba(242,184,75,.28)}
+.newsletter-row .btn{width:max-content;min-width:148px;border:1px solid rgba(255,255,255,.22);white-space:nowrap;padding:14px 20px;cursor:pointer;font-weight:950;background:var(--green-700);color:#fff;box-shadow:0 8px 18px rgba(6,40,31,.18)}
+.newsletter-row .btn:hover{box-shadow:0 10px 22px rgba(6,40,31,.24)}
 .newsletter-row .btn:disabled{opacity:.68;cursor:not-allowed}
 .newsletter-status{display:none;padding:10px 12px;border-radius:12px;font-weight:800;font-size:.84rem}
 .newsletter-status.show{display:block}
