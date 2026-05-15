@@ -271,9 +271,12 @@
           <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
         </label>
 
-        <label for="need">Type de projet ou formation
-          <select id="need" name="need" required></select>
-        </label>
+        <fieldset class="domains-field" id="needGroup">
+          <legend>Domaines/services qui vous intéressent</legend>
+          <p class="domains-help" id="needHelp">Cochez un ou plusieurs domaines afin que nous orientions mieux votre demande.</p>
+          <div class="domain-options" id="needOptions" role="group" aria-describedby="needHelp"></div>
+          <input type="hidden" id="need" name="need" required />
+        </fieldset>
 
         <label for="message" id="messageField">Décrivez brièvement votre projet
           <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>

@@ -61,7 +61,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
     filters: document.querySelector('#filters'),
-    needSelect: document.querySelector('#need'),
+    needInput: document.querySelector('#need'),
+    needOptions: document.querySelector('#needOptions'),
+    needGroup: document.querySelector('#needGroup'),
     menuBtn: document.querySelector('#menuBtn'),
     navLinks: document.querySelector('#navLinks'),
     brandHome: document.querySelector('[data-scroll-top]'),
@@ -82,6 +84,33 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   };
 
   const partnershipNeed = 'Partenariat';
+  const contactDomains = [
+    'Aviculture',
+    'Cuniculture',
+    'Apiculture',
+    'Pisciculture',
+    'Maraîchage / pépinière',
+    'Irrigation',
+    'Gabionnage',
+    'Biogaz',
+    'Formation',
+    partnershipNeed,
+    'Autre'
+  ];
+  const contactDomainAliases = new Map([
+    ['Poulet de chair', 'Aviculture'],
+    ['Poule pondeuse', 'Aviculture'],
+    ['Incubateur / Écloserie', 'Aviculture'],
+    ['Pépinière', 'Maraîchage / pépinière'],
+    ['Cours en ligne', 'Formation'],
+    ['Formation en cuniculture', 'Formation'],
+    ['Formation poulet de chair', 'Formation'],
+    ['Formation poule pondeuse', 'Formation'],
+    ['Formation en apiculture', 'Formation'],
+    ['Formation en pisciculture', 'Formation'],
+    ['Clôture métallique', 'Autre'],
+    ['Porcherie', 'Autre']
+  ]);
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
@@ -97,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
   const NEWSLETTER_SUCCESS_MESSAGE = 'Merci, votre inscription à la newsletter est confirmée.';
   const NEWSLETTER_ERROR_MESSAGE = 'Inscription impossible pour le moment. Veuillez réessayer.';
+
 
   function escapeHtml(value) {
     return String(value)
@@ -198,11 +228,56 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
 
-  function getSubmitButtonLabel() {
-    const selectedNeed = elements.needSelect?.value || '';
+  function getSelectedNeeds() {
+    if (!elements.needOptions) return [];
 
-    if (isFormationNeed(selectedNeed)) return 'Réservez votre place';
-    if (isPartnershipNeed(selectedNeed)) return 'Discuter d’un partenariat';
+    return [...elements.needOptions.querySelectorAll('input[name="domains"]:checked')]
+      .map((checkbox) => checkbox.value)
+      .filter(Boolean);
+  }
+
+  function formatSelectedNeeds(needs = getSelectedNeeds()) {
+    return needs.join(', ');
+  }
+
+  function syncNeedInput() {
+    if (!elements.needInput) return '';
+
+    const selectedNeeds = getSelectedNeeds();
+    const formattedNeeds = formatSelectedNeeds(selectedNeeds);
+    elements.needInput.value = formattedNeeds;
+    return formattedNeeds;
+  }
+
+  function normalizeContactDomain(value) {
+    if (!value) return '';
+    if (contactDomains.includes(value)) return value;
+    if (contactDomainAliases.has(value)) return contactDomainAliases.get(value);
+    if (/formation|cours en ligne/i.test(value)) return 'Formation';
+    if (/partenariat/i.test(value)) return partnershipNeed;
+    return 'Autre';
+  }
+
+  function setDomainChecked(value, checked = true) {
+    if (!elements.needOptions) return;
+
+    const domain = normalizeContactDomain(value);
+    if (!domain) return;
+
+    const checkbox = [...elements.needOptions.querySelectorAll('input[name="domains"]')]
+      .find((input) => input.value === domain);
+    if (!checkbox) return;
+
+    checkbox.checked = checked;
+    syncNeedInput();
+    updateMessageFieldVisibility();
+  }
+
+  function getSubmitButtonLabel() {
+    const selectedNeeds = getSelectedNeeds();
+
+    if (selectedNeeds.length === 1 && isFormationNeed(selectedNeeds[0])) return 'Réservez votre place';
+    if (selectedNeeds.some(isPartnershipNeed)) return 'Discuter d’un partenariat';
 
     return 'Demander une consultation';
   }
@@ -235,14 +310,15 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function updateMessageFieldVisibility() {
-    if (!elements.messageField || !elements.messageInput || !elements.needSelect) return;
+    if (!elements.messageField || !elements.messageInput) return;
 
-    const isFormation = isFormationNeed(elements.needSelect.value);
-    elements.messageField.classList.toggle('message-field-hidden', isFormation);
-    elements.messageInput.required = !isFormation;
-    elements.messageInput.disabled = isFormation;
+    const selectedNeeds = getSelectedNeeds();
+    const isOnlyFormation = selectedNeeds.length > 0 && selectedNeeds.every(isFormationNeed);
+    elements.messageField.classList.toggle('message-field-hidden', isOnlyFormation);
+    elements.messageInput.required = !isOnlyFormation;
+    elements.messageInput.disabled = isOnlyFormation;
 
-    if (isFormation) {
+    if (isOnlyFormation) {
       elements.messageInput.value = '';
     }
 
@@ -379,20 +455,22 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     updateTestimonialCarousel();
   }
 
-  function populateSelect() {
-    if (!elements.needSelect) return;
+  function renderNeedOptions() {
+    if (!elements.needOptions) return;
 
-    const serviceOptions = services
-      .map((service) => `<option value="${escapeHtml(service.title)}">${escapeHtml(service.title)}</option>`)
+    elements.needOptions.innerHTML = contactDomains
+      .map((domain, index) => {
+        const inputId = `need-${index}`;
+        return `
+          <label class="domain-option" for="${inputId}">
+            <input type="checkbox" id="${inputId}" name="domains" value="${escapeHtml(domain)}" />
+            <span>${escapeHtml(domain)}</span>
+          </label>
+        `;
+      })
       .join('');
 
-    const courseOptions = courses
-      .map((course) => `<option value="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}">${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}</option>`)
-      .join('');
-
-    const partnershipOption = `<option value="${partnershipNeed}">${partnershipNeed}</option>`;
-
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${partnershipOption}${courseOptions}`;
+    syncNeedInput();
     updateMessageFieldVisibility();
   }
 
@@ -659,13 +737,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     document.addEventListener('click', (event) => {
       const link = event.target.closest('[data-need]');
       if (!link) return;
-      if (elements.needSelect) {
-        if (link.dataset.need && ![...elements.needSelect.options].some((option) => option.value === link.dataset.need)) {
-          elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
-        }
-        elements.needSelect.value = link.dataset.need;
-        updateMessageFieldVisibility();
-      }
+
+      setDomainChecked(link.dataset.need, true);
 
       if (link.dataset.contactCard === 'true') {
         window.location.hash = 'contact';
@@ -710,8 +783,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       });
     }
 
-    if (elements.needSelect) {
-      elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
+    if (elements.needOptions) {
+      elements.needOptions.addEventListener('change', () => {
+        syncNeedInput();
+        updateMessageFieldVisibility();
+      });
     }
 
     window.addEventListener('resize', scheduleCarouselResizeUpdate, { passive: true });
@@ -723,11 +799,14 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         const name = elements.nameInput?.value.trim() || '';
         const email = elements.emailInput?.value.trim() || '';
         const phone = sanitizePhone(elements.phoneInput?.value || '');
-        const need = elements.needSelect?.value || '';
-        const isFormationRequest = isFormationNeed(need);
-        const message = isFormationRequest
+        const selectedNeeds = getSelectedNeeds();
+        const need = syncNeedInput();
+        const selectedDomainsLine = `Domaines sélectionnés : ${need}`;
+        const isFormationRequest = selectedNeeds.length > 0 && selectedNeeds.every(isFormationNeed);
+        const projectMessage = isFormationRequest
           ? 'Demande liée à une formation sélectionnée.'
           : elements.messageInput?.value.trim() || '';
+        const message = `${selectedDomainsLine}\n\n${projectMessage}`;
         const consent = elements.consentInput?.checked || false;
         const website = elements.honeypotInput?.value.trim() || '';
 
@@ -740,7 +819,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
         if (website) return;
 
-        if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
+        if (!name || !email || !phone || !need || (!isFormationRequest && !projectMessage) || !consent) {
           setFormStatus('error', 'Veuillez remplir les champs requis et accepter d’être recontacté.');
           return;
         }
@@ -760,6 +839,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           from_email: email,
           phone,
           need,
+          domains: need,
+          selected_domains: need,
+          domaines_selectionnes: need,
+          selected_domains_line: selectedDomainsLine,
+          project_message: projectMessage,
           message,
           consent: consent ? 'Oui' : 'Non',
           source: 'Site Agri-Tech',
@@ -868,14 +952,23 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(elements.partnershipTrack === null || getPartnershipSlideCount() === 3, 'Test échoué : 3 cartes partenariats attendues.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
-    console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
-    if (elements.needSelect && elements.submitBtn) {
-      const originalNeed = elements.needSelect.value;
-      elements.needSelect.value = partnershipNeed;
+    console.assert(elements.needOptions === null || contactDomains.every((domain) => [...elements.needOptions.querySelectorAll('input[name="domains"]')].some((checkbox) => checkbox.value === domain)), 'Test échoué : domaines de contact manquants.');
+    if (elements.needOptions && elements.submitBtn) {
+      const originalChecked = getSelectedNeeds();
+      elements.needOptions.querySelectorAll('input[name="domains"]').forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      setDomainChecked(partnershipNeed, true);
       console.assert(getSubmitButtonLabel() === 'Discuter d’un partenariat', 'Test échoué : libellé partenariat attendu.');
-      elements.needSelect.value = services[0].title;
+      elements.needOptions.querySelectorAll('input[name="domains"]').forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+      setDomainChecked('Aviculture', true);
       console.assert(getSubmitButtonLabel() === 'Demander une consultation', 'Test échoué : libellé consultation attendu.');
-      elements.needSelect.value = originalNeed;
+      elements.needOptions.querySelectorAll('input[name="domains"]').forEach((checkbox) => {
+        checkbox.checked = originalChecked.includes(checkbox.value);
+      });
+      syncNeedInput();
       updateMessageFieldVisibility();
     }
   }
@@ -884,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   renderServices();
   renderCourses();
   renderTestimonials();
-  populateSelect();
+  renderNeedOptions();
   setupEvents();
   setupCourseCarousel();
   setupTestimonialCarousel();
