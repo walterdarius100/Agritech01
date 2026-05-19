@@ -49,12 +49,21 @@
       </button>
 
       <div class="nav-links" id="navLinks">
-        <a href="#services">Services</a>
-        <a href="#cours">Cours en ligne</a>
-        <a href="#processus">Méthode</a>
-        <a href="#preuves">Crédibilité</a>
-        <a href="#temoignages">Témoignages</a>
-        <a href="#contact" class="nav-cta">Demander un devis</a>
+        <a href="#services" data-i18n="nav.services">Services</a>
+        <a href="#cours" data-i18n="nav.courses">Cours en ligne</a>
+        <a href="#processus" data-i18n="nav.method">Méthode</a>
+        <a href="#preuves" data-i18n="nav.credibility">Crédibilité</a>
+        <a href="#temoignages" data-i18n="nav.testimonials">Témoignages</a>
+        <a href="#contact" class="nav-cta" data-i18n="nav.quote">Demander un devis</a>
+      </div>
+      <div class="lang-switcher" id="langSwitcher">
+        <button class="lang-btn" id="langBtn" type="button" aria-label="Changer la langue" aria-expanded="false" aria-controls="langMenu">
+          <span aria-hidden="true">🌐</span><span id="activeLangCode">FR</span>
+        </button>
+        <div class="lang-menu" id="langMenu" role="menu">
+          <button type="button" role="menuitem" data-lang-option="fr">Français</button>
+          <button type="button" role="menuitem" data-lang-option="en">English</button>
+        </div>
       </div>
     </nav>
   </header>
@@ -63,12 +72,12 @@
     <section class="hero section-pad">
       <div class="reveal is-visible">
         <span class="eyebrow">Agriculture • Élevage • Technologies rurales</span>
-        <h1>Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.</h1>
-        <p>Agri-tech accompagne les entrepreneurs, institutions et producteurs dans la conception, l’installation et le suivi de projets agricoles modernes en Haïti.</p>
+        <h1 data-i18n="hero.title">Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.</h1>
+        <p data-i18n="hero.text">Agri-tech accompagne les entrepreneurs, institutions et producteurs dans la conception, l’installation et le suivi de projets agricoles modernes en Haïti.</p>
 
         <div class="hero-actions">
-          <a href="#contact" class="btn primary">Obtenir une consultation</a>
-          <a href="#services" class="btn secondary">Voir nos domaines</a>
+          <a href="#contact" class="btn primary" data-i18n="hero.ctaPrimary">Obtenir une consultation</a>
+          <a href="#services" class="btn secondary" data-i18n="hero.ctaSecondary">Voir nos domaines</a>
         </div>
 
         <div class="trust-row" aria-label="Arguments de confiance">
@@ -253,35 +262,35 @@
 
     <section class="section-pad contact-section" id="contact">
       <div class="contact-copy reveal">
-        <span class="eyebrow">Contactez-nous</span>
-        <h2>Discutons de votre projet agricole</h2>
-        <p>Décrivez brièvement votre projet, vos besoins ou vos objectifs. Notre équipe vous recontactera pour échanger sur les meilleures solutions adaptées à votre réalité.</p>
+        <span class="eyebrow" data-i18n="contact.eyebrow">Contactez-nous</span>
+        <h2 data-i18n="contact.title">Discutons de votre projet agricole</h2>
+        <p data-i18n="contact.text">Décrivez brièvement votre projet, vos besoins ou vos objectifs. Notre équipe vous recontactera pour échanger sur les meilleures solutions adaptées à votre réalité.</p>
       </div>
 
       <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
-        <label for="name">Nom complet
-          <input type="text" id="name" name="name" placeholder="Votre nom" autocomplete="name" required />
+        <label for="name"><span data-i18n="form.name">Nom complet</span>
+          <input type="text" id="name" name="name" placeholder="Votre nom" data-i18n-placeholder="form.namePlaceholder" autocomplete="name" required />
         </label>
 
-        <label for="email">Email
+        <label for="email"><span data-i18n="form.email">Email</span>
           <input type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email" required />
         </label>
 
-        <label for="phone">Téléphone
-          <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
+        <label for="phone"><span data-i18n="form.phone">Téléphone</span>
+          <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" data-i18n-placeholder="form.phonePlaceholder" autocomplete="tel" required />
         </label>
 
-        <label for="need">Type de projet ou formation
+        <label for="need"><span data-i18n="form.need">Type de projet ou formation</span>
           <select id="need" name="need" required></select>
         </label>
 
-        <label for="message" id="messageField">Décrivez brièvement votre projet
-          <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>
+        <label for="message" id="messageField"><span data-i18n="form.message">Décrivez brièvement votre projet</span>
+          <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." data-i18n-placeholder="form.messagePlaceholder" required></textarea>
         </label>
 
         <label class="consent-label" for="consent">
           <input type="checkbox" id="consent" required />
-          <span class="consent-text">J’accepte d’être recontacté par Agri-tech</span>
+          <span class="consent-text" data-i18n="form.consent">J’accepte d’être recontacté par Agri-tech</span>
         </label>
 
         <label class="hidden-field" aria-hidden="true">Ne pas remplir
@@ -290,7 +299,7 @@
 
         <button class="btn primary full" type="submit" id="submitBtn">Demander une consultation</button>
         <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
-        <p class="form-note">Vos informations restent confidentielles et sont utilisées uniquement dans le cadre de votre demande.</p>
+        <p class="form-note" data-i18n="form.note">Vos informations restent confidentielles et sont utilisées uniquement dans le cadre de votre demande.</p>
       </form>
     </section>
   </main>

@@ -2,6 +2,10 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
+  const I18N = {
+    fr: { 'nav.services': 'Services', 'nav.courses': 'Cours en ligne', 'nav.method': 'Méthode', 'nav.credibility': 'Crédibilité', 'nav.testimonials': 'Témoignages', 'nav.quote': 'Demander un devis', 'hero.title': 'Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.', 'hero.text': 'Agri-tech accompagne les entrepreneurs, institutions et producteurs dans la conception, l’installation et le suivi de projets agricoles modernes en Haïti.', 'hero.ctaPrimary': 'Obtenir une consultation', 'hero.ctaSecondary': 'Voir nos domaines', 'contact.eyebrow': 'Contactez-nous', 'contact.title': 'Discutons de votre projet agricole', 'contact.text': 'Décrivez brièvement votre projet, vos besoins ou vos objectifs. Notre équipe vous recontactera pour échanger sur les meilleures solutions adaptées à votre réalité.', 'form.name': 'Nom complet', 'form.namePlaceholder': 'Votre nom', 'form.email': 'Email', 'form.phone': 'Téléphone', 'form.phonePlaceholder': 'Ex: +509 0000 0000', 'form.need': 'Type de projet ou formation', 'form.message': 'Décrivez brièvement votre projet', 'form.messagePlaceholder': 'Lieu, budget approximatif, objectif, urgence...', 'form.consent': 'J’accepte d’être recontacté par Agri-tech', 'form.note': 'Vos informations restent confidentielles et sont utilisées uniquement dans le cadre de votre demande.' },
+    en: { 'nav.services': 'Services', 'nav.courses': 'Online courses', 'nav.method': 'Method', 'nav.credibility': 'Credibility', 'nav.testimonials': 'Testimonials', 'nav.quote': 'Request a quote', 'hero.title': 'Turn your agricultural idea into a profitable, structured project ready to launch.', 'hero.text': 'Agri-tech supports entrepreneurs, institutions, and producers in designing, deploying, and monitoring modern agricultural projects in Haiti.', 'hero.ctaPrimary': 'Get a consultation', 'hero.ctaSecondary': 'See our sectors', 'contact.eyebrow': 'Contact us', 'contact.title': 'Let’s discuss your agricultural project', 'contact.text': 'Briefly describe your project, needs, or goals. Our team will contact you to discuss the best solutions for your context.', 'form.name': 'Full name', 'form.namePlaceholder': 'Your name', 'form.email': 'Email', 'form.phone': 'Phone', 'form.phonePlaceholder': 'Ex: +509 0000 0000', 'form.need': 'Project type or training', 'form.message': 'Briefly describe your project', 'form.messagePlaceholder': 'Location, estimated budget, objective, urgency...', 'form.consent': 'I agree to be contacted by Agri-tech', 'form.note': 'Your information remains confidential and is used only to process your request.' }
+  };
   const EMAILJS_CONFIG = {
     publicKey: 'FIM6Dgp1FXsfD9fJf',
     serviceId: 'service_z856n3l',
@@ -80,6 +84,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     newsletterSubmitBtn: document.querySelector('#newsletterSubmit'),
     newsletterStatus: document.querySelector('#newsletterStatus')
   };
+  let currentLang = localStorage.getItem('agritech_lang') || 'fr';
 
   const partnershipNeed = 'Partenariat';
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
@@ -194,17 +199,25 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (!elements.newsletterSubmitBtn) return;
 
     elements.newsletterSubmitBtn.disabled = isLoading;
-    elements.newsletterSubmitBtn.textContent = isLoading ? 'Inscription...' : 'S’inscrire';
+    elements.newsletterSubmitBtn.textContent = isLoading ? (currentLang === 'en' ? 'Subscribing...' : 'Inscription...') : (currentLang === 'en' ? 'Subscribe' : 'S’inscrire');
   }
 
 
   function getSubmitButtonLabel() {
     const selectedNeed = elements.needSelect?.value || '';
 
-    if (isFormationNeed(selectedNeed)) return 'Réservez votre place';
-    if (isPartnershipNeed(selectedNeed)) return 'Discuter d’un partenariat';
-
-    return 'Demander une consultation';
+    if (isFormationNeed(selectedNeed)) return currentLang === 'en' ? 'Reserve your spot' : 'Réservez votre place';
+    if (isPartnershipNeed(selectedNeed)) return currentLang === 'en' ? 'Discuss a partnership' : 'Discuter d’un partenariat';
+    return currentLang === 'en' ? 'Request a consultation' : 'Demander une consultation';
+  }
+  function t(key) { return I18N[currentLang]?.[key] || I18N.fr[key] || key; }
+  function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)); });
+    document.documentElement.lang = currentLang;
+    if (elements.submitBtn) elements.submitBtn.textContent = getSubmitButtonLabel();
+    const code = document.querySelector('#activeLangCode');
+    if (code) code.textContent = currentLang.toUpperCase();
   }
 
   function updateSubmitButtonLabel() {
@@ -645,6 +658,28 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function setupEvents() {
+    const langBtn = document.querySelector('#langBtn');
+    const langMenu = document.querySelector('#langMenu');
+    if (langBtn && langMenu) {
+      langBtn.addEventListener('click', () => {
+        const isOpen = langMenu.classList.toggle('open');
+        langBtn.setAttribute('aria-expanded', String(isOpen));
+      });
+      langMenu.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-lang-option]');
+        if (!option) return;
+        currentLang = option.dataset.langOption === 'en' ? 'en' : 'fr';
+        localStorage.setItem('agritech_lang', currentLang);
+        langMenu.classList.remove('open');
+        langBtn.setAttribute('aria-expanded', 'false');
+        applyI18n();
+      });
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('#langSwitcher')) return;
+        langMenu.classList.remove('open');
+        langBtn.setAttribute('aria-expanded', 'false');
+      });
+    }
     if (elements.filters) {
       elements.filters.addEventListener('click', (event) => {
         const button = event.target.closest('.filter-btn');
@@ -891,4 +926,5 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   setupPartnershipCarousel();
   setupScrollReveal();
   runSmokeTests();
+  applyI18n();
 });
