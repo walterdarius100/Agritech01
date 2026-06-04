@@ -1,4 +1,4 @@
-// Agri-Tech - script.js
+// Agri-tech - script.js
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
@@ -19,18 +19,16 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   const services = [
-    { title: 'Poulet de chair', category: 'Élevage', image: 'assets/images/poulet-chair.jpg', text: 'Conception de poulailler, plan de production, équipements et accompagnement technique.' },
-    { title: 'Poule pondeuse', category: 'Élevage', image: 'assets/images/poule-pondeuse.jpg', text: 'Mise en place d’unités de ponte, suivi sanitaire, alimentation et rentabilité.' },
-    { title: 'Incubateur / Écloserie', category: 'Technologie', image: 'assets/images/incubateur.jpg', text: 'Fabrication et accompagnement autour des incubateurs pour production de poussins.' },
-    { title: 'Cuniculture', category: 'Élevage', image: 'assets/images/cuniculture.jpg', text: 'Clapiers modernes, formation, équipements et installation de fermes cunicoles.' },
-    { title: 'Porcherie', category: 'Élevage', image: 'assets/images/porcherie.jpg', text: 'Conception de porcherie, hygiène, alimentation, reproduction et suivi de croissance.' },
-    { title: 'Pépinière', category: 'Production', image: 'assets/images/pepiniere.jpg', text: 'Implantation de pépinières, choix de semences, matériel et formation pratique.' },
-    { title: 'Apiculture', category: 'Élevage', image: 'assets/images/apiculture.jpg', text: 'Conception de rucher, installation de ruches, formation et valorisation du miel.' },
-    { title: 'Pisciculture', category: 'Élevage', image: 'assets/images/pisciculture.jpg', text: 'Élevage de poissons, bassin, alimentation, densité et plan de production.' },
-    { title: 'Gabionnage', category: 'Infrastructure', image: 'assets/images/gabionnage.jpg', text: 'Solutions de protection, stabilisation de terrain et aménagement rural.' },
-    { title: 'Irrigation', category: 'Infrastructure', image: 'assets/images/irrigation.jpg', text: 'Systèmes d’irrigation adaptés aux cultures, au terrain et au budget disponible.' },
-    { title: 'Biogaz', category: 'Technologie', image: 'assets/images/biogaz.jpg', text: 'Valorisation des déchets organiques pour produire énergie et fertilisants.' },
-    { title: 'Clôture métallique', category: 'Infrastructure', image: 'assets/images/cloture-metallique.jpg', text: 'Clôtures agricoles pour sécuriser les exploitations, animaux et équipements.' }
+    { title: 'Aviculture', category: 'Élevage', image: 'assets/images/poulet-chair.jpg', text: 'Étude, conception et suivi pour lancer poulets de chair, pondeuses ou unités avicoles mieux planifiées.' },
+    { title: 'Apiculture', category: 'Élevage', image: 'assets/images/apiculture.jpg', text: 'Structuration de ruchers, choix du matériel, formation et valorisation progressive de la production de miel.' },
+    { title: 'Cuniculture', category: 'Élevage', image: 'assets/images/cuniculture.jpg', text: 'Clapiers, conduite d’élevage, alimentation et suivi pour développer une ferme cunicole plus maîtrisée.' },
+    { title: 'Pisciculture', category: 'Élevage', image: 'assets/images/pisciculture.jpg', text: 'Conception de bassins, densité, alimentation et plan de production adaptés à votre site.' },
+    { title: 'Maraîchage & pépinière', category: 'Production', image: 'assets/images/pepiniere.jpg', text: 'Appui à la préparation de pépinières, cultures maraîchères, calendrier technique et besoins matériels.' },
+    { title: 'Irrigation', category: 'Infrastructure', image: 'assets/images/irrigation.jpg', text: 'Solutions d’irrigation dimensionnées selon l’eau disponible, la culture, le terrain et le budget.' },
+    { title: 'Biogaz', category: 'Technologie', image: 'assets/images/biogaz.jpg', text: 'Valorisation des déchets organiques pour produire énergie, fertilisants et solutions rurales durables.' },
+    { title: 'Gabionnage', category: 'Infrastructure', image: 'assets/images/gabionnage.jpg', text: 'Aménagements pour protéger, stabiliser et sécuriser des zones agricoles ou communautaires sensibles.' },
+    { title: 'Équipements agricoles', category: 'Équipement', image: 'assets/images/incubateur.jpg', text: 'Orientation sur les équipements utiles, incubateurs, clôtures et matériels adaptés au projet.' },
+    { title: 'Formations agricoles', category: 'Formation', image: 'assets/images/formation-apiculture.jpg', text: 'Formations pratiques pour renforcer les compétences avant et pendant la mise en œuvre du projet.' }
   ];
 
   const courses = [
@@ -204,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (isFormationNeed(selectedNeed)) return 'Réservez votre place';
     if (isPartnershipNeed(selectedNeed)) return 'Discuter d’un partenariat';
 
-    return 'Demander une consultation';
+    return 'Soumettre mon projet';
   }
 
   function updateSubmitButtonLabel() {
@@ -392,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
     const partnershipOption = `<option value="${partnershipNeed}">${partnershipNeed}</option>`;
 
-    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${partnershipOption}${courseOptions}`;
+    elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez votre domaine ou objectif</option>${serviceOptions}${partnershipOption}${courseOptions}`;
     updateMessageFieldVisibility();
   }
 
@@ -762,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           need,
           message,
           consent: consent ? 'Oui' : 'Non',
-          source: 'Site Agri-Tech',
+          source: 'Site Agri-tech',
           SOURCE: 'Formulaire de contact',
           TYPE_CONTACT: 'Contact',
           date: new Date().toISOString()
@@ -824,11 +822,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           from_email: email,
           phone: '',
           need: 'Newsletter',
-          message: 'Inscription à la newsletter depuis le footer.',
+          message: 'Inscription à la communauté Agri-tech depuis le footer.',
           consent: 'Oui',
-          source: 'Footer newsletter',
-          SOURCE: 'Footer newsletter',
-          TYPE_CONTACT: 'Newsletter',
+          source: 'Footer communauté',
+          SOURCE: 'Footer communauté',
+          TYPE_CONTACT: 'Communauté',
           date: new Date().toISOString()
         };
 
@@ -852,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function runSmokeTests() {
-    console.assert(services.length === 12, 'Test échoué : 12 services attendus.');
+    console.assert(services.length === 10, 'Test échoué : 10 services attendus.');
     console.assert(courses.length >= 3, 'Test échoué : au moins 3 cours attendus.');
     console.assert(testimonials.length === 3, 'Test échoué : 3 témoignages attendus.');
     console.assert(services.every((service) => service.image.startsWith('assets/images/')), 'Test échoué : images services locales attendues.');
@@ -874,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.needSelect.value = partnershipNeed;
       console.assert(getSubmitButtonLabel() === 'Discuter d’un partenariat', 'Test échoué : libellé partenariat attendu.');
       elements.needSelect.value = services[0].title;
-      console.assert(getSubmitButtonLabel() === 'Demander une consultation', 'Test échoué : libellé consultation attendu.');
+      console.assert(getSubmitButtonLabel() === 'Soumettre mon projet', 'Test échoué : libellé projet attendu.');
       elements.needSelect.value = originalNeed;
       updateMessageFieldVisibility();
     }
