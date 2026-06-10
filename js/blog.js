@@ -25,6 +25,10 @@
     return new Intl.DateTimeFormat('fr-HT', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
   }
 
+  function isPublished(post) {
+    return post && post.published !== false;
+  }
+
   function sortPosts(posts) {
     return [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
   }
@@ -127,7 +131,7 @@
       const response = await fetch(postsUrl);
       if (!response.ok) throw new Error(`Chargement impossible (${response.status})`);
       const posts = await response.json();
-      state.posts = Array.isArray(posts) ? posts : [];
+      state.posts = Array.isArray(posts) ? posts.filter(isPublished) : [];
       renderHome(state.posts);
       renderFilters(state.posts);
       renderFeatured(state.posts);
