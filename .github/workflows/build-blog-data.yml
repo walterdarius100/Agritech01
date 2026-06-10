@@ -1,0 +1,41 @@
+name: Build blog data
+
+on:
+  push:
+    paths:
+      - 'content/actualites/**'
+      - 'scripts/generate-blog-data.js'
+      - '.github/workflows/build-blog-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-blog-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate data/blog-posts.json
+        run: node scripts/generate-blog-data.js
+
+      - name: Commit generated blog data if needed
+        run: |
+          if git diff --quiet -- data/blog-posts.json; then
+            echo "data/blog-posts.json is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/blog-posts.json
+          git commit -m "chore: generate blog data from markdown"
+          git push

@@ -22,6 +22,10 @@
     return new URLSearchParams(window.location.search).get('slug') || '';
   }
 
+  function isPublished(post) {
+    return post && post.published !== false;
+  }
+
   function sortPosts(posts) {
     return [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
   }
@@ -106,8 +110,9 @@
     try {
       const response = await fetch(postsUrl);
       if (!response.ok) throw new Error(`Chargement impossible (${response.status})`);
-      const posts = await response.json();
-      const post = Array.isArray(posts) ? posts.find((item) => item.slug === getSlug()) : null;
+      const postsData = await response.json();
+      const posts = Array.isArray(postsData) ? postsData.filter(isPublished) : [];
+      const post = posts.find((item) => item.slug === getSlug()) || null;
 
       if (!post) {
         renderNotFound();
