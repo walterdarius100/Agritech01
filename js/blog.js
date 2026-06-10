@@ -1,7 +1,8 @@
 (() => {
   const postsUrl = 'data/blog-posts.json';
-  const categoryOrder = ['Tous', 'Actualités', 'Alertes', 'Événements', 'Marché agricole', 'Analyse Agri-tech'];
-  const state = { posts: [], activeCategory: 'Tous' };
+  const allCategory = 'Tous';
+  const preferredCategoryOrder = [allCategory, 'Actualités', 'Alertes', 'Événements', 'Marché agricole', 'Analyse Agri-tech'];
+  const state = { posts: [], activeCategory: allCategory };
 
   const elements = {
     homeGrid: document.querySelector('#homeNewsGrid'),
@@ -29,9 +30,30 @@
     return [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
-  function coverMarkup(post, className = 'news-card-image') {
+  function normalizePosts(posts) {
+    if (!Array.isArray(posts)) return [];
+
+    return posts.filter((post) => (
+      post &&
+      post.slug &&
+      post.title &&
+      post.excerpt &&
+      post.category &&
+      post.date
+    ));
+  }
+
+  function getCategories(posts) {
+    const postCategories = [...new Set(posts.map((post) => post.category).filter(Boolean))];
+    const ordered = preferredCategoryOrder.filter((category) => category === allCategory || postCategories.includes(category));
+    const extra = postCategories.filter((category) => !ordered.includes(category)).sort((a, b) => a.localeCompare(b, 'fr'));
+
+    return [...ordered, ...extra];
+  }
+
+  function coverMarkup(post, className = 'news-card-image', loading = 'lazy') {
     if (post.cover) {
-      return `<div class="${className}"><img src="${escapeHtml(post.cover)}" alt="${escapeHtml(post.title)}" loading="lazy" decoding="async" /></div>`;
+      return `<div class="${className}"><img src="${escapeHtml(post.cover)}" alt="${escapeHtml(post.title)}" loading="${loading}" decoding="async" /></div>`;
     }
 
     return `<div class="${className}"><div class="news-placeholder" aria-hidden="true"><span>🌿</span></div></div>`;
@@ -44,7 +66,7 @@
         <div class="news-card-body">
           <div class="news-meta">
             <span class="news-category">${escapeHtml(post.category)}</span>
-            <span class="news-type">${escapeHtml(post.type)}</span>
+            <span class="news-type">${escapeHtml(post.type || 'Publication')}</span>
             <time datetime="${escapeHtml(post.date)}">${escapeHtml(formatDate(post.date))}</time>
           </div>
           <h3>${escapeHtml(post.title)}</h3>
@@ -65,16 +87,23 @@
 
   function renderFilters(posts) {
     if (!elements.filters) return;
-    const categories = categoryOrder.filter((category) => category === 'Tous' || posts.some((post) => post.category === category));
+    const categories = getCategories(posts);
+
+    if (!categories.includes(state.activeCategory)) {
+      state.activeCategory = allCategory;
+    }
 
     elements.filters.innerHTML = categories
-      .map((category) => `<button class="blog-filter-btn ${category === state.activeCategory ? 'active' : ''}" type="button" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`)
+      .map((category) => {
+        const isActive = category === state.activeCategory;
+        return `<button class="blog-filter-btn ${isActive ? 'active' : ''}" type="button" data-category="${escapeHtml(category)}" aria-pressed="${isActive}">${escapeHtml(category)}</button>`;
+      })
       .join('');
   }
 
   function renderFeatured(posts) {
     if (!elements.featured) return;
-    const featuredPost = sortPosts(posts).find((post) => post.featured);
+    const featuredPost = sortPosts(posts).find((post) => post.featured) || sortPosts(posts)[0];
 
     if (!featuredPost) {
       elements.featured.innerHTML = '';
@@ -84,11 +113,11 @@
 
     elements.featured.hidden = false;
     elements.featured.innerHTML = `
-      ${coverMarkup(featuredPost, 'featured-news-image')}
+      ${coverMarkup(featuredPost, 'featured-news-image', 'eager')}
       <div class="featured-news-content">
         <div class="news-meta">
           <span class="news-category">À la une</span>
-          <span class="news-type">${escapeHtml(featuredPost.type)}</span>
+          <span class="news-type">${escapeHtml(featuredPost.category)}</span>
           <time datetime="${escapeHtml(featuredPost.date)}">${escapeHtml(formatDate(featuredPost.date))}</time>
         </div>
         <h2>${escapeHtml(featuredPost.title)}</h2>
@@ -97,11 +126,15 @@
       </div>`;
   }
 
+  function getVisiblePosts(posts) {
+    const sorted = sortPosts(posts);
+    if (state.activeCategory === allCategory) return sorted;
+    return sorted.filter((post) => post.category === state.activeCategory);
+  }
+
   function renderGrid(posts) {
     if (!elements.grid) return;
-    const visiblePosts = state.activeCategory === 'Tous'
-      ? sortPosts(posts)
-      : sortPosts(posts).filter((post) => post.category === state.activeCategory);
+    const visiblePosts = getVisiblePosts(posts);
 
     elements.grid.innerHTML = visiblePosts.length
       ? visiblePosts.map(cardMarkup).join('')
@@ -113,7 +146,7 @@
     elements.filters.addEventListener('click', (event) => {
       const button = event.target.closest('[data-category]');
       if (!button) return;
-      state.activeCategory = button.dataset.category;
+      state.activeCategory = button.dataset.category || allCategory;
       renderFilters(state.posts);
       renderGrid(state.posts);
     });
@@ -126,8 +159,7 @@
     try {
       const response = await fetch(postsUrl);
       if (!response.ok) throw new Error(`Chargement impossible (${response.status})`);
-      const posts = await response.json();
-      state.posts = Array.isArray(posts) ? posts : [];
+      state.posts = normalizePosts(await response.json());
       renderHome(state.posts);
       renderFilters(state.posts);
       renderFeatured(state.posts);
@@ -137,6 +169,7 @@
       const message = '<div class="empty-state">Les actualités agricoles ne peuvent pas être chargées pour le moment.</div>';
       if (elements.homeGrid) elements.homeGrid.innerHTML = message;
       if (elements.grid) elements.grid.innerHTML = message;
+      if (elements.filters) elements.filters.innerHTML = '';
       if (elements.featured) elements.featured.hidden = true;
     }
   }
