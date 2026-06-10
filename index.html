@@ -28,6 +28,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/blog.css" />
 </head>
 
 <body>
@@ -54,6 +55,7 @@
         <a href="#processus">Méthode</a>
         <a href="#preuves">Crédibilité</a>
         <a href="#temoignages">Témoignages</a>
+        <a href="blog.html">Actualités</a>
         <a href="#contact" class="nav-cta">Demander un devis</a>
       </div>
     </nav>
@@ -251,6 +253,21 @@
       </div>
     </section>
 
+
+    <section class="section-pad home-news-section" id="actualites" aria-labelledby="home-news-title">
+      <div class="section-head reveal">
+        <span class="eyebrow">Veille agricole</span>
+        <h2 id="home-news-title">Actualités agricoles</h2>
+        <p>Suivez les informations, alertes, événements et analyses qui influencent le secteur agricole en Haïti.</p>
+      </div>
+
+      <div class="news-grid home-news-grid reveal reveal-delay-1" id="homeNewsGrid" aria-live="polite"></div>
+
+      <div class="home-news-actions reveal reveal-delay-2">
+        <a href="blog.html" class="btn primary">Voir toutes les actualités</a>
+      </div>
+    </section>
+
     <section class="section-pad contact-section" id="contact">
       <div class="contact-copy reveal">
         <span class="eyebrow">Contactez-nous</span>
@@ -317,6 +334,7 @@
         <a href="#services">Services agricoles</a>
         <a href="#cours">Cours en ligne</a>
         <a href="#processus">Notre méthode</a>
+        <a href="blog.html">Actualités</a>
         <a href="#contact">Demander un devis</a>
       </div>
 
@@ -385,5 +403,6 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
   <script src="script.js" defer></script>
+  <script src="js/blog.js" defer></script>
 </body>
 </html>
