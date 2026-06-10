@@ -49,7 +49,7 @@
           </div>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.excerpt)}</p>
-          <a class="news-card-link" href="article.html?slug=${encodeURIComponent(post.slug)}">Lire l’analyse →</a>
+          <a class="news-card-link" href="article.html?slug=${encodeURIComponent(post.slug)}">Lire l’article →</a>
         </div>
       </article>`;
   }
@@ -93,7 +93,7 @@
         </div>
         <h2>${escapeHtml(featuredPost.title)}</h2>
         <p>${escapeHtml(featuredPost.excerpt)}</p>
-        <a href="article.html?slug=${encodeURIComponent(featuredPost.slug)}" class="btn primary">Lire la publication</a>
+        <a href="article.html?slug=${encodeURIComponent(featuredPost.slug)}" class="btn primary">Lire l’article</a>
       </div>`;
   }
 

@@ -45,7 +45,7 @@
           </div>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.excerpt)}</p>
-          <a class="news-card-link" href="article.html?slug=${encodeURIComponent(post.slug)}">Lire la publication →</a>
+          <a class="news-card-link" href="article.html?slug=${encodeURIComponent(post.slug)}">Lire l’article →</a>
         </div>
       </article>`;
   }
