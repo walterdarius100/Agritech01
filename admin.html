@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f3d2e" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Espace d’administration Agri-tech pour gérer les articles d’actualité." />
+  <title>Agri-tech Admin | Actualités</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon-agritech.svg?v=2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/pages/admin.css" />
+</head>
+<body class="admin-page">
+  <main class="admin-shell" id="main">
+    <header class="admin-topbar">
+      <a class="admin-brand" href="index.html" aria-label="Retour au site public Agri-tech">
+        <span class="admin-brand-mark"><img src="assets/images/logo-agritech.png" alt="" aria-hidden="true" width="127" height="96" decoding="async" /></span>
+        <span><strong>Agri-tech Admin</strong><small>Retour au site public</small></span>
+      </a>
+      <button class="admin-logout" id="logoutButton" type="button" hidden>Se déconnecter</button>
+    </header>
+
+    <section class="admin-diagnostic" aria-labelledby="diagnosticTitle">
+      <div>
+        <p class="eyebrow">Diagnostic</p>
+        <h1 id="diagnosticTitle">État Supabase</h1>
+      </div>
+      <dl class="diagnostic-grid">
+        <div><dt>Supabase configuré</dt><dd><span class="diag-badge" id="diagConfigured">Non</span></dd></div>
+        <div><dt>Projet Supabase</dt><dd id="diagProject">Non configuré</dd></div>
+        <div><dt>Client initialisé</dt><dd><span class="diag-badge" id="diagClient">Non</span></dd></div>
+        <div><dt>Session active</dt><dd><span class="diag-badge" id="diagSession">Non</span></dd></div>
+      </dl>
+    </section>
+
+    <section class="admin-card admin-login" id="loginPanel" aria-labelledby="loginTitle">
+      <div class="admin-card-heading">
+        <span class="eyebrow">Connexion sécurisée</span>
+        <h2 id="loginTitle">Se connecter à l’administration</h2>
+        <p>Utilisez l’email et le mot de passe créés dans Supabase Auth. Aucun identifiant n’est codé dans le site.</p>
+      </div>
+      <form id="loginForm" class="admin-form" novalidate>
+        <label for="adminEmail">Email</label>
+        <input id="adminEmail" name="email" type="email" autocomplete="email" required />
+        <label for="adminPassword">Mot de passe</label>
+        <input id="adminPassword" name="password" type="password" autocomplete="current-password" required />
+        <button class="btn primary" id="loginButton" type="submit">Se connecter</button>
+        <p class="admin-message" id="loginMessage" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="admin-dashboard" id="dashboardPanel" hidden>
+      <div class="admin-dashboard-header">
+        <div>
+          <span class="eyebrow">Actualités</span>
+          <h2>Administration des actualités</h2>
+          <p>Créez, publiez, archivez et mettez à la une les articles affichés sur le site public.</p>
+        </div>
+        <button class="btn primary" id="newArticleButton" type="button">Nouvel article</button>
+      </div>
+
+      <p class="admin-message" id="dashboardMessage" role="status" aria-live="polite"></p>
+
+      <div class="admin-layout">
+        <section class="admin-card article-list-card" aria-labelledby="articleListTitle">
+          <h3 id="articleListTitle">Articles</h3>
+          <div class="admin-article-list" id="articlesList"></div>
+        </section>
+
+        <section class="admin-card article-form-card" id="articleFormPanel" aria-labelledby="articleFormTitle" hidden>
+          <div class="admin-card-heading compact">
+            <span class="eyebrow">Édition</span>
+            <h3 id="articleFormTitle">Nouvel article</h3>
+          </div>
+          <form id="articleForm" class="admin-form article-form" novalidate>
+            <input type="hidden" id="articleId" />
+            <div class="form-grid two">
+              <div>
+                <label for="articleTitle">Titre</label>
+                <input id="articleTitle" name="title" type="text" required />
+              </div>
+              <div>
+                <label for="articleSlug">Slug</label>
+                <input id="articleSlug" name="slug" type="text" required />
+              </div>
+            </div>
+            <div class="form-grid two">
+              <div>
+                <label for="articleCategory">Catégorie</label>
+                <input id="articleCategory" name="category" type="text" required />
+              </div>
+              <div>
+                <label for="articleAuthor">Auteur</label>
+                <input id="articleAuthor" name="author" type="text" value="Agri-tech" />
+              </div>
+            </div>
+            <label for="articleExcerpt">Résumé / extrait</label>
+            <textarea id="articleExcerpt" name="excerpt" rows="3"></textarea>
+            <div class="form-grid two">
+              <div>
+                <label for="articleCoverUrl">URL image de couverture</label>
+                <input id="articleCoverUrl" name="cover_image_url" type="url" placeholder="https://..." />
+              </div>
+              <div>
+                <label for="articleImage">Uploader une image</label>
+                <input id="articleImage" name="image" type="file" accept="image/*" />
+                <small>Image JPG/PNG/WebP, 4 Mo maximum.</small>
+              </div>
+            </div>
+            <label for="articleContentField">Contenu</label>
+            <textarea id="articleContentField" name="content" rows="10" required></textarea>
+            <div class="form-grid two">
+              <div>
+                <label for="articleStatus">Statut</label>
+                <select id="articleStatus" name="status">
+                  <option value="draft">brouillon</option>
+                  <option value="published">publié</option>
+                  <option value="archived">archivé</option>
+                </select>
+              </div>
+              <div>
+                <label for="articlePublishedAt">Date de publication</label>
+                <input id="articlePublishedAt" name="published_at" type="datetime-local" />
+              </div>
+            </div>
+            <label class="checkbox-row"><input id="articleFeatured" name="featured" type="checkbox" /> Article à la une</label>
+            <div class="form-actions">
+              <button class="btn ghost" id="saveDraftButton" type="button">Enregistrer comme brouillon</button>
+              <button class="btn primary" id="publishButton" type="button">Publier</button>
+              <button class="btn secondary" id="updateButton" type="submit">Mettre à jour</button>
+              <button class="btn text-btn" id="cancelEditButton" type="button">Annuler</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="js/pages/admin.js"></script>
+</body>
+</html>
