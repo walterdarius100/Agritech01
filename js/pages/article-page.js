@@ -6,8 +6,122 @@ import { initMobileMenu, initScrollReveal } from './page-utils.js';
 const articleContainer = document.querySelector('#articleContent');
 const params = new URLSearchParams(window.location.search);
 const slug = params.get('slug');
-const FALLBACK_IMAGE = 'assets/images/logo-agritech.png';
+const FALLBACK_IMAGE = 'assets/images/irrigation.jpg';
+const DEFAULT_META_DESCRIPTION = 'Découvrez cet article publié par Agri-tech.';
+let currentArticleShareData = null;
+let shareToastTimeout = null;
 
+function stripHtml(value) {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function truncateText(value, maxLength = 155) {
+  const text = stripHtml(value);
+  if (text.length <= maxLength) return text;
+  const truncated = text.slice(0, maxLength - 1).trimEnd();
+  const lastSpace = truncated.lastIndexOf(' ');
+  return `${(lastSpace > 80 ? truncated.slice(0, lastSpace) : truncated).trimEnd()}…`;
+}
+
+function getArticleDescription(article) {
+  const content = Array.isArray(article.content) ? article.content.join(' ') : article.content;
+  return truncateText(article.excerpt || content || DEFAULT_META_DESCRIPTION);
+}
+
+function toAbsoluteUrl(url) {
+  try {
+    return new URL(url || FALLBACK_IMAGE, window.location.origin).href;
+  } catch (error) {
+    return new URL(FALLBACK_IMAGE, window.location.origin).href;
+  }
+}
+
+function setMeta(selector, value) {
+  const tag = document.querySelector(selector);
+  if (tag && value) tag.setAttribute('content', value);
+}
+
+function updateArticleMeta(article) {
+  const title = stripHtml(article.title) || 'Agri-tech - Actualités agricoles';
+  const description = getArticleDescription(article);
+  const image = toAbsoluteUrl(article.coverImage || article.cover_image_url || FALLBACK_IMAGE);
+  const url = window.location.href;
+
+  document.title = `${title} | Agri-tech`;
+  setMeta('meta[name="description"]', description);
+  setMeta('meta[property="og:title"]', title);
+  setMeta('meta[property="og:description"]', description);
+  setMeta('meta[property="og:image"]', image);
+  setMeta('meta[property="og:url"]', url);
+  setMeta('meta[name="twitter:title"]', title);
+  setMeta('meta[name="twitter:description"]', description);
+  setMeta('meta[name="twitter:image"]', image);
+}
+
+function getShareData(article) {
+  return {
+    title: stripHtml(article.title) || document.title,
+    text: getArticleDescription(article) || DEFAULT_META_DESCRIPTION,
+    url: window.location.href
+  };
+}
+
+function showToast(message) {
+  const toast = document.querySelector('#articleShareToast');
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  window.clearTimeout(shareToastTimeout);
+  shareToastTimeout = window.setTimeout(() => {
+    toast.classList.remove('is-visible');
+  }, 2600);
+}
+
+async function copyArticleUrl(url) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(url);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = url;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+async function handleArticleShare() {
+  if (!currentArticleShareData) return;
+
+  try {
+    if (navigator.share) {
+      await navigator.share(currentArticleShareData);
+      showToast('Article partagé');
+      return;
+    }
+
+    await copyArticleUrl(currentArticleShareData.url);
+    showToast('Lien copié');
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+
+    try {
+      await copyArticleUrl(currentArticleShareData.url);
+      showToast('Lien copié');
+    } catch (copyError) {
+      console.error('Partage indisponible:', copyError);
+      showToast('Partage indisponible');
+    }
+  }
+}
 
 function renderRelatedArticleCard(article) {
   const category = String(article.category || '').trim();
@@ -74,9 +188,8 @@ function renderNotFound() {
 function renderArticle(article, relatedArticles = []) {
   if (!articleContainer) return;
 
-  document.title = `${article.title} | Agri-tech`;
-  const metaDescription = document.querySelector('meta[name="description"]');
-  if (metaDescription) metaDescription.setAttribute('content', article.excerpt);
+  updateArticleMeta(article);
+  currentArticleShareData = getShareData(article);
 
   const paragraphs = Array.isArray(article.content) ? article.content : String(article.content || '').split(/\n{2,}/).filter(Boolean);
 
@@ -94,7 +207,13 @@ function renderArticle(article, relatedArticles = []) {
         </div>
       </section>
       <section class="section-pad article-layout">
-        <img class="article-cover reveal" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
+        <div class="article-cover-wrap reveal">
+          <img class="article-cover" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
+          <button class="article-share-button" type="button" aria-label="Partager cet article" title="Partager cet article">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
+          </button>
+          <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
+        </div>
         <div class="article-content reveal">
           ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
         </div>
@@ -102,6 +221,8 @@ function renderArticle(article, relatedArticles = []) {
       ${renderRelatedSection(relatedArticles, article.slug)}
     </article>
   `;
+
+  articleContainer.querySelector('.article-share-button')?.addEventListener('click', handleArticleShare);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

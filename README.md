@@ -74,3 +74,8 @@ Ces valeurs ont été conservées pendant le refactor pour ne pas casser le form
 
 Le rapport d’audit complet est disponible dans :
 `docs/SITE_AUDIT_REPORT.md`
+
+## Partage social et prévisualisation des liens
+
+La logique de partage et les limites Open Graph sont documentées dans :
+`docs/SOCIAL_SHARING_AND_OG.md`
