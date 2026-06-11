@@ -1,0 +1,129 @@
+[
+  {
+    "id": 1,
+    "title": "Préparer un projet agricole rentable avant d’investir",
+    "slug": "preparer-projet-agricole-rentable",
+    "category": "Conseils",
+    "excerpt": "Les premières décisions structurent la rentabilité d’un projet agricole. Voici les points à clarifier avant d’acheter du matériel ou de lancer la production.",
+    "coverImage": "assets/images/pepiniere.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-06-10",
+    "status": "published",
+    "content": [
+      "Un projet agricole rentable commence rarement par l’achat du matériel. Il commence par une compréhension claire du besoin, du marché, du site disponible, des ressources et des contraintes locales.",
+      "Avant d’investir, Agri-tech recommande de clarifier le modèle de production, les objectifs de vente, les coûts de démarrage, la disponibilité de l’eau, la main-d’œuvre et les risques sanitaires ou climatiques.",
+      "Un diagnostic simple permet d’éviter les dépenses inutiles et de construire un plan d’action réaliste. Cette étape aide aussi à choisir la bonne échelle de démarrage et les priorités techniques."
+    ],
+    "featured": true
+  },
+  {
+    "id": 2,
+    "title": "Pourquoi se former avant de lancer un élevage",
+    "slug": "se-former-avant-lancer-elevage",
+    "category": "Formations",
+    "excerpt": "Une formation pratique aide à réduire les erreurs de démarrage, mieux gérer les cycles de production et comprendre les besoins réels des animaux.",
+    "coverImage": "assets/images/formation-poulet.jpg",
+    "author": "Agri-tech Academy",
+    "publishedAt": "2026-06-06",
+    "status": "published",
+    "content": [
+      "L’élevage demande une organisation précise : bâtiment, alimentation, hygiène, suivi sanitaire, calendrier et vente. Sans préparation, les erreurs peuvent rapidement devenir coûteuses.",
+      "La formation permet de comprendre les bases avant d’engager un budget important. Elle donne des repères pratiques pour dimensionner le projet, gérer les animaux et anticiper les moments critiques.",
+      "Agri-tech Academy développe des contenus orientés terrain pour aider les porteurs de projets à prendre de meilleures décisions dès le départ."
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Irrigation : sécuriser la production en saison sèche",
+    "slug": "irrigation-production-saison-seche",
+    "category": "Infrastructure",
+    "excerpt": "L’eau est un facteur décisif pour la régularité des cultures. Un système d’irrigation doit être adapté au terrain, aux cultures et au budget.",
+    "coverImage": "assets/images/irrigation.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-05-28",
+    "status": "published",
+    "content": [
+      "En saison sèche, l’irrigation peut faire la différence entre une production régulière et des pertes importantes. Le choix du système dépend du débit disponible, de la surface, des cultures et de l’entretien possible.",
+      "Un bon diagnostic évalue la source d’eau, la pente du terrain, le stockage, la pression nécessaire et les coûts de maintenance. L’objectif est de choisir une solution durable, pas seulement un équipement.",
+      "Agri-tech accompagne les producteurs dans l’analyse du terrain et la planification de systèmes d’irrigation adaptés aux réalités locales."
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Cuniculture : démarrer petit, mais structuré",
+    "slug": "cuniculture-demarrer-petit-structure",
+    "category": "Élevage",
+    "excerpt": "La cuniculture peut être lancée progressivement, à condition de bien organiser les clapiers, la reproduction, l’alimentation et le suivi.",
+    "coverImage": "assets/images/cuniculture.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-05-18",
+    "status": "published",
+    "content": [
+      "La cuniculture attire de nombreux jeunes entrepreneurs parce qu’elle peut démarrer à petite échelle. Mais même un petit élevage doit être structuré pour éviter les pertes.",
+      "Les priorités sont simples : cages adaptées, hygiène, reproduction maîtrisée, alimentation régulière et suivi des performances. Le producteur doit aussi réfléchir à la vente avant d’augmenter le cheptel.",
+      "Un démarrage progressif permet d’apprendre, d’ajuster et de sécuriser la rentabilité avant de passer à une taille plus importante."
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Compostage : améliorer le sol avec les ressources disponibles",
+    "slug": "compostage-ameliorer-sol-ressources-disponibles",
+    "category": "Conseils",
+    "excerpt": "Le compostage aide à valoriser les résidus organiques et à renforcer la fertilité du sol avec une méthode progressive et accessible.",
+    "coverImage": "assets/images/pepiniere.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-05-08",
+    "status": "published",
+    "content": [
+      "Le compostage permet de transformer des matières organiques disponibles localement en amendement utile pour les cultures. Il demande une bonne alternance entre matières sèches, matières humides, air et humidité.",
+      "Pour démarrer, il est préférable de choisir une zone propre, protégée des excès d’eau et facile à surveiller. Les retournements réguliers favorisent une décomposition homogène et limitent les mauvaises odeurs.",
+      "Le compost ne remplace pas toujours un plan complet de fertilisation, mais il améliore la structure du sol et peut réduire certaines dépenses lorsqu’il est bien préparé."
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Pépinière : organiser la production de jeunes plants",
+    "slug": "pepiniere-organiser-production-jeunes-plants",
+    "category": "Production végétale",
+    "excerpt": "Une pépinière bien organisée sécurise la qualité des plants, facilite le suivi et réduit les pertes avant la mise en terre.",
+    "coverImage": "assets/images/pepiniere.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-04-27",
+    "status": "published",
+    "content": [
+      "La réussite d’une pépinière dépend de l’organisation : choix du substrat, arrosage, ombrage, protection, identification des lots et calendrier de repiquage.",
+      "Un espace propre et bien drainé limite les maladies et facilite la surveillance quotidienne. Les jeunes plants doivent être regroupés selon leur stade afin d’adapter l’arrosage et la lumière.",
+      "Agri-tech recommande de documenter les semis, les dates et les pertes observées pour améliorer les cycles suivants et mieux planifier les ventes ou les plantations."
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Apiculture : les premières questions avant d’installer des ruches",
+    "slug": "apiculture-premieres-questions-installer-ruches",
+    "category": "Élevage",
+    "excerpt": "Avant d’installer des ruches, il faut analyser l’environnement, les ressources florales, l’accès au site et les compétences de suivi.",
+    "coverImage": "assets/images/apiculture.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-04-15",
+    "status": "published",
+    "content": [
+      "L’apiculture peut être une activité intéressante, mais elle nécessite une observation attentive du site. Les ressources florales, la présence d’eau, les traitements agricoles voisins et la sécurité doivent être évalués.",
+      "Le producteur doit aussi prévoir du matériel adapté, une protection correcte et un calendrier de visites. Une ruche mal suivie peut rapidement perdre en performance ou devenir difficile à gérer.",
+      "Un démarrage encadré aide à comprendre le comportement des colonies, à limiter les erreurs et à construire progressivement une activité durable."
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Note interne : calendrier éditorial Academy",
+    "slug": "calendrier-editorial-academy",
+    "category": "Interne",
+    "excerpt": "Article de préparation non publié.",
+    "coverImage": "assets/images/logo-agritech.png",
+    "author": "Agri-tech",
+    "publishedAt": "2026-06-12",
+    "status": "draft",
+    "content": [
+      "Contenu non publié."
+    ]
+  }
+]
