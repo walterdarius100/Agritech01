@@ -69,3 +69,8 @@ export const EMAILJS_CONFIG = {
 ```
 
 Ces valeurs ont été conservées pendant le refactor pour ne pas casser le formulaire, la newsletter ni le stockage Google Sheets.
+
+## Audit du site
+
+Le rapport d’audit complet est disponible dans :
+`docs/SITE_AUDIT_REPORT.md`
