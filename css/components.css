@@ -51,7 +51,9 @@
 .course-meta span{font-size:.78rem;font-weight:900;color:var(--green-700);background:var(--green-100);padding:6px 9px;border-radius:999px}
 .course-price{font-weight:900;color:var(--green-900);margin:12px 0 16px}
 .bonus{font-size:.9rem;color:var(--muted)}
-.service-content .btn,.course-body .btn{margin-top:auto}
+.service-content .card-link,.course-body .card-link{margin-top:auto}
+.card-link{display:inline-flex;align-items:center;width:max-content;max-width:100%;color:var(--green-700);font-weight:800;font-size:.94rem;transition:color .2s ease,transform .2s ease}
+.card-link:hover{color:var(--green-900);transform:translateX(2px)}
 
 .partnerships-section{overflow:hidden}
 .partnership-carousel{position:relative;overflow:hidden;margin:6px auto 0;padding:4px;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}

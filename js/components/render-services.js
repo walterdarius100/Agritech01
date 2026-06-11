@@ -20,7 +20,7 @@ export function renderServices({ serviceGrid, services, category = 'Tous', setup
           <span class="tag">${escapeHtml(service.category)}</span>
           <h3>${escapeHtml(service.title)}</h3>
           <p>${escapeHtml(service.text)}</p>
-          <a href="#contact" data-need="${escapeHtml(service.title)}" class="btn primary full">Demander ce service</a>
+          <a href="#contact" data-need="${escapeHtml(service.title)}" class="card-link">Demander ce service →</a>
         </div>
       </article>
     `)

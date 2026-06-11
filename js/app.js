@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   };
 
   const partnershipNeed = PARTNERSHIP_NEED;
-  const featuredServices = services.slice(0, 6);
+  const featuredServices = services.slice(0, 3);
   const featuredCourses = courses.slice(0, 3);
   const categories = ['Tous', ...new Set(featuredServices.map((service) => service.category))];
   let testimonialIndex = 0;
