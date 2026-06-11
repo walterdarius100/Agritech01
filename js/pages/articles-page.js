@@ -55,15 +55,22 @@ function renderPagination(totalPages) {
   }
 
   const previousLink = currentPage > 1
-    ? `<a class="pagination-link" href="${buildPageUrl(currentPage - 1)}">← Précédent</a>`
-    : '<span class="pagination-link is-disabled" aria-disabled="true">← Précédent</span>';
+    ? `<a class="pagination-arrow" href="${buildPageUrl(currentPage - 1)}" aria-label="Page précédente">‹</a>`
+    : '<span class="pagination-arrow is-disabled" aria-disabled="true" aria-label="Page précédente">‹</span>';
   const nextLink = currentPage < totalPages
-    ? `<a class="pagination-link" href="${buildPageUrl(currentPage + 1)}">Suivant →</a>`
-    : '<span class="pagination-link is-disabled" aria-disabled="true">Suivant →</span>';
+    ? `<a class="pagination-arrow" href="${buildPageUrl(currentPage + 1)}" aria-label="Page suivante">›</a>`
+    : '<span class="pagination-arrow is-disabled" aria-disabled="true" aria-label="Page suivante">›</span>';
+  const pageDots = Array.from({ length: totalPages }, (_, index) => {
+    const page = index + 1;
+    if (page === currentPage) {
+      return `<span class="pagination-dot is-active" aria-label="Page ${page} actuelle" aria-current="page"></span>`;
+    }
+    return `<a class="pagination-dot" href="${buildPageUrl(page)}" aria-label="Aller à la page ${page}"></a>`;
+  }).join('');
 
   pagination.innerHTML = `
     ${previousLink}
-    <span class="pagination-status">Page ${currentPage} / ${totalPages}</span>
+    <div class="pagination-dots" aria-label="Pages disponibles">${pageDots}</div>
     ${nextLink}
   `;
 }
