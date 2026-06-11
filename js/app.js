@@ -8,6 +8,7 @@ import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
+import { initFloatingActions } from './components/floating-actions.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
 import { isEmailValid } from './utils/validation.js';
 
@@ -762,6 +763,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   populateSelect();
   selectNeedFromExternalLink();
   setupEvents();
+  initFloatingActions();
   setupCourseCarousel();
   setupTestimonialCarousel();
   setupPartnershipCarousel();
