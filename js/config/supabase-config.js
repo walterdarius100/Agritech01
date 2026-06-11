@@ -1,4 +1,4 @@
 export const SUPABASE_CONFIG = {
-  url: 'YOUR_SUPABASE_URL',
+  url: 'https://ujidzkzotlzyocozjyib.supabase.co/rest/v1/',
   anonKey: 'YOUR_SUPABASE_ANON_KEY',
 };
