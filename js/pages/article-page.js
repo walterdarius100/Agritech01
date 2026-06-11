@@ -98,10 +98,6 @@ function renderArticle(article, relatedArticles = []) {
         <div class="article-content reveal">
           ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
         </div>
-        <div class="article-end reveal" aria-label="Fin de l’article">
-          <span class="article-end-line" aria-hidden="true"></span>
-          <a href="index.html" class="article-back-link article-home-link">← Retour au site Agri-tech</a>
-        </div>
       </section>
       ${renderRelatedSection(relatedArticles, article.slug)}
     </article>
