@@ -1,15 +1,17 @@
-// Agri-Tech - script.js
-'use strict';
+import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
+import { services } from './data/services.js';
+import { courses } from './data/formations.js';
+import { testimonials } from './data/testimonials.js';
+import { renderCourses } from './components/render-formations.js';
+import { renderFilters, renderServices } from './components/render-services.js';
+import { renderTestimonials } from './components/render-testimonials.js';
+import { clampCarouselIndex } from './components/carousel.js';
+import { storeLead as storeLeadRequest } from './components/contact-form.js';
+import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
+import { isEmailValid } from './utils/validation.js';
 
+// Agri-Tech application bootstrap.
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
-  const EMAILJS_CONFIG = {
-    publicKey: 'FIM6Dgp1FXsfD9fJf',
-    serviceId: 'service_z856n3l',
-    templateId: 'template_pzsnmea',
-    autoReplyTemplateId: '',
-    sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw6LvUrYSGt7pyWOK9E4UY_bJpAP9FbhyvfSK5clxBfDSQUPuBVa750vS5y59ybFApJ/exec'
-  };
-
   if (window.emailjs) {
     window.emailjs.init({
       publicKey: EMAILJS_CONFIG.publicKey,
@@ -17,36 +19,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       limitRate: { id: 'agritech-contact-form', throttle: 10000 }
     });
   }
-
-  const services = [
-    { title: 'Poulet de chair', category: 'Élevage', image: 'assets/images/poulet-chair.jpg', text: 'Conception de poulailler, plan de production, équipements et accompagnement technique.' },
-    { title: 'Poule pondeuse', category: 'Élevage', image: 'assets/images/poule-pondeuse.jpg', text: 'Mise en place d’unités de ponte, suivi sanitaire, alimentation et rentabilité.' },
-    { title: 'Incubateur / Écloserie', category: 'Technologie', image: 'assets/images/incubateur.jpg', text: 'Fabrication et accompagnement autour des incubateurs pour production de poussins.' },
-    { title: 'Cuniculture', category: 'Élevage', image: 'assets/images/cuniculture.jpg', text: 'Clapiers modernes, formation, équipements et installation de fermes cunicoles.' },
-    { title: 'Porcherie', category: 'Élevage', image: 'assets/images/porcherie.jpg', text: 'Conception de porcherie, hygiène, alimentation, reproduction et suivi de croissance.' },
-    { title: 'Pépinière', category: 'Production', image: 'assets/images/pepiniere.jpg', text: 'Implantation de pépinières, choix de semences, matériel et formation pratique.' },
-    { title: 'Apiculture', category: 'Élevage', image: 'assets/images/apiculture.jpg', text: 'Conception de rucher, installation de ruches, formation et valorisation du miel.' },
-    { title: 'Pisciculture', category: 'Élevage', image: 'assets/images/pisciculture.jpg', text: 'Élevage de poissons, bassin, alimentation, densité et plan de production.' },
-    { title: 'Gabionnage', category: 'Infrastructure', image: 'assets/images/gabionnage.jpg', text: 'Solutions de protection, stabilisation de terrain et aménagement rural.' },
-    { title: 'Irrigation', category: 'Infrastructure', image: 'assets/images/irrigation.jpg', text: 'Systèmes d’irrigation adaptés aux cultures, au terrain et au budget disponible.' },
-    { title: 'Biogaz', category: 'Technologie', image: 'assets/images/biogaz.jpg', text: 'Valorisation des déchets organiques pour produire énergie et fertilisants.' },
-    { title: 'Clôture métallique', category: 'Infrastructure', image: 'assets/images/cloture-metallique.jpg', text: 'Clôtures agricoles pour sécuriser les exploitations, animaux et équipements.' }
-  ];
-
-  const courses = [
-    { title: 'Cuniculture rentable (de 0 à 50 000 HT)', image: 'assets/images/formation-cuniculture.jpg', level: 'Débutant', duration: '4 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Apprenez à lancer un élevage de lapins rentable avec une méthode claire étape par étape.', bonus: 'Support WhatsApp 7 jours' },
-    { title: 'Poulet de chair : produire et vendre efficacement', image: 'assets/images/formation-poulet.jpg', level: 'Intermédiaire', duration: '5 modules', status: 'Disponible', price: 'Accès immédiat après validation', text: 'Maîtrisez tout le cycle de production : installation, alimentation, santé et vente.', bonus: 'Plan de production inclus' },
-    { title: 'Apiculture moderne simplifiée', image: 'assets/images/formation-apiculture.jpg', level: 'Débutant', duration: '3 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Comprenez les bases pour démarrer un rucher et produire du miel.', bonus: 'Liste du matériel fournie' },
-    { title: 'Formation en élevage de poules pondeuses', image: 'assets/images/poule-pondeuse.jpg', level: 'Élevage', duration: '4 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Apprenez les bases essentielles pour démarrer et gérer un élevage de poules pondeuses de manière structurée et rentable.', bonus: 'Alerte au lancement', cta: 'Accéder à la formation', need: 'Formation poule pondeuse', cardLink: true },
-    { title: 'Formation en pisciculture', image: 'assets/images/pisciculture.jpg', level: 'Élevage', duration: '4 modules', status: 'Bientôt disponible', price: 'Préinscription ouverte', text: 'Apprenez les bases essentielles pour démarrer et gérer un projet piscicole de manière structurée, rentable et adaptée à votre réalité.', bonus: 'Alerte au lancement', cta: 'Accéder à la formation', need: 'Formation en pisciculture', cardLink: true }
-  ];
-
-  const testimonials = [
-    { name: 'Participant formation', role: 'Cuniculture', image: 'assets/images/temoignage-1.jpg', text: 'L’accompagnement m’a permis de mieux comprendre les étapes avant de lancer mon élevage. Les explications étaient claires et pratiques.' },
-    { name: 'Porteur de projet', role: 'Poulet de chair', image: 'assets/images/temoignage-2.jpg', text: 'Agri-tech m’a aidé à structurer mon idée et à voir les erreurs que je devais éviter avant d’investir.' },
-    { name: 'Jeune entrepreneur agricole', role: 'Projet agricole', image: 'assets/images/temoignage-3.jpg', text: 'Ce que j’ai apprécié, c’est l’approche directe : diagnostic, conseils techniques et orientation claire pour avancer.' }
-  ];
-
   const elements = {
     serviceGrid: document.querySelector('#serviceGrid'),
     courseGrid: document.querySelector('#courseGrid'),
@@ -81,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     newsletterStatus: document.querySelector('#newsletterStatus')
   };
 
-  const partnershipNeed = 'Partenariat';
+  const partnershipNeed = PARTNERSHIP_NEED;
   const categories = ['Tous', ...new Set(services.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
@@ -92,34 +64,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let formResetTimer = null;
   let formStatusTimer = null;
   let newsletterStatusTimer = null;
-  const FORM_STATUS_DURATION = 10000;
-  const FORM_SUCCESS_MESSAGE = 'Votre demande a bien été envoyée. Notre équipe vous recontactera dans les meilleurs délais.';
-  const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
-  const NEWSLETTER_SUCCESS_MESSAGE = 'Merci, votre inscription à la newsletter est confirmée.';
-  const NEWSLETTER_ERROR_MESSAGE = 'Inscription impossible pour le moment. Veuillez réessayer.';
 
-  function escapeHtml(value) {
-    return String(value)
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
-
-  function getDelayClass(index) {
-    if (index % 3 === 1) return 'reveal-delay-1';
-    if (index % 3 === 2) return 'reveal-delay-2';
-    return '';
-  }
-
-  function isEmailValid(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  function sanitizePhone(value) {
-    return String(value).replace(/[^0-9+\s-]/g, '').trim();
-  }
 
   function isEmailJsConfigured() {
     return Boolean(
@@ -250,23 +195,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   async function storeLead(payload) {
-    if (!EMAILJS_CONFIG.sheetEndpoint) return;
-
-    try {
-      const formData = new URLSearchParams();
-
-      Object.entries(payload).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-
-      await fetch(EMAILJS_CONFIG.sheetEndpoint, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-      });
-    } catch (error) {
-      console.warn('Stockage du lead non confirmé:', error);
-    }
+    await storeLeadRequest(EMAILJS_CONFIG, payload);
   }
 
   function setupScrollReveal(items = document.querySelectorAll('.reveal')) {
@@ -289,94 +218,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     revealItems.forEach((item) => {
       if (!item.classList.contains('is-visible')) observer.observe(item);
     });
-  }
-
-  function renderFilters() {
-    if (!elements.filters) return;
-    elements.filters.innerHTML = categories
-      .map((category, index) => `<button class="filter-btn ${index === 0 ? 'active' : ''}" type="button" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`)
-      .join('');
-  }
-
-  function renderServices(category = 'Tous') {
-    if (!elements.serviceGrid) return;
-    const visibleServices = category === 'Tous' ? services : services.filter((service) => service.category === category);
-
-    elements.serviceGrid.innerHTML = visibleServices
-      .map((service, index) => `
-        <article class="service-card reveal ${getDelayClass(index)}">
-          <img src="${escapeHtml(service.image)}" alt="${escapeHtml(service.title)}" class="service-image" width="1200" height="800" loading="lazy" decoding="async" />
-          <div class="service-content">
-            <span class="tag">${escapeHtml(service.category)}</span>
-            <h3>${escapeHtml(service.title)}</h3>
-            <p>${escapeHtml(service.text)}</p>
-            <a href="#contact" data-need="${escapeHtml(service.title)}">Demander ce service →</a>
-          </div>
-        </article>
-      `)
-      .join('');
-
-    setupScrollReveal(elements.serviceGrid.querySelectorAll('.reveal'));
-  }
-
-  function renderCourses() {
-    if (!elements.courseGrid) return;
-
-    elements.courseGrid.innerHTML = courses
-      .map((course, index) => `
-        <article class="course-card reveal ${getDelayClass(index)}"${course.cardLink ? ` data-need="${escapeHtml(course.need)}" data-contact-card="true"` : ''}>
-          <div class="course-header">
-            <img src="${escapeHtml(course.image)}" alt="${escapeHtml(course.title)}" width="1200" height="800" loading="lazy" decoding="async" />
-            <span class="course-badge">Formation</span>
-          </div>
-          <div class="course-body">
-            <h3>${escapeHtml(course.title)}</h3>
-            <p>${escapeHtml(course.text)}</p>
-            <div class="course-meta">
-              <span>${escapeHtml(course.level)}</span>
-              <span>${escapeHtml(course.duration)}</span>
-              <span>${escapeHtml(course.status)}</span>
-            </div>
-            <div class="course-price">${escapeHtml(course.price)}</div>
-            <p class="bonus">🎁 ${escapeHtml(course.bonus)}</p>
-            <a href="#contact" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="btn primary full">${escapeHtml(course.cta || 'Accéder à la formation')}</a>
-          </div>
-        </article>
-      `)
-      .join('');
-
-    setupScrollReveal(elements.courseGrid.querySelectorAll('.reveal'));
-    updateCourseCarousel();
-  }
-
-  function renderTestimonials() {
-    if (!elements.testimonialTrack) return;
-
-    elements.testimonialTrack.innerHTML = testimonials
-      .map((testimonial) => `
-        <article class="testimonial-card">
-          <img src="${escapeHtml(testimonial.image)}" alt="${escapeHtml(testimonial.name)}" class="testimonial-image" width="1200" height="800" loading="lazy" decoding="async" />
-          <div class="testimonial-content">
-            <div class="testimonial-author">
-              <strong>${escapeHtml(testimonial.name)}</strong>
-              <span>${escapeHtml(testimonial.role)}</span>
-            </div>
-            <div class="testimonial-stars" aria-label="5 étoiles">★★★★★</div>
-            <p class="testimonial-text">${escapeHtml(testimonial.text)}</p>
-          </div>
-        </article>
-      `)
-      .join('');
-
-    if (elements.testimonialDots) {
-      elements.testimonialDots.innerHTML = testimonials
-        .map((testimonial, index) => `
-          <button class="testimonial-dot" type="button" aria-label="Afficher le témoignage ${index + 1} : ${escapeHtml(testimonial.name)}" data-testimonial-index="${index}"></button>
-        `)
-        .join('');
-    }
-
-    updateTestimonialCarousel();
   }
 
   function populateSelect() {
@@ -444,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
   function updateTestimonialCarousel() {
     if (!elements.testimonialTrack) return;
-    testimonialIndex = Math.min(Math.max(testimonialIndex, 0), testimonials.length - 1);
+    testimonialIndex = clampCarouselIndex(testimonialIndex, testimonials.length);
     elements.testimonialTrack.style.transform = `translateX(-${testimonialIndex * 100}%)`;
     updateTestimonialDots();
   }
@@ -460,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function goToTestimonial(index) {
-    testimonialIndex = Math.min(Math.max(index, 0), testimonials.length - 1);
+    testimonialIndex = clampCarouselIndex(index, testimonials.length);
     updateTestimonialCarousel();
   }
 
@@ -520,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
     if (!slideCount) return;
 
-    partnershipIndex = Math.min(Math.max(partnershipIndex, 0), slideCount - 1);
+    partnershipIndex = clampCarouselIndex(partnershipIndex, slideCount);
     elements.partnershipTrack.style.transform = `translateX(-${partnershipIndex * 100}%)`;
     updatePartnershipDots(slideCount);
   }
@@ -652,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
         document.querySelectorAll('.filter-btn').forEach((item) => item.classList.remove('active'));
         button.classList.add('active');
-        renderServices(button.dataset.category);
+        renderServices({ serviceGrid: elements.serviceGrid, services, category: button.dataset.category, setupScrollReveal });
       });
     }
 
@@ -751,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         }
 
         if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', 'EmailJS n’est pas encore configuré. Ajoutez vos identifiants dans script.js.');
+          setFormStatus('error', 'EmailJS n’est pas encore configuré. Ajoutez vos identifiants dans js/config.js.');
           return;
         }
 
@@ -880,10 +721,10 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     }
   }
 
-  renderFilters();
-  renderServices();
-  renderCourses();
-  renderTestimonials();
+  renderFilters({ filters: elements.filters, categories });
+  renderServices({ serviceGrid: elements.serviceGrid, services, setupScrollReveal });
+  renderCourses({ courseGrid: elements.courseGrid, courses, setupScrollReveal, updateCourseCarousel });
+  renderTestimonials({ testimonialTrack: elements.testimonialTrack, testimonialDots: elements.testimonialDots, testimonials, updateTestimonialCarousel });
   populateSelect();
   setupEvents();
   setupCourseCarousel();
