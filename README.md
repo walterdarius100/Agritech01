@@ -5,8 +5,8 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 ## Structure principale
 
 - `index.html` : page d’accueil actuelle, conservée comme point d’entrée GitHub Pages.
-- `services.html` : page détaillée des services Agri-tech avec filtres, méthode, clients et FAQ.
-- `formations.html` : portail Agri-tech Academy avec formations disponibles, à venir, parcours et FAQ.
+- `services.html` : page détaillée des services Agri-tech avec filtres, méthode et CTA vers le contact.
+- `formations.html` : portail Agri-tech Academy avec formations disponibles, à venir, méthode pédagogique et CTA.
 - `css/main.css` : point d’entrée CSS qui importe les fichiers organisés.
 - `css/variables.css` : tokens de couleurs, ombres et variables globales.
 - `css/layout.css` : styles de base, navigation et primitives de mise en page.
@@ -25,6 +25,7 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 
 - Page d’accueil et identité visuelle existantes.
 - Pages dédiées `services.html` et `formations.html` ajoutées avec le même design.
+- Aperçus Services/Formations sur l’accueil avec CTA vers les pages complètes.
 - Footer harmonisé sur toutes les pages avec les mêmes contacts, réseaux sociaux et liens internes.
 - EmailJS avec les identifiants existants.
 - Endpoint Google Sheets existant.

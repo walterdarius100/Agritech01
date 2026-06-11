@@ -54,7 +54,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   };
 
   const partnershipNeed = PARTNERSHIP_NEED;
-  const categories = ['Tous', ...new Set(services.map((service) => service.category))];
+  const featuredServices = services.slice(0, 6);
+  const featuredCourses = courses.slice(0, 3);
+  const categories = ['Tous', ...new Set(featuredServices.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
   let partnershipIndex = 0;
@@ -262,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (!elements.courseGrid) return;
 
     const visible = getVisibleCourseCount();
-    const maxIndex = Math.max(0, courses.length - visible);
+    const maxIndex = Math.max(0, featuredCourses.length - visible);
 
     if (courseIndex > maxIndex) courseIndex = maxIndex;
 
@@ -274,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     updateCourseDots(maxIndex);
   }
 
-  function updateCourseDots(maxIndex = Math.max(0, courses.length - getVisibleCourseCount())) {
+  function updateCourseDots(maxIndex = Math.max(0, featuredCourses.length - getVisibleCourseCount())) {
     if (!elements.courseDots) return;
 
     const pages = maxIndex + 1;
@@ -293,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
   function moveCourseCarousel(direction) {
     const visible = getVisibleCourseCount();
-    const maxIndex = Math.max(0, courses.length - visible);
+    const maxIndex = Math.max(0, featuredCourses.length - visible);
     courseIndex = Math.min(Math.max(courseIndex + direction, 0), maxIndex);
     updateCourseCarousel();
   }
@@ -508,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
         document.querySelectorAll('.filter-btn').forEach((item) => item.classList.remove('active'));
         button.classList.add('active');
-        renderServices({ serviceGrid: elements.serviceGrid, services, category: button.dataset.category, setupScrollReveal });
+        renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, category: button.dataset.category, setupScrollReveal });
       });
     }
 
@@ -723,7 +725,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
     console.assert(elements.partnershipTrack === null || getPartnershipSlideCount() === 3, 'Test échoué : 3 cartes partenariats attendues.');
     console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
-    console.assert(elements.courseGrid === null || elements.courseGrid.children.length === courses.length, 'Test échoué : toutes les formations doivent être rendues.');
+    console.assert(elements.serviceGrid === null || elements.serviceGrid.children.length <= featuredServices.length, 'Test échoué : aperçu services attendu.');
+    console.assert(elements.courseGrid === null || elements.courseGrid.children.length === featuredCourses.length, 'Test échoué : aperçu formations attendu.');
     console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
     if (elements.needSelect && elements.submitBtn) {
       const originalNeed = elements.needSelect.value;
@@ -737,8 +740,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   renderFilters({ filters: elements.filters, categories });
-  renderServices({ serviceGrid: elements.serviceGrid, services, setupScrollReveal });
-  renderCourses({ courseGrid: elements.courseGrid, courses, setupScrollReveal, updateCourseCarousel });
+  renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, setupScrollReveal });
+  renderCourses({ courseGrid: elements.courseGrid, courses: featuredCourses, setupScrollReveal, updateCourseCarousel });
   renderTestimonials({ testimonialTrack: elements.testimonialTrack, testimonialDots: elements.testimonialDots, testimonials, updateTestimonialCarousel });
   populateSelect();
   selectNeedFromExternalLink();
