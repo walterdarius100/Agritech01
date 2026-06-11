@@ -34,8 +34,10 @@
 .page-cta .eyebrow{color:var(--gold)}
 .page-cta .btn{background:#fff;color:var(--green-900);box-shadow:none;white-space:nowrap}
 .page-cta .hero-actions{justify-content:flex-end;margin-top:0}
+.page-cta-single .hero-actions{min-width:max-content}
+.page-cta-single .btn{min-width:210px}
 .nav-links a[aria-current="page"]{color:var(--green-700)}
-@media(max-width:900px){.page-intro{grid-template-columns:1fr}.detail-grid,.detail-grid.two-col,.audience-grid{grid-template-columns:repeat(2,1fr)}.page-cta{align-items:flex-start;flex-direction:column;margin-left:20px;margin-right:20px}.compact-steps{grid-template-columns:1fr}}
+@media(max-width:900px){.page-intro{grid-template-columns:1fr}.detail-grid,.detail-grid.two-col,.audience-grid{grid-template-columns:repeat(2,1fr)}.page-cta{align-items:flex-start;flex-direction:column;margin-left:20px;margin-right:20px}.page-cta-single .hero-actions{min-width:0}.compact-steps{grid-template-columns:1fr}}
 @media(max-width:620px){.page-hero{min-height:auto}.mini-metrics,.detail-grid,.detail-grid.two-col,.audience-grid{grid-template-columns:1fr}.detail-card>img{height:190px}.page-cta{margin-left:16px;margin-right:16px;margin-bottom:58px;padding:28px;border-radius:26px}.page-cta .hero-actions{width:100%}.page-cta .btn{width:100%}}
 
 
