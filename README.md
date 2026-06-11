@@ -25,10 +25,12 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 
 - Page d’accueil et identité visuelle existantes.
 - Pages dédiées `services.html` et `formations.html` ajoutées avec le même design.
+- Footer harmonisé sur toutes les pages avec les mêmes contacts, réseaux sociaux et liens internes.
 - EmailJS avec les identifiants existants.
 - Endpoint Google Sheets existant.
 - Formulaire de contact avec validation, honeypot anti-spam et consentement.
 - Préremplissage automatique du type de demande depuis les pages dédiées via les liens `index.html?need=...#contact`.
+- Newsletter footer active sur les pages dédiées via EmailJS et le même endpoint Google Sheets.
 - Newsletter du footer.
 - Menu mobile.
 - Carrousels formations, témoignages et partenariats.
