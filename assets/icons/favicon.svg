@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Agri-tech">
+  <rect width="64" height="64" rx="16" fill="#0f3d2e"/>
+  <path d="M18 43c18-2 29-13 31-28-16 2-27 10-31 28Z" fill="#e8f5ee"/>
+  <path d="M18 43c8-8 17-15 31-28" fill="none" stroke="#176b48" stroke-width="4" stroke-linecap="round"/>
+  <path d="M17 47h30" stroke="#f2b84b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M24 47 33 22l9 25" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 38h10" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</svg>
