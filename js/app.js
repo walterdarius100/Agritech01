@@ -237,6 +237,21 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     updateMessageFieldVisibility();
   }
 
+
+  function selectNeedFromExternalLink() {
+    if (!elements.needSelect) return;
+
+    const requestedNeed = new URLSearchParams(window.location.search).get('need');
+    if (!requestedNeed) return;
+
+    if (![...elements.needSelect.options].some((option) => option.value === requestedNeed)) {
+      elements.needSelect.add(new Option(requestedNeed, requestedNeed));
+    }
+
+    elements.needSelect.value = requestedNeed;
+    updateMessageFieldVisibility();
+  }
+
   function getVisibleCourseCount() {
     if (window.innerWidth <= 620) return 1;
     if (window.innerWidth <= 900) return 2;
@@ -726,6 +741,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   renderCourses({ courseGrid: elements.courseGrid, courses, setupScrollReveal, updateCourseCarousel });
   renderTestimonials({ testimonialTrack: elements.testimonialTrack, testimonialDots: elements.testimonialDots, testimonials, updateTestimonialCarousel });
   populateSelect();
+  selectNeedFromExternalLink();
   setupEvents();
   setupCourseCarousel();
   setupTestimonialCarousel();

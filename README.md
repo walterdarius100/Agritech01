@@ -5,25 +5,30 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 ## Structure principale
 
 - `index.html` : page d’accueil actuelle, conservée comme point d’entrée GitHub Pages.
+- `services.html` : page détaillée des services Agri-tech avec filtres, méthode, clients et FAQ.
+- `formations.html` : portail Agri-tech Academy avec formations disponibles, à venir, parcours et FAQ.
 - `css/main.css` : point d’entrée CSS qui importe les fichiers organisés.
 - `css/variables.css` : tokens de couleurs, ombres et variables globales.
 - `css/layout.css` : styles de base, navigation et primitives de mise en page.
 - `css/components.css` : boutons, cartes, formulaires, carrousels et animations réutilisables.
 - `css/pages/home.css` : sections propres à la page d’accueil et règles responsive.
-- `js/app.js` : bootstrap de la page d’accueil et orchestration des modules.
+- `js/app.js` : bootstrap de la page d’accueil, orchestration des modules et préremplissage du formulaire via `?need=`.
 - `js/config.js` : configuration EmailJS et endpoint Google Sheets existants.
-- `js/data/` : données services, formations et témoignages.
+- `js/data/` : données services, formations et témoignages utilisées par l’accueil et les pages dédiées.
 - `js/components/` : rendu des services, formations, témoignages et helpers composants.
 - `js/utils/` : fonctions de sanitisation et de validation.
+- `js/pages/` : scripts propres aux pages Services et Formations.
 - `data/` : emplacement réservé aux futurs contenus structurés.
 - `assets/images/services/`, `assets/images/formations/`, `assets/images/articles/` : dossiers prêts pour les prochaines pages.
 
 ## Fonctionnalités conservées
 
 - Page d’accueil et identité visuelle existantes.
+- Pages dédiées `services.html` et `formations.html` ajoutées avec le même design.
 - EmailJS avec les identifiants existants.
 - Endpoint Google Sheets existant.
 - Formulaire de contact avec validation, honeypot anti-spam et consentement.
+- Préremplissage automatique du type de demande depuis les pages dédiées via les liens `index.html?need=...#contact`.
 - Newsletter du footer.
 - Menu mobile.
 - Carrousels formations, témoignages et partenariats.
@@ -34,8 +39,8 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 
 L’architecture est prête pour ajouter progressivement :
 
-- `services.html` ou une route dédiée Services avec ses données dans `js/data/services.js` ou `data/`.
-- `formations.html` avec les formations dans `js/data/formations.js`.
+- l’enrichissement de `services.html` depuis `js/data/services.js` ou `data/`.
+- l’enrichissement de `formations.html` depuis `js/data/formations.js`.
 - `actualites.html` avec les articles et images dans `assets/images/articles/`.
 - une page `admin.html` ou un espace d’administration statique selon les besoins GitHub Pages.
 
