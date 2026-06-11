@@ -1,4 +1,7 @@
+import { initFloatingActions } from '../components/floating-actions.js';
+
 export function initMobileMenu() {
+  initFloatingActions();
   const menuBtn = document.querySelector('#menuBtn');
   const navLinks = document.querySelector('#navLinks');
   if (!menuBtn || !navLinks) return;
