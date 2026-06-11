@@ -1,5 +1,6 @@
 import { escapeHtml } from '../utils/sanitize.js';
-import { formatArticleDate, getPublishedArticles } from '../components/render-articles.js';
+import { formatArticleDate } from '../components/render-articles.js';
+import { getArticleBySlug } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
 
 const articleContainer = document.querySelector('#articleContent');
@@ -16,7 +17,7 @@ function renderNotFound() {
           <span class="eyebrow">Actualités</span>
           <h1>Article introuvable</h1>
           <p>L’article demandé n’existe pas ou n’est plus disponible.</p>
-          <a href="actualites.html" class="btn primary">Retour aux actualités</a>
+          <a href="actualites.html" class="article-back-link">← Retour aux actualités</a>
         </section>
       </div>
     </section>
@@ -30,7 +31,7 @@ function renderArticle(article) {
   const metaDescription = document.querySelector('meta[name="description"]');
   if (metaDescription) metaDescription.setAttribute('content', article.excerpt);
 
-  const paragraphs = Array.isArray(article.content) ? article.content : [article.content];
+  const paragraphs = Array.isArray(article.content) ? article.content : String(article.content || '').split(/\n{2,}/).filter(Boolean);
 
   articleContainer.innerHTML = `
     <article>
@@ -46,7 +47,7 @@ function renderArticle(article) {
         </div>
       </section>
       <section class="section-pad article-layout">
-        <img class="article-cover reveal" src="${escapeHtml(article.coverImage)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
+        <img class="article-cover reveal" src="${escapeHtml(article.coverImage || 'assets/images/logo-agritech.png')}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
         <div class="article-content reveal">
           ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
         </div>
@@ -66,8 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    const articles = await getPublishedArticles();
-    const article = articles.find((item) => item.slug === slug);
+    const article = await getArticleBySlug(slug);
 
     if (!article) {
       renderNotFound();

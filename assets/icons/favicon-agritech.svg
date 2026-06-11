@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Agri-tech">
+  <rect width="64" height="64" rx="14" fill="#176b48"/>
+  <path d="M32 49c-9.4-6.2-14-14.1-13.5-23.5 8.7.5 15.9 4.8 21.5 12.9-1.4-7.8 1.1-14.2 7.4-19.4 3.7 10.1 1.9 18.5-5.4 25.3-3.2 3-6.5 4.5-10 4.7Z" fill="#fff"/>
+  <path d="M20 24c7.8 5.2 13.6 11.8 17.5 20M47 20c-4.2 8-9.2 15-15 21" fill="none" stroke="#176b48" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
+</svg>
