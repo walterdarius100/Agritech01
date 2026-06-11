@@ -7,6 +7,8 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 - `index.html` : page d’accueil actuelle, conservée comme point d’entrée GitHub Pages.
 - `services.html` : page détaillée des services Agri-tech avec filtres, méthode et CTA vers le contact.
 - `formations.html` : portail Agri-tech Academy avec formations disponibles, à venir, méthode pédagogique et CTA.
+- `actualites.html` : liste des articles publiés avec filtres par catégorie.
+- `article.html` : gabarit d’article complet chargé par slug dans l’URL.
 - `politique-confidentialite.html` : page légale dédiée aux données personnelles, formulaires, newsletter et outils tiers.
 - `mentions-legales.html` : page légale dédiée à l’éditeur, aux contenus, responsabilités et contacts.
 - `css/main.css` : point d’entrée CSS qui importe les fichiers organisés.
@@ -19,8 +21,9 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 - `js/data/` : données services, formations et témoignages utilisées par l’accueil et les pages dédiées.
 - `js/components/` : rendu des services, formations, témoignages et helpers composants.
 - `js/utils/` : fonctions de sanitisation et de validation.
-- `js/pages/` : scripts propres aux pages Services et Formations.
+- `js/pages/` : scripts propres aux pages Services, Formations, Actualités et pages légales.
 - `data/` : emplacement réservé aux futurs contenus structurés.
+- `data/articles.json` : source des actualités publiées, prête pour une future connexion admin.
 - `assets/images/services/`, `assets/images/formations/`, `assets/images/articles/` : dossiers prêts pour les prochaines pages.
 
 ## Fonctionnalités conservées
@@ -28,6 +31,7 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 - Page d’accueil et identité visuelle existantes.
 - Pages dédiées `services.html` et `formations.html` ajoutées avec le même design.
 - Aperçus Services/Formations sur l’accueil avec CTA vers les pages complètes.
+- Actualités publiées depuis `data/articles.json`, avec aperçu accueil, page liste, filtres et page article par slug.
 - Footer harmonisé sur toutes les pages avec les mêmes contacts, réseaux sociaux et liens internes.
 - Pages légales accessibles uniquement depuis le footer.
 - EmailJS avec les identifiants existants.
@@ -47,7 +51,7 @@ L’architecture est prête pour ajouter progressivement :
 
 - l’enrichissement de `services.html` depuis `js/data/services.js` ou `data/`.
 - l’enrichissement de `formations.html` depuis `js/data/formations.js`.
-- `actualites.html` avec les articles et images dans `assets/images/articles/`.
+- l’enrichissement d’`actualites.html` depuis `data/articles.json` et `assets/images/articles/`.
 - une page `admin.html` ou un espace d’administration statique selon les besoins GitHub Pages.
 
 ## Configuration EmailJS et Google Sheets

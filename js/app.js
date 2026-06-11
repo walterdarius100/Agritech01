@@ -5,6 +5,7 @@ import { testimonials } from './data/testimonials.js';
 import { renderCourses } from './components/render-formations.js';
 import { renderFilters, renderServices } from './components/render-services.js';
 import { renderTestimonials } from './components/render-testimonials.js';
+import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
@@ -50,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     newsletterForm: document.querySelector('#newsletterForm'),
     newsletterEmailInput: document.querySelector('#newsletterEmail'),
     newsletterSubmitBtn: document.querySelector('#newsletterSubmit'),
-    newsletterStatus: document.querySelector('#newsletterStatus')
+    newsletterStatus: document.querySelector('#newsletterStatus'),
+    homeArticlesGrid: document.querySelector('#homeArticlesGrid')
   };
 
   const partnershipNeed = PARTNERSHIP_NEED;
@@ -220,6 +222,19 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     revealItems.forEach((item) => {
       if (!item.classList.contains('is-visible')) observer.observe(item);
     });
+  }
+
+  async function renderHomeArticles() {
+    if (!elements.homeArticlesGrid) return;
+
+    try {
+      const articles = await getPublishedArticles();
+      renderArticleCards({ container: elements.homeArticlesGrid, articles: articles.slice(0, 3) });
+      setupScrollReveal(elements.homeArticlesGrid.querySelectorAll('.reveal'));
+    } catch (error) {
+      console.error('Erreur actualités:', error);
+      renderArticleCards({ container: elements.homeArticlesGrid, articles: [], emptyMessage: 'Les actualités sont indisponibles pour le moment.' });
+    }
   }
 
   function populateSelect() {
@@ -743,6 +758,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, setupScrollReveal });
   renderCourses({ courseGrid: elements.courseGrid, courses: featuredCourses, setupScrollReveal, updateCourseCarousel });
   renderTestimonials({ testimonialTrack: elements.testimonialTrack, testimonialDots: elements.testimonialDots, testimonials, updateTestimonialCarousel });
+  renderHomeArticles();
   populateSelect();
   selectNeedFromExternalLink();
   setupEvents();
