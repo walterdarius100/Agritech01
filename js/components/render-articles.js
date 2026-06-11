@@ -17,6 +17,38 @@ export function formatArticleDate(value) {
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date(value));
 }
 
+
+export function getFeaturedArticle(articles) {
+  const featuredArticles = articles.filter((article) => article.featured === true);
+  return (featuredArticles.length ? featuredArticles : articles)[0] || null;
+}
+
+export function renderFeaturedArticle({ container, article }) {
+  if (!container) return;
+
+  if (!article) {
+    container.innerHTML = '<p class="empty-state">Aucun article à la une pour le moment.</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <article class="featured-article reveal is-visible">
+      <a class="featured-article-image" href="article.html?slug=${encodeURIComponent(article.slug)}" aria-label="Lire : ${escapeHtml(article.title)}">
+        <img src="${escapeHtml(article.coverImage)}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
+      </a>
+      <div class="featured-article-body">
+        <div class="article-meta">
+          <span class="tag">${escapeHtml(article.category)}</span>
+          <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
+        </div>
+        <h3><a href="article.html?slug=${encodeURIComponent(article.slug)}">${escapeHtml(article.title)}</a></h3>
+        <p>${escapeHtml(article.excerpt)}</p>
+        <a href="article.html?slug=${encodeURIComponent(article.slug)}" class="btn primary">Lire l’article</a>
+      </div>
+    </article>
+  `;
+}
+
 export function renderArticleCards({ container, articles, emptyMessage = 'Aucune actualité publiée pour le moment.' }) {
   if (!container) return;
 

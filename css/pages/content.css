@@ -69,3 +69,23 @@
 .article-byline span,.article-byline time{background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:999px;padding:8px 12px}
 @media(max-width:900px){.article-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.article-grid{grid-template-columns:1fr}.article-card-image{height:185px}.article-cover{border-radius:24px}}
+.featured-article{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:stretch;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:30px;box-shadow:var(--shadow)}
+.featured-article-image{min-height:330px;background:var(--green-100);overflow:hidden}
+.featured-article-image img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+.featured-article:hover .featured-article-image img{transform:scale(1.03)}
+.featured-article-body{display:flex;flex-direction:column;justify-content:center;gap:14px;padding:clamp(24px,4vw,44px)}
+.featured-article-body h3{font-size:clamp(1.65rem,3vw,2.75rem);line-height:1.02;letter-spacing:-.04em;margin:0}
+.featured-article-body p{color:var(--muted);margin:0}
+.featured-article-body .btn{width:max-content;margin-top:8px}
+.articles-pagination{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
+.pagination-link,.pagination-status{border:1px solid var(--border);border-radius:999px;background:#fff;padding:10px 14px;font-weight:900;color:var(--green-900)}
+.pagination-link{transition:transform .2s ease,background-color .2s ease,color .2s ease}
+.pagination-link:hover{background:var(--green-900);color:#fff;transform:translateY(-1px)}
+.pagination-link.is-disabled{color:var(--muted);opacity:.58;pointer-events:none}
+.article-cover{border-radius:16px;box-shadow:none}
+.article-content{max-width:780px;margin:0 auto;font-size:1.08rem;line-height:1.85;color:var(--ink)}
+.article-content p{color:var(--ink);margin:0 0 20px}
+.article-back-link{display:flex;width:max-content;margin:26px auto 0;color:var(--green-700);font-weight:900;transition:color .2s ease,transform .2s ease}
+.article-back-link:hover{color:var(--green-900);transform:translateX(-2px)}
+@media(max-width:900px){.featured-article{grid-template-columns:1fr}.featured-article-image{min-height:280px}.featured-article-body .btn{width:100%}}
+@media(max-width:620px){.featured-article{border-radius:24px}.featured-article-image{min-height:220px}.article-cover{border-radius:12px}.articles-pagination{align-items:stretch;flex-direction:column}.pagination-link,.pagination-status{text-align:center}}

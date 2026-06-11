@@ -47,20 +47,10 @@ function renderArticle(article) {
       </section>
       <section class="section-pad article-layout">
         <img class="article-cover reveal" src="${escapeHtml(article.coverImage)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
-        <div class="article-content legal-card reveal">
+        <div class="article-content reveal">
           ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
         </div>
-      </section>
-      <section class="section-pad page-cta reveal">
-        <div>
-          <span class="eyebrow">Un projet à structurer ?</span>
-          <h2>Parlez-nous de votre besoin agricole.</h2>
-          <p>Agri-tech peut vous orienter vers un service, une formation ou un accompagnement adapté.</p>
-        </div>
-        <div class="hero-actions">
-          <a href="index.html#contact" class="btn primary">Contacter Agri-tech</a>
-          <a href="#newsletterForm" class="btn secondary">Recevoir la newsletter</a>
-        </div>
+        <a href="actualites.html" class="article-back-link reveal">← Retour aux actualités</a>
       </section>
     </article>
   `;

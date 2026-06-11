@@ -49,12 +49,22 @@
 
     <section class="section-pad">
       <div class="section-head reveal">
+        <span class="eyebrow">À la une</span>
+        <h2>Article à la une.</h2>
+        <p>Le contenu prioritaire sélectionné par Agri-tech, ou automatiquement le plus récent article publié.</p>
+      </div>
+      <div id="featuredArticle"></div>
+    </section>
+
+    <section class="section-pad">
+      <div class="section-head reveal">
         <span class="eyebrow">Publications</span>
-        <h2>Toutes les actualités publiées.</h2>
-        <p>Filtrez par catégorie pour trouver rapidement les contenus utiles à votre projet.</p>
+        <h2>Les autres actualités publiées.</h2>
+        <p>Filtrez par catégorie et parcourez les articles récents, quatre contenus à la fois.</p>
       </div>
       <div class="filters reveal reveal-delay-1" id="articleFilters" aria-label="Filtres d’actualités"></div>
       <div class="article-grid" id="articlesGrid"></div>
+      <nav class="articles-pagination" id="articlesPagination" aria-label="Pagination des actualités"></nav>
     </section>
 
     <section class="section-pad page-cta reveal">

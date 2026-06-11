@@ -13,7 +13,8 @@
       "Un projet agricole rentable commence rarement par l’achat du matériel. Il commence par une compréhension claire du besoin, du marché, du site disponible, des ressources et des contraintes locales.",
       "Avant d’investir, Agri-tech recommande de clarifier le modèle de production, les objectifs de vente, les coûts de démarrage, la disponibilité de l’eau, la main-d’œuvre et les risques sanitaires ou climatiques.",
       "Un diagnostic simple permet d’éviter les dépenses inutiles et de construire un plan d’action réaliste. Cette étape aide aussi à choisir la bonne échelle de démarrage et les priorités techniques."
-    ]
+    ],
+    "featured": true
   },
   {
     "id": 2,
@@ -64,6 +65,54 @@
     ]
   },
   {
+    "id": 6,
+    "title": "Compostage : améliorer le sol avec les ressources disponibles",
+    "slug": "compostage-ameliorer-sol-ressources-disponibles",
+    "category": "Conseils",
+    "excerpt": "Le compostage aide à valoriser les résidus organiques et à renforcer la fertilité du sol avec une méthode progressive et accessible.",
+    "coverImage": "assets/images/pepiniere.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-05-08",
+    "status": "published",
+    "content": [
+      "Le compostage permet de transformer des matières organiques disponibles localement en amendement utile pour les cultures. Il demande une bonne alternance entre matières sèches, matières humides, air et humidité.",
+      "Pour démarrer, il est préférable de choisir une zone propre, protégée des excès d’eau et facile à surveiller. Les retournements réguliers favorisent une décomposition homogène et limitent les mauvaises odeurs.",
+      "Le compost ne remplace pas toujours un plan complet de fertilisation, mais il améliore la structure du sol et peut réduire certaines dépenses lorsqu’il est bien préparé."
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Pépinière : organiser la production de jeunes plants",
+    "slug": "pepiniere-organiser-production-jeunes-plants",
+    "category": "Production végétale",
+    "excerpt": "Une pépinière bien organisée sécurise la qualité des plants, facilite le suivi et réduit les pertes avant la mise en terre.",
+    "coverImage": "assets/images/pepiniere.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-04-27",
+    "status": "published",
+    "content": [
+      "La réussite d’une pépinière dépend de l’organisation : choix du substrat, arrosage, ombrage, protection, identification des lots et calendrier de repiquage.",
+      "Un espace propre et bien drainé limite les maladies et facilite la surveillance quotidienne. Les jeunes plants doivent être regroupés selon leur stade afin d’adapter l’arrosage et la lumière.",
+      "Agri-tech recommande de documenter les semis, les dates et les pertes observées pour améliorer les cycles suivants et mieux planifier les ventes ou les plantations."
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Apiculture : les premières questions avant d’installer des ruches",
+    "slug": "apiculture-premieres-questions-installer-ruches",
+    "category": "Élevage",
+    "excerpt": "Avant d’installer des ruches, il faut analyser l’environnement, les ressources florales, l’accès au site et les compétences de suivi.",
+    "coverImage": "assets/images/apiculture.jpg",
+    "author": "Agri-tech",
+    "publishedAt": "2026-04-15",
+    "status": "published",
+    "content": [
+      "L’apiculture peut être une activité intéressante, mais elle nécessite une observation attentive du site. Les ressources florales, la présence d’eau, les traitements agricoles voisins et la sécurité doivent être évalués.",
+      "Le producteur doit aussi prévoir du matériel adapté, une protection correcte et un calendrier de visites. Une ruche mal suivie peut rapidement perdre en performance ou devenir difficile à gérer.",
+      "Un démarrage encadré aide à comprendre le comportement des colonies, à limiter les erreurs et à construire progressivement une activité durable."
+    ]
+  },
+  {
     "id": 5,
     "title": "Note interne : calendrier éditorial Academy",
     "slug": "calendrier-editorial-academy",
@@ -73,6 +122,8 @@
     "author": "Agri-tech",
     "publishedAt": "2026-06-12",
     "status": "draft",
-    "content": ["Contenu non publié."]
+    "content": [
+      "Contenu non publié."
+    ]
   }
 ]

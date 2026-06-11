@@ -31,7 +31,7 @@ Site vitrine Agri-Tech pour présenter les services agricoles, les formations, l
 - Page d’accueil et identité visuelle existantes.
 - Pages dédiées `services.html` et `formations.html` ajoutées avec le même design.
 - Aperçus Services/Formations sur l’accueil avec CTA vers les pages complètes.
-- Actualités publiées depuis `data/articles.json`, avec aperçu accueil, page liste, filtres et page article par slug.
+- Actualités publiées depuis `data/articles.json`, avec aperçu accueil, article à la une, pagination, filtres et page article par slug.
 - Footer harmonisé sur toutes les pages avec les mêmes contacts, réseaux sociaux et liens internes.
 - Pages légales accessibles uniquement depuis le footer.
 - EmailJS avec les identifiants existants.
