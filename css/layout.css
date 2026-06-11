@@ -17,7 +17,6 @@ img{max-width:100%;display:block}
 .brand small{display:block;color:var(--muted);margin-top:0}
 .nav-links{display:flex;align-items:center;gap:24px;font-weight:700}
 .nav-links a:hover{color:var(--green-700)}
-.nav-cta{background:var(--green-900);color:#fff!important;padding:10px 16px;border-radius:999px}
 .menu-btn{display:none;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:14px;background:transparent;color:var(--green-900);cursor:pointer;transition:background-color .2s ease,transform .2s ease}
 .menu-btn:hover{background:rgba(15,61,46,.08)}
 .menu-btn:active{transform:scale(.96)}

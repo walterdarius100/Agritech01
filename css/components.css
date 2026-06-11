@@ -1,7 +1,7 @@
 /* Reusable buttons, cards, forms, carousels and animation utilities. */
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:13px 20px;border-radius:999px;font-weight:900;border:1px solid transparent;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease}
 .btn:hover{transform:translateY(-2px)}
-.btn:focus-visible,.filter-btn:focus-visible,.course-nav:focus-visible,.course-dot:focus-visible,.carousel-btn:focus-visible,.testimonial-dot:focus-visible,.menu-btn:focus-visible,.nav-links a:focus-visible,.social-links a:focus-visible{outline:3px solid rgba(242,184,75,.62);outline-offset:3px}
+.btn:focus-visible,.filter-btn:focus-visible,.course-nav:focus-visible,.course-dot:focus-visible,.carousel-btn:focus-visible,.testimonial-dot:focus-visible,.menu-btn:focus-visible,.nav-links a:focus-visible,.social-links a:focus-visible,.floating-action:focus-visible{outline:3px solid rgba(242,184,75,.62);outline-offset:3px}
 .btn:disabled{opacity:.65;cursor:not-allowed;transform:none}
 .primary{background:var(--green-900);color:#fff;box-shadow:0 14px 30px rgba(15,61,46,.22)}
 .secondary{background:#fff;border-color:var(--border)}
@@ -117,3 +117,17 @@ input:focus,textarea:focus,select:focus{border-color:var(--green-700);box-shadow
 .reveal-delay-1{transition-delay:.08s}
 .reveal-delay-2{transition-delay:.16s}
 .reveal-delay-3{transition-delay:.24s}
+
+.floating-actions{position:fixed;right:clamp(20px,3vw,28px);bottom:clamp(24px,3vw,32px);z-index:90;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
+.floating-action{width:52px;height:52px;padding:0;border:1px solid rgba(255,255,255,.18);border-radius:50%;display:grid;place-items:center;color:#fff;box-shadow:0 14px 30px rgba(6,40,31,.22);cursor:pointer;pointer-events:auto;transition:transform .22s ease,box-shadow .22s ease,background-color .22s ease,opacity .22s ease,visibility .22s ease}
+.floating-action svg{width:23px;height:23px;fill:currentColor}
+.floating-action-top{background:var(--green-900)}
+.floating-action-top:not(.is-visible){opacity:0;visibility:hidden;pointer-events:none;transform:translateY(8px) scale(.92)}
+.floating-action-share{background:var(--green-700)}
+.floating-action:hover{transform:translateY(-3px);box-shadow:0 18px 36px rgba(6,40,31,.28)}
+.floating-action:active{transform:scale(.96)}
+.floating-action-status{position:absolute;right:0;bottom:calc(100% + 12px);width:max-content;max-width:min(260px,calc(100vw - 40px));padding:9px 12px;border-radius:999px;background:rgba(15,61,46,.94);color:#fff;font-size:.84rem;font-weight:800;box-shadow:0 12px 26px rgba(6,40,31,.18);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .2s ease,visibility .2s ease,transform .2s ease;pointer-events:none}
+.floating-action-status.is-visible{opacity:1;visibility:visible;transform:translateY(0)}
+
+@media(max-width:620px){.floating-actions{right:16px;bottom:18px;gap:10px}.floating-action{width:46px;height:46px}.floating-action svg{width:21px;height:21px}}
+@media(prefers-reduced-motion:reduce){.floating-action,.floating-action-status{transition:none}.floating-action:hover{transform:none}.floating-action:active{transform:none}}
