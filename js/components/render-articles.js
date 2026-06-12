@@ -4,9 +4,19 @@ import { escapeHtml } from '../utils/sanitize.js';
 import { getDelayClass } from '../utils/validation.js';
 
 export function formatArticleDate(value) {
-  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date non renseignée';
+
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(date);
 }
 
+function getArticleUrl(article) {
+  return `article.html?slug=${encodeURIComponent(article?.slug || '')}`;
+}
+
+function getArticleImage(article) {
+  return article?.coverImage || 'assets/images/logo-agritech.png';
+}
 
 export function renderFeaturedArticle({ container, article }) {
   if (!container) return;
@@ -18,23 +28,23 @@ export function renderFeaturedArticle({ container, article }) {
 
   container.innerHTML = `
     <article class="featured-article reveal is-visible">
-      <a class="featured-article-image" href="article.html?slug=${encodeURIComponent(article.slug)}" aria-label="Lire : ${escapeHtml(article.title)}">
-        <img src="${escapeHtml(article.coverImage || 'assets/images/logo-agritech.png')}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
+      <a class="featured-article-image" href="${getArticleUrl(article)}" aria-label="Lire : ${escapeHtml(article.title)}">
+        <img src="${escapeHtml(getArticleImage(article))}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
       </a>
       <div class="featured-article-body">
         <div class="article-meta">
           <span class="tag">${escapeHtml(article.category)}</span>
           <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
         </div>
-        <h3><a href="article.html?slug=${encodeURIComponent(article.slug)}">${escapeHtml(article.title)}</a></h3>
+        <h3><a href="${getArticleUrl(article)}">${escapeHtml(article.title)}</a></h3>
         <p>${escapeHtml(article.excerpt)}</p>
-        <a href="article.html?slug=${encodeURIComponent(article.slug)}" class="btn primary">Lire l’article</a>
+        <a href="${getArticleUrl(article)}" class="btn primary">Lire l’article</a>
       </div>
     </article>
   `;
 }
 
-export function renderArticleCards({ container, articles, emptyMessage = 'Aucune actualité publiée pour le moment.' }) {
+export function renderArticleCards({ container, articles = [], emptyMessage = 'Aucune actualité publiée pour le moment.' }) {
   if (!container) return;
 
   if (!articles.length) {
@@ -45,17 +55,17 @@ export function renderArticleCards({ container, articles, emptyMessage = 'Aucune
   container.innerHTML = articles
     .map((article, index) => `
       <article class="article-card reveal ${getDelayClass(index)}">
-        <a class="article-card-image" href="article.html?slug=${encodeURIComponent(article.slug)}" aria-label="Lire : ${escapeHtml(article.title)}">
-          <img src="${escapeHtml(article.coverImage || 'assets/images/logo-agritech.png')}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
+        <a class="article-card-image" href="${getArticleUrl(article)}" aria-label="Lire : ${escapeHtml(article.title)}">
+          <img src="${escapeHtml(getArticleImage(article))}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
         </a>
         <div class="article-card-body">
           <div class="article-meta">
             <span class="tag">${escapeHtml(article.category)}</span>
             <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
           </div>
-          <h3><a href="article.html?slug=${encodeURIComponent(article.slug)}">${escapeHtml(article.title)}</a></h3>
+          <h3><a href="${getArticleUrl(article)}">${escapeHtml(article.title)}</a></h3>
           <p>${escapeHtml(article.excerpt)}</p>
-          <a href="article.html?slug=${encodeURIComponent(article.slug)}" class="card-link">Lire l’article →</a>
+          <a href="${getArticleUrl(article)}" class="card-link">Lire l’article →</a>
         </div>
       </article>
     `)

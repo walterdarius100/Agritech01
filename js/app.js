@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function setupScrollReveal(items = document.querySelectorAll('.reveal')) {
-    const revealItems = Array.from(items);
+    const revealItems = Array.from(items || []);
     if (!revealItems.length) return;
 
     if (!('IntersectionObserver' in window)) {
@@ -588,7 +588,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
     }
 
-    window.addEventListener('resize', scheduleCarouselResizeUpdate, { passive: true });
+    if (elements.courseGrid || elements.partnershipTrack) {
+      window.addEventListener('resize', scheduleCarouselResizeUpdate, { passive: true });
+    }
 
     if (elements.form) {
       elements.form.addEventListener('submit', async (event) => {
