@@ -210,7 +210,10 @@ function renderArticle(article, relatedArticles = []) {
         <div class="article-cover-wrap reveal">
           <img class="article-cover" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
           <button class="article-share-button" type="button" aria-label="Partager cet article" title="Partager cet article">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
+            <span class="share-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
+            </span>
+            <span>Partager</span>
           </button>
           <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
