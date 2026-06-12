@@ -1,6 +1,7 @@
 import { EMAILJS_CONFIG, FORM_STATUS_DURATION, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE } from '../config.js';
 import { storeLead } from '../components/contact-form.js';
 import { isEmailValid } from '../utils/validation.js';
+import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 
 function isEmailJsConfigured() {
   return Boolean(EMAILJS_CONFIG.publicKey && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.templateId);
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!window.emailjs || !isEmailJsConfigured()) {
-      setStatus('error', 'EmailJS n’est pas encore configuré.');
+      setStatus('error', NEWSLETTER_ERROR_MESSAGE);
       return;
     }
 
@@ -90,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus('success', NEWSLETTER_SUCCESS_MESSAGE, true);
       form.reset();
     } catch (error) {
-      console.error('Erreur newsletter:', error);
-      setStatus('error', NEWSLETTER_ERROR_MESSAGE, true);
+      logClientError('newsletter', error);
+      setStatus('error', getSafeErrorMessage('newsletter', error), true);
     } finally {
       setSubmitState(false);
     }

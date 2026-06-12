@@ -1,4 +1,5 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
+import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 import {
   archiveArticle,
   createArticle,
@@ -150,14 +151,8 @@ function showDashboard() {
   updateDiagnostics();
 }
 
-function getFriendlyError(error) {
-  const message = String(error?.message || error || 'Erreur inconnue');
-  if (/Invalid login credentials/i.test(message)) return 'Identifiants invalides. Vérifiez l’email, le mot de passe et le projet Supabase.';
-  if (/Email not confirmed/i.test(message)) return 'Email non confirmé. Confirmez l’utilisateur dans Supabase Auth ou désactivez la confirmation si approprié.';
-  if (/Failed to fetch|NetworkError/i.test(message)) return 'Erreur réseau. Vérifiez la connexion, l’URL Supabase et les domaines autorisés.';
-  if (/not configured/i.test(message)) return 'Supabase client not configured : vérifiez js/config/supabase-config.js.';
-  if (/row-level security|RLS|policy/i.test(message)) return 'Erreur RLS après connexion. Vérifiez les policies Supabase.';
-  return message;
+function getFriendlyError(error, context = 'default') {
+  return getSafeErrorMessage(context, error);
 }
 
 function statusLabel(status) {
@@ -245,7 +240,8 @@ async function loadArticles() {
     renderArticles();
     setMessage(elements.dashboardMessage, 'Articles chargés.', 'success');
   } catch (error) {
-    setMessage(elements.dashboardMessage, getFriendlyError(error), 'error');
+    logClientError('admin articles', error);
+    setMessage(elements.dashboardMessage, getFriendlyError(error, 'load-admin-articles'), 'error');
   }
 }
 
@@ -320,9 +316,9 @@ async function saveArticle(forcedStatus = null) {
   }
 
   setMessage(elements.dashboardMessage, 'Enregistrement en cours…', 'info');
+  const file = elements.articleImage.files?.[0];
   try {
     let payload = collectFormPayload(forcedStatus);
-    const file = elements.articleImage.files?.[0];
     if (file) {
       payload.cover_image_url = await uploadArticleImage(file, payload.slug);
       elements.articleCoverUrl.value = payload.cover_image_url;
@@ -337,19 +333,21 @@ async function saveArticle(forcedStatus = null) {
     elements.articleId.value = savedArticle.id;
     await loadArticles();
   } catch (error) {
-    setMessage(elements.dashboardMessage, getFriendlyError(error), 'error');
+    logClientError('admin sauvegarde article', error);
+    setMessage(elements.dashboardMessage, getFriendlyError(error, file ? 'upload' : 'save-article'), 'error');
   }
 }
 
 async function initSession() {
   supabase = await getSupabaseClient();
   if (!supabase) {
-    showLogin('Supabase non configuré. Renseignez uniquement l’URL publique et la clé anon/publishable.');
+    showLogin('Configuration de l’espace admin incomplète. Contactez le responsable du site.');
     return;
   }
 
   const { data, error } = await supabase.auth.getSession();
   if (error) {
+    logClientError('admin session', error);
     showLogin(getFriendlyError(error));
     return;
   }
@@ -376,7 +374,7 @@ function bindEvents() {
     setMessage(elements.loginMessage, '', 'info');
     supabase = supabase || await getSupabaseClient();
     if (!supabase) {
-      setMessage(elements.loginMessage, 'Supabase client not configured.', 'error');
+      setMessage(elements.loginMessage, 'Configuration de l’espace admin incomplète. Contactez le responsable du site.', 'error');
       updateDiagnostics();
       return;
     }
@@ -393,6 +391,7 @@ function bindEvents() {
       showDashboard();
       await loadArticles();
     } catch (error) {
+      logClientError('admin connexion', error);
       setMessage(elements.loginMessage, getFriendlyError(error), 'error');
     } finally {
       setLoading(elements.loginButton, false, 'Se connecter');
@@ -469,7 +468,7 @@ function bindEvents() {
       if (button.dataset.action === 'publish') {
         if (!window.confirm('Publier cet article ?')) return;
         await publishArticle(article.id);
-        setMessage(elements.dashboardMessage, 'Article publié.', 'success');
+        setMessage(elements.dashboardMessage, 'Article publié avec succès.', 'success');
       }
       if (button.dataset.action === 'feature') {
         const payload = {
@@ -485,21 +484,22 @@ function bindEvents() {
           published_at: article.publishedAt || null
         };
         await updateArticle(article.id, payload);
-        setMessage(elements.dashboardMessage, 'Article mis à la une.', 'success');
+        setMessage(elements.dashboardMessage, 'Article mis à la une avec succès.', 'success');
       }
       if (button.dataset.action === 'archive') {
         if (!window.confirm('Archiver cet article ?')) return;
         await archiveArticle(article.id);
-        setMessage(elements.dashboardMessage, 'Article archivé.', 'success');
+        setMessage(elements.dashboardMessage, 'Article archivé avec succès.', 'success');
       }
       if (button.dataset.action === 'delete') {
         if (!window.confirm('Supprimer définitivement cet article ?')) return;
         await deleteArticle(article.id);
-        setMessage(elements.dashboardMessage, 'Article supprimé.', 'success');
+        setMessage(elements.dashboardMessage, 'Article supprimé avec succès.', 'success');
       }
       await loadArticles();
     } catch (error) {
-      setMessage(elements.dashboardMessage, getFriendlyError(error), 'error');
+      logClientError('admin action article', error);
+      setMessage(elements.dashboardMessage, getFriendlyError(error, `${button.dataset.action || 'default'}-article`), 'error');
     }
   });
 }

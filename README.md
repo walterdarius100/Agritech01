@@ -79,3 +79,8 @@ Le rapport d’audit complet est disponible dans :
 
 La logique de partage et les limites Open Graph sont documentées dans :
 `docs/SOCIAL_SHARING_AND_OG.md`
+
+## Gestion des erreurs
+
+Les règles de messages d’erreur sécurisés sont documentées dans :
+`docs/ERROR_HANDLING.md`
