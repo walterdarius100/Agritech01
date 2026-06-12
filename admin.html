@@ -21,26 +21,16 @@
         <span class="admin-brand-mark"><img src="assets/images/logo-agritech.png" alt="" aria-hidden="true" width="127" height="96" decoding="async" /></span>
         <span><strong>Agri-tech Admin</strong><small>Retour au site public</small></span>
       </a>
-      <button class="admin-logout" id="logoutButton" type="button" hidden>Se déconnecter</button>
-    </header>
-
-    <section class="admin-diagnostic" aria-labelledby="diagnosticTitle">
-      <div>
-        <p class="eyebrow">Diagnostic</p>
-        <h1 id="diagnosticTitle">État Supabase</h1>
+      <div class="admin-session-actions">
+        <span class="admin-user" id="adminUserEmail" hidden></span>
+        <button class="admin-logout" id="logoutButton" type="button" hidden>Se déconnecter</button>
       </div>
-      <dl class="diagnostic-grid">
-        <div><dt>Supabase configuré</dt><dd><span class="diag-badge" id="diagConfigured">Non</span></dd></div>
-        <div><dt>Projet Supabase</dt><dd id="diagProject">Non configuré</dd></div>
-        <div><dt>Client initialisé</dt><dd><span class="diag-badge" id="diagClient">Non</span></dd></div>
-        <div><dt>Session active</dt><dd><span class="diag-badge" id="diagSession">Non</span></dd></div>
-      </dl>
-    </section>
+    </header>
 
     <section class="admin-card admin-login" id="loginPanel" aria-labelledby="loginTitle">
       <div class="admin-card-heading">
         <span class="eyebrow">Connexion sécurisée</span>
-        <h2 id="loginTitle">Se connecter à l’administration</h2>
+        <h1 id="loginTitle">Se connecter à l’administration</h1>
         <p>Utilisez l’email et le mot de passe créés dans Supabase Auth. Aucun identifiant n’est codé dans le site.</p>
       </div>
       <form id="loginForm" class="admin-form" novalidate>
@@ -56,28 +46,94 @@
     <section class="admin-dashboard" id="dashboardPanel" hidden>
       <div class="admin-dashboard-header">
         <div>
-          <span class="eyebrow">Actualités</span>
+          <span class="eyebrow">Centre de pilotage</span>
           <h2>Administration des actualités</h2>
-          <p>Créez, publiez, archivez et mettez à la une les articles affichés sur le site public.</p>
+          <p>Gérez les articles du site public depuis un tableau de bord simple, clair et sécurisé.</p>
         </div>
         <button class="btn primary" id="newArticleButton" type="button">Nouvel article</button>
       </div>
 
+      <nav class="admin-tabs" aria-label="Sections d’administration">
+        <button class="admin-tab is-active" type="button" data-admin-tab="overview" aria-controls="adminSectionOverview">Tableau de bord</button>
+        <button class="admin-tab" type="button" data-admin-tab="articles" aria-controls="adminSectionArticles">Articles</button>
+        <button class="admin-tab" type="button" data-admin-tab="editor" aria-controls="articleFormPanel">Nouvel article</button>
+        <button class="admin-tab" type="button" data-admin-tab="media" aria-controls="adminSectionMedia">Médias</button>
+        <button class="admin-tab" type="button" data-admin-tab="diagnostic" aria-controls="adminSectionDiagnostic">Diagnostic</button>
+      </nav>
+
       <p class="admin-message" id="dashboardMessage" role="status" aria-live="polite"></p>
 
-      <div class="admin-layout">
-        <section class="admin-card article-list-card" aria-labelledby="articleListTitle">
-          <h3 id="articleListTitle">Articles</h3>
-          <div class="admin-article-list" id="articlesList"></div>
-        </section>
+      <section class="admin-section is-active" id="adminSectionOverview" data-admin-section="overview" aria-labelledby="overviewTitle">
+        <div class="admin-section-heading">
+          <span class="eyebrow">Vue rapide</span>
+          <h3 id="overviewTitle">Tableau de bord</h3>
+          <p>Suivez l’état éditorial des actualités Agri-tech et vérifiez rapidement la session Supabase.</p>
+        </div>
+        <div class="stats-grid" aria-label="Statistiques des articles">
+          <article class="stat-card"><span>Total articles</span><strong id="statTotalArticles">0</strong></article>
+          <article class="stat-card"><span>Publiés</span><strong id="statPublishedArticles">0</strong></article>
+          <article class="stat-card"><span>Brouillons</span><strong id="statDraftArticles">0</strong></article>
+          <article class="stat-card"><span>Archivés</span><strong id="statArchivedArticles">0</strong></article>
+        </div>
+        <div class="overview-grid">
+          <article class="admin-card summary-card">
+            <span class="eyebrow">À la une</span>
+            <h4>Article mis en avant</h4>
+            <p id="summaryFeaturedArticle">Aucun article à la une pour le moment.</p>
+          </article>
+          <article class="admin-card summary-card">
+            <span class="eyebrow">Publication</span>
+            <h4>Dernier article publié</h4>
+            <p id="summaryLastPublished">Aucun article publié pour le moment.</p>
+          </article>
+          <article class="admin-card summary-card">
+            <span class="eyebrow">Connexion</span>
+            <h4>Session Supabase</h4>
+            <p id="summarySessionState">Session en cours de vérification.</p>
+          </article>
+        </div>
+      </section>
 
-        <section class="admin-card article-form-card" id="articleFormPanel" aria-labelledby="articleFormTitle" hidden>
-          <div class="admin-card-heading compact">
+      <section class="admin-section" id="adminSectionArticles" data-admin-section="articles" aria-labelledby="articleListTitle" hidden>
+        <div class="admin-card article-list-card">
+          <div class="admin-section-heading inline-heading">
+            <div>
+              <span class="eyebrow">Gestion éditoriale</span>
+              <h3 id="articleListTitle">Articles</h3>
+              <p>Retrouvez les articles existants, leurs statuts et les actions de gestion.</p>
+            </div>
+            <button class="btn secondary" type="button" data-open-editor>Créer un article</button>
+          </div>
+          <div class="articles-toolbar" aria-label="Filtres des articles">
+            <div class="filter-pills" role="group" aria-label="Filtrer par statut">
+              <button class="filter-pill is-active" type="button" data-article-filter="all">Tous</button>
+              <button class="filter-pill" type="button" data-article-filter="published">Publiés</button>
+              <button class="filter-pill" type="button" data-article-filter="draft">Brouillons</button>
+              <button class="filter-pill" type="button" data-article-filter="archived">Archivés</button>
+              <button class="filter-pill" type="button" data-article-filter="featured">À la une</button>
+            </div>
+            <label class="article-search" for="articleSearchInput">
+              <span>Recherche</span>
+              <input id="articleSearchInput" type="search" placeholder="Rechercher par titre…" />
+            </label>
+          </div>
+          <div class="admin-article-list" id="articlesList"></div>
+        </div>
+      </section>
+
+      <section class="admin-section admin-card article-form-card" id="articleFormPanel" data-admin-section="editor" aria-labelledby="articleFormTitle" hidden>
+        <div class="admin-section-heading inline-heading">
+          <div>
             <span class="eyebrow">Édition</span>
             <h3 id="articleFormTitle">Nouvel article</h3>
+            <p>Renseignez les informations de l’article sans modifier la logique de publication existante.</p>
           </div>
-          <form id="articleForm" class="admin-form article-form" novalidate>
-            <input type="hidden" id="articleId" />
+        </div>
+        <form id="articleForm" class="admin-form article-form" novalidate>
+          <input type="hidden" id="articleId" />
+
+          <fieldset class="form-block">
+            <legend>Informations principales</legend>
             <div class="form-grid two">
               <div>
                 <label for="articleTitle">Titre</label>
@@ -100,10 +156,15 @@
             </div>
             <label for="articleExcerpt">Résumé / extrait</label>
             <textarea id="articleExcerpt" name="excerpt" rows="3"></textarea>
-            <div class="form-grid two">
+          </fieldset>
+
+          <fieldset class="form-block">
+            <legend>Image de couverture</legend>
+            <div class="form-grid two media-form-grid">
               <div>
                 <label for="articleCoverUrl">URL image de couverture</label>
                 <input id="articleCoverUrl" name="cover_image_url" type="url" placeholder="https://..." />
+                <small>Conservez ce champ pour une image déjà hébergée ou après upload Supabase Storage.</small>
               </div>
               <div>
                 <label for="articleImage">Uploader une image</label>
@@ -111,8 +172,20 @@
                 <small>Image JPG/PNG/WebP, 4 Mo maximum.</small>
               </div>
             </div>
-            <label for="articleContentField">Contenu</label>
-            <textarea id="articleContentField" name="content" rows="10" required></textarea>
+            <div class="cover-preview" id="coverPreviewBox" hidden>
+              <span>Aperçu de l’image</span>
+              <img id="coverPreview" src="" alt="Aperçu de l’image de couverture" />
+            </div>
+          </fieldset>
+
+          <fieldset class="form-block">
+            <legend>Contenu</legend>
+            <label for="articleContentField">Contenu complet de l’article</label>
+            <textarea id="articleContentField" name="content" rows="12" required></textarea>
+          </fieldset>
+
+          <fieldset class="form-block publication-block">
+            <legend>Publication</legend>
             <div class="form-grid two">
               <div>
                 <label for="articleStatus">Statut</label>
@@ -134,9 +207,39 @@
               <button class="btn secondary" id="updateButton" type="submit">Mettre à jour</button>
               <button class="btn text-btn" id="cancelEditButton" type="button">Annuler</button>
             </div>
-          </form>
-        </section>
-      </div>
+          </fieldset>
+        </form>
+      </section>
+
+      <section class="admin-section" id="adminSectionMedia" data-admin-section="media" aria-labelledby="mediaTitle" hidden>
+        <div class="admin-card media-card">
+          <span class="eyebrow">Images</span>
+          <h3 id="mediaTitle">Médias</h3>
+          <p>Les images publiées dans les articles sont envoyées dans Supabase Storage via le formulaire d’article.</p>
+          <div class="media-guidelines">
+            <article><strong>Format recommandé</strong><span>WebP ou JPG compressé</span></article>
+            <article><strong>Dimension idéale</strong><span>1200 × 675 px</span></article>
+            <article><strong>Poids conseillé</strong><span>300 à 500 Ko</span></article>
+          </div>
+          <p class="media-note">Google Drive peut rester une archive interne des visuels sources. Supabase Storage doit rester la source des images effectivement publiées.</p>
+        </div>
+      </section>
+
+      <section class="admin-section" id="adminSectionDiagnostic" data-admin-section="diagnostic" aria-labelledby="diagnosticTitle" hidden>
+        <div class="admin-card admin-diagnostic">
+          <div class="admin-section-heading">
+            <span class="eyebrow">Diagnostic</span>
+            <h3 id="diagnosticTitle">État Supabase</h3>
+            <p>Contrôlez la configuration, le client Supabase et la session active sans encombrer la rédaction.</p>
+          </div>
+          <dl class="diagnostic-grid">
+            <div><dt>Supabase configuré</dt><dd><span class="diag-badge" id="diagConfigured">Non</span></dd></div>
+            <div><dt>Projet Supabase</dt><dd id="diagProject">Non configuré</dd></div>
+            <div><dt>Client initialisé</dt><dd><span class="diag-badge" id="diagClient">Non</span></dd></div>
+            <div><dt>Session active</dt><dd><span class="diag-badge" id="diagSession">Non</span></dd></div>
+          </dl>
+        </div>
+      </section>
     </section>
   </main>
   <script type="module" src="js/pages/admin.js"></script>

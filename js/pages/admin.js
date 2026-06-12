@@ -17,8 +17,14 @@ const elements = {
   loginButton: document.querySelector('#loginButton'),
   loginMessage: document.querySelector('#loginMessage'),
   logoutButton: document.querySelector('#logoutButton'),
+  adminUserEmail: document.querySelector('#adminUserEmail'),
   dashboardMessage: document.querySelector('#dashboardMessage'),
   newArticleButton: document.querySelector('#newArticleButton'),
+  adminTabs: document.querySelectorAll('[data-admin-tab]'),
+  adminSections: document.querySelectorAll('[data-admin-section]'),
+  openEditorButtons: document.querySelectorAll('[data-open-editor]'),
+  articleFilterButtons: document.querySelectorAll('[data-article-filter]'),
+  articleSearchInput: document.querySelector('#articleSearchInput'),
   articlesList: document.querySelector('#articlesList'),
   articleFormPanel: document.querySelector('#articleFormPanel'),
   articleForm: document.querySelector('#articleForm'),
@@ -35,10 +41,19 @@ const elements = {
   articleStatus: document.querySelector('#articleStatus'),
   articlePublishedAt: document.querySelector('#articlePublishedAt'),
   articleFeatured: document.querySelector('#articleFeatured'),
+  coverPreviewBox: document.querySelector('#coverPreviewBox'),
+  coverPreview: document.querySelector('#coverPreview'),
   saveDraftButton: document.querySelector('#saveDraftButton'),
   publishButton: document.querySelector('#publishButton'),
   updateButton: document.querySelector('#updateButton'),
   cancelEditButton: document.querySelector('#cancelEditButton'),
+  statTotalArticles: document.querySelector('#statTotalArticles'),
+  statPublishedArticles: document.querySelector('#statPublishedArticles'),
+  statDraftArticles: document.querySelector('#statDraftArticles'),
+  statArchivedArticles: document.querySelector('#statArchivedArticles'),
+  summaryFeaturedArticle: document.querySelector('#summaryFeaturedArticle'),
+  summaryLastPublished: document.querySelector('#summaryLastPublished'),
+  summarySessionState: document.querySelector('#summarySessionState'),
   diagConfigured: document.querySelector('#diagConfigured'),
   diagProject: document.querySelector('#diagProject'),
   diagClient: document.querySelector('#diagClient'),
@@ -49,6 +64,9 @@ let supabase = null;
 let currentSession = null;
 let articles = [];
 let slugTouched = false;
+let activeArticleFilter = 'all';
+let articleSearchTerm = '';
+let previewObjectUrl = '';
 
 function escapeHtml(value) {
   return String(value || '')
@@ -78,18 +96,48 @@ function setBadge(element, active) {
   element.classList.toggle('is-ko', !active);
 }
 
+function formatDate(value) {
+  if (!value) return 'Date non renseignée';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date non renseignée';
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 function updateDiagnostics() {
   const diagnostics = getSupabaseDiagnostics();
   setBadge(elements.diagConfigured, diagnostics.configured);
   setBadge(elements.diagClient, diagnostics.clientInitialized);
   setBadge(elements.diagSession, Boolean(currentSession));
   if (elements.diagProject) elements.diagProject.textContent = diagnostics.projectHost || 'Non configuré';
+  if (elements.summarySessionState) {
+    elements.summarySessionState.textContent = currentSession
+      ? `Session active${currentSession.user?.email ? ` pour ${currentSession.user.email}` : ''}.`
+      : 'Aucune session active.';
+  }
+  if (elements.adminUserEmail) {
+    elements.adminUserEmail.textContent = currentSession?.user?.email || '';
+    elements.adminUserEmail.hidden = !currentSession?.user?.email;
+  }
+}
+
+function switchAdminSection(sectionName = 'overview') {
+  elements.adminSections.forEach((section) => {
+    const isTarget = section.dataset.adminSection === sectionName;
+    section.hidden = !isTarget;
+    section.classList.toggle('is-active', isTarget);
+  });
+  elements.adminTabs.forEach((tab) => {
+    const isTarget = tab.dataset.adminTab === sectionName;
+    tab.classList.toggle('is-active', isTarget);
+    tab.setAttribute('aria-selected', String(isTarget));
+  });
 }
 
 function showLogin(message = '') {
   elements.loginPanel.hidden = false;
   elements.dashboardPanel.hidden = true;
   elements.logoutButton.hidden = true;
+  if (elements.adminUserEmail) elements.adminUserEmail.hidden = true;
   if (message) setMessage(elements.loginMessage, message, 'error');
   updateDiagnostics();
 }
@@ -98,6 +146,7 @@ function showDashboard() {
   elements.loginPanel.hidden = true;
   elements.dashboardPanel.hidden = false;
   elements.logoutButton.hidden = false;
+  switchAdminSection('overview');
   updateDiagnostics();
 }
 
@@ -115,28 +164,74 @@ function statusLabel(status) {
   return { draft: 'brouillon', published: 'publié', archived: 'archivé' }[status] || status;
 }
 
+function getFilteredArticles() {
+  return articles.filter((article) => {
+    const matchesFilter = activeArticleFilter === 'all'
+      || article.status === activeArticleFilter
+      || (activeArticleFilter === 'featured' && article.featured);
+    const matchesSearch = !articleSearchTerm
+      || article.title.toLowerCase().includes(articleSearchTerm)
+      || article.slug.toLowerCase().includes(articleSearchTerm);
+    return matchesFilter && matchesSearch;
+  });
+}
+
+function updateOverview() {
+  const publishedArticles = articles.filter((article) => article.status === 'published');
+  const draftArticles = articles.filter((article) => article.status === 'draft');
+  const archivedArticles = articles.filter((article) => article.status === 'archived');
+  const featuredArticle = articles.find((article) => article.featured);
+  const lastPublished = [...publishedArticles].sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))[0];
+
+  if (elements.statTotalArticles) elements.statTotalArticles.textContent = articles.length;
+  if (elements.statPublishedArticles) elements.statPublishedArticles.textContent = publishedArticles.length;
+  if (elements.statDraftArticles) elements.statDraftArticles.textContent = draftArticles.length;
+  if (elements.statArchivedArticles) elements.statArchivedArticles.textContent = archivedArticles.length;
+  if (elements.summaryFeaturedArticle) {
+    elements.summaryFeaturedArticle.textContent = featuredArticle
+      ? `${featuredArticle.title} — ${statusLabel(featuredArticle.status)}`
+      : 'Aucun article à la une pour le moment.';
+  }
+  if (elements.summaryLastPublished) {
+    elements.summaryLastPublished.textContent = lastPublished
+      ? `${lastPublished.title} — publié le ${formatDate(lastPublished.publishedAt)}`
+      : 'Aucun article publié pour le moment.';
+  }
+  updateDiagnostics();
+}
+
 function renderArticles() {
   if (!elements.articlesList) return;
+  updateOverview();
+
+  const filteredArticles = getFilteredArticles();
   if (!articles.length) {
     elements.articlesList.innerHTML = '<p class="empty-state">Aucun article pour le moment.</p>';
     return;
   }
+  if (!filteredArticles.length) {
+    elements.articlesList.innerHTML = '<p class="empty-state">Aucun article ne correspond à ce filtre.</p>';
+    return;
+  }
 
-  elements.articlesList.innerHTML = articles.map((article) => `
+  elements.articlesList.innerHTML = filteredArticles.map((article) => `
     <article class="admin-article-item">
       <div>
         <div class="article-item-meta">
           <span class="status-badge status-${escapeHtml(article.status)}">${escapeHtml(statusLabel(article.status))}</span>
           ${article.featured ? '<span class="featured-badge">À la une</span>' : ''}
+          ${article.category ? `<span class="category-badge">${escapeHtml(article.category)}</span>` : ''}
         </div>
         <h4>${escapeHtml(article.title)}</h4>
         <p>${escapeHtml(article.excerpt || 'Sans résumé')}</p>
-        <small>${escapeHtml(article.slug)}</small>
+        <small>Slug : ${escapeHtml(article.slug)} · ${escapeHtml(formatDate(article.publishedAt || article.createdAt))}</small>
       </div>
       <div class="article-item-actions">
-        ${article.status === 'published' ? `<a class="btn mini" href="article.html?slug=${encodeURIComponent(article.slug)}" target="_blank" rel="noopener">Voir l’article</a>` : ''}
+        ${article.status === 'published' ? `<a class="btn mini" href="article.html?slug=${encodeURIComponent(article.slug)}" target="_blank" rel="noopener">Voir</a>` : ''}
+        ${article.status !== 'published' ? `<button class="btn mini success" data-action="publish" data-id="${escapeHtml(article.id)}" type="button">Publier</button>` : ''}
+        ${!article.featured ? `<button class="btn mini" data-action="feature" data-id="${escapeHtml(article.id)}" type="button">À la une</button>` : ''}
         <button class="btn mini" data-action="edit" data-id="${escapeHtml(article.id)}" type="button">Modifier</button>
-        <button class="btn mini warning" data-action="archive" data-id="${escapeHtml(article.id)}" type="button">Archiver</button>
+        ${article.status !== 'archived' ? `<button class="btn mini warning" data-action="archive" data-id="${escapeHtml(article.id)}" type="button">Archiver</button>` : ''}
         <button class="btn mini danger" data-action="delete" data-id="${escapeHtml(article.id)}" type="button">Supprimer</button>
       </div>
     </article>
@@ -154,6 +249,17 @@ async function loadArticles() {
   }
 }
 
+function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
+  if (!elements.coverPreviewBox || !elements.coverPreview) return;
+  if (!source) {
+    elements.coverPreviewBox.hidden = true;
+    elements.coverPreview.removeAttribute('src');
+    return;
+  }
+  elements.coverPreview.src = source;
+  elements.coverPreviewBox.hidden = false;
+}
+
 function resetForm() {
   elements.articleForm.reset();
   elements.articleId.value = '';
@@ -161,12 +267,15 @@ function resetForm() {
   elements.articleStatus.value = 'draft';
   elements.articleFormTitle.textContent = 'Nouvel article';
   slugTouched = false;
+  updateCoverPreview('');
 }
 
 function openForm(article = null) {
   elements.articleFormPanel.hidden = false;
+  switchAdminSection('editor');
   if (!article) {
     resetForm();
+    elements.articleTitle?.focus();
     return;
   }
 
@@ -182,7 +291,9 @@ function openForm(article = null) {
   elements.articleStatus.value = article.status || 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
+  updateCoverPreview(article.coverImage || '');
   slugTouched = true;
+  elements.articleTitle?.focus();
 }
 
 function collectFormPayload(forcedStatus = null) {
@@ -215,6 +326,7 @@ async function saveArticle(forcedStatus = null) {
     if (file) {
       payload.cover_image_url = await uploadArticleImage(file, payload.slug);
       elements.articleCoverUrl.value = payload.cover_image_url;
+      updateCoverPreview(payload.cover_image_url);
     }
 
     const savedArticle = elements.articleId.value
@@ -292,19 +404,48 @@ function bindEvents() {
     if (supabase) await supabase.auth.signOut();
     currentSession = null;
     articles = [];
+    updateOverview();
     showLogin('Vous êtes déconnecté.');
+  });
+
+  elements.adminTabs.forEach((tab) => {
+    tab.addEventListener('click', () => switchAdminSection(tab.dataset.adminTab));
+  });
+
+  elements.openEditorButtons.forEach((button) => {
+    button.addEventListener('click', () => openForm());
+  });
+
+  elements.articleFilterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      activeArticleFilter = button.dataset.articleFilter || 'all';
+      elements.articleFilterButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+      renderArticles();
+    });
+  });
+
+  elements.articleSearchInput?.addEventListener('input', () => {
+    articleSearchTerm = elements.articleSearchInput.value.trim().toLowerCase();
+    renderArticles();
   });
 
   elements.newArticleButton?.addEventListener('click', () => openForm());
   elements.cancelEditButton?.addEventListener('click', () => {
-    elements.articleFormPanel.hidden = true;
     resetForm();
+    switchAdminSection('articles');
   });
   elements.articleTitle?.addEventListener('input', () => {
     if (!slugTouched) elements.articleSlug.value = generateSlug(elements.articleTitle.value);
   });
   elements.articleSlug?.addEventListener('input', () => { slugTouched = true; });
   elements.articleSlug?.addEventListener('blur', () => { elements.articleSlug.value = generateSlug(elements.articleSlug.value); });
+  elements.articleCoverUrl?.addEventListener('input', () => updateCoverPreview(elements.articleCoverUrl.value));
+  elements.articleImage?.addEventListener('change', () => {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    const file = elements.articleImage.files?.[0];
+    previewObjectUrl = file ? URL.createObjectURL(file) : '';
+    updateCoverPreview(previewObjectUrl || elements.articleCoverUrl.value);
+  });
 
   elements.articleForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -325,6 +466,27 @@ function bindEvents() {
     }
 
     try {
+      if (button.dataset.action === 'publish') {
+        if (!window.confirm('Publier cet article ?')) return;
+        await publishArticle(article.id);
+        setMessage(elements.dashboardMessage, 'Article publié.', 'success');
+      }
+      if (button.dataset.action === 'feature') {
+        const payload = {
+          title: article.title,
+          slug: article.slug,
+          category: article.category,
+          excerpt: article.excerpt,
+          cover_image_url: article.coverImage,
+          author: article.author,
+          content: article.content,
+          status: article.status,
+          featured: true,
+          published_at: article.publishedAt || null
+        };
+        await updateArticle(article.id, payload);
+        setMessage(elements.dashboardMessage, 'Article mis à la une.', 'success');
+      }
       if (button.dataset.action === 'archive') {
         if (!window.confirm('Archiver cet article ?')) return;
         await archiveArticle(article.id);
