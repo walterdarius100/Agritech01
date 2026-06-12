@@ -19,7 +19,7 @@ export function initMobileMenu() {
 }
 
 export function initScrollReveal(items = document.querySelectorAll('.reveal')) {
-  const revealItems = Array.from(items);
+  const revealItems = Array.from(items || []);
   if (!revealItems.length) return;
 
   if (!('IntersectionObserver' in window)) {
