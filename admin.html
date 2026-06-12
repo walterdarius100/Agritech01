@@ -172,9 +172,12 @@
                 <small>Image JPG/PNG/WebP, 4 Mo maximum.</small>
               </div>
             </div>
-            <div class="cover-preview" id="coverPreviewBox" hidden>
+            <div class="cover-preview" id="coverPreviewBox">
               <span>Aperçu de l’image</span>
-              <img id="coverPreview" alt="Aperçu de l’image de couverture" width="1200" height="800" loading="lazy" decoding="async" />
+              <div class="admin-image-preview">
+                <img id="coverPreview" alt="Aperçu de l’image de couverture" width="1200" height="675" loading="lazy" decoding="async" hidden />
+                <div class="admin-image-preview-placeholder" id="coverPreviewPlaceholder">Aucun aperçu disponible</div>
+              </div>
             </div>
           </fieldset>
 
