@@ -129,24 +129,24 @@ to authenticated
 using (public.is_blog_admin());
 ```
 
-## 4. Bucket Supabase Storage `blog-images`
+## 4. Bucket Supabase Storage `article-images`
 
-L’implémentation attend un bucket **public** nommé `blog-images`. Les URLs publiques retournées par Supabase sont ensuite sauvegardées dans `cover_image_url` et dans `content_html`.
+L’implémentation attend le bucket existant **public** `article-images`. Ne créez pas de bucket séparé pour TinyMCE : les URLs publiques retournées par Supabase sont sauvegardées dans `cover_image_url` et dans `content_html`.
 
 Structure utilisée par le code :
 
 ```text
-blog-images/articles/{article-id}/cover/{timestamp}-{slug}-{filename}.ext
-blog-images/articles/{article-id}/content/{timestamp}-{slug}-{filename}.ext
+article-images/articles/{article-id}/cover/{timestamp}-{slug}-{filename}.ext
+article-images/articles/{article-id}/content/{timestamp}-{slug}-{filename}.ext
 ```
 
-Création du bucket via SQL :
+Vérification/création du bucket via SQL si votre projet ne l’a pas encore :
 
 ```sql
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
-  'blog-images',
-  'blog-images',
+  'article-images',
+  'article-images',
   true,
   4194304,
   array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
@@ -165,7 +165,7 @@ create policy "Public can read blog images"
 on storage.objects
 for select
 to anon, authenticated
-using (bucket_id = 'blog-images');
+using (bucket_id = 'article-images');
 
 drop policy if exists "Blog admins can upload blog images" on storage.objects;
 create policy "Blog admins can upload blog images"
@@ -173,7 +173,7 @@ on storage.objects
 for insert
 to authenticated
 with check (
-  bucket_id = 'blog-images'
+  bucket_id = 'article-images'
   and public.is_blog_admin()
   and name like 'articles/%'
 );
@@ -183,22 +183,22 @@ create policy "Blog admins can update blog images"
 on storage.objects
 for update
 to authenticated
-using (bucket_id = 'blog-images' and public.is_blog_admin())
-with check (bucket_id = 'blog-images' and public.is_blog_admin());
+using (bucket_id = 'article-images' and public.is_blog_admin())
+with check (bucket_id = 'article-images' and public.is_blog_admin());
 
 drop policy if exists "Blog admins can delete blog images" on storage.objects;
 create policy "Blog admins can delete blog images"
 on storage.objects
 for delete
 to authenticated
-using (bucket_id = 'blog-images' and public.is_blog_admin());
+using (bucket_id = 'article-images' and public.is_blog_admin());
 ```
 
 ## 6. Tests fonctionnels
 
 1. **Connexion admin** : ouvrir `/admin.html`, se connecter avec un utilisateur Supabase Auth ayant `app_metadata.role = 'admin'` ou `blog_admin`.
 2. **Création d’un brouillon** : créer un article, choisir `brouillon`, enregistrer. Vérifier la ligne dans `public.articles` avec `status = 'draft'` et `content_html` rempli.
-3. **Image principale** : sélectionner une image dans “Image principale à uploader”. Vérifier que le fichier apparaît dans `Storage → blog-images → articles/{article-id}/cover/` et que `cover_image_url` contient l’URL publique.
+3. **Image principale** : sélectionner une image dans “Image principale à uploader”. Vérifier que le fichier apparaît dans `Storage → article-images → articles/{article-id}/cover/` et que `cover_image_url` contient l’URL publique.
 4. **Image TinyMCE** : utiliser le bouton image de TinyMCE et choisir un fichier. Vérifier que l’image est uploadée dans `articles/{article-id}/content/` et que le HTML contient une URL Supabase, pas du base64.
 5. **Publication** : cliquer “Publier”. Vérifier `status = 'published'` et `published_at` non nul.
 6. **Affichage public** : ouvrir `article.html?slug=...`; l’article publié doit s’afficher avec le HTML nettoyé.

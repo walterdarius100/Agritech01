@@ -38,7 +38,7 @@
 * **Gravité :** critique.
 * **Impact :** si les policies RLS sont absentes ou trop permissives, un visiteur peut potentiellement lire des brouillons ou tenter des écritures via la clé publique.
 * **Cause probable :** les règles de sécurité sont configurées dans Supabase, donc elles ne sont pas prouvées uniquement par le code frontend.
-* **Solution recommandée :** vérifier dans Supabase que RLS est activé sur `articles` et `blog-images`, que la lecture publique filtre uniquement `status = 'published'`, et que les opérations insert/update/delete nécessitent un utilisateur authentifié autorisé.
+* **Solution recommandée :** vérifier dans Supabase que RLS est activé sur `articles` et `article-images`, que la lecture publique filtre uniquement `status = 'published'`, et que les opérations insert/update/delete nécessitent un utilisateur authentifié autorisé.
 * **Effort estimé :** moyen.
 
 ### Problème 2 — Configuration Supabase exposée côté client
@@ -268,7 +268,7 @@
 
 ## Priorité 1 — À corriger avant publication officielle
 
-* Vérifier et documenter les policies RLS Supabase pour `articles` et `blog-images`.
+* Vérifier et documenter les policies RLS Supabase pour `articles` et `article-images`.
 * Tester que seuls les articles `published` sont visibles publiquement.
 * Tester que les brouillons ne sont jamais visibles via `actualites.html` ou `article.html?slug=...`.
 * Tester l’accès admin avec un compte autorisé et avec un utilisateur non autorisé.

@@ -1,8 +1,8 @@
 import { getSupabaseClient } from './supabase-client.js';
 import { generateSlug } from './articles-service.js';
 
-export const BLOG_IMAGES_BUCKET = 'blog-images';
-export const MAX_BLOG_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+export const ARTICLE_IMAGES_BUCKET = 'article-images';
+export const MAX_ARTICLE_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 
 const IMAGE_EXTENSION_BY_MIME = {
   'image/jpeg': 'jpg',
@@ -31,7 +31,7 @@ function sanitizeFileBaseName(fileName, fallback = 'image') {
 function assertValidImageFile(file) {
   if (!file) throw new Error('Aucun fichier image sélectionné.');
   if (!file.type?.startsWith('image/')) throw new Error('Le fichier sélectionné doit être une image.');
-  if (file.size > MAX_BLOG_IMAGE_SIZE_BYTES) throw new Error('L’image dépasse la limite de 4 Mo.');
+  if (file.size > MAX_ARTICLE_IMAGE_SIZE_BYTES) throw new Error('L’image dépasse la limite de 4 Mo.');
 }
 
 export function createArticleStorageId() {
@@ -39,7 +39,7 @@ export function createArticleStorageId() {
   return `${Date.now()}-${getRandomSuffix()}`;
 }
 
-export function buildBlogImagePath({ file, articleId, slug = 'article', slot = 'content' }) {
+export function buildArticleImagePath({ file, articleId, slug = 'article', slot = 'content' }) {
   const safeArticleId = generateSlug(articleId) || createArticleStorageId();
   const safeSlot = slot === 'cover' ? 'cover' : 'content';
   const safeSlug = generateSlug(slug) || 'article';
@@ -48,14 +48,14 @@ export function buildBlogImagePath({ file, articleId, slug = 'article', slot = '
   return `articles/${safeArticleId}/${safeSlot}/${Date.now()}-${getRandomSuffix()}-${safeSlug}-${safeName}.${extension}`;
 }
 
-export async function uploadBlogImage({ file, articleId, slug, slot = 'content' }) {
+export async function uploadArticleImageToStorage({ file, articleId, slug, slot = 'content' }) {
   assertValidImageFile(file);
 
   const client = await getSupabaseClient();
   if (!client) throw new Error('Supabase client not configured');
 
-  const path = buildBlogImagePath({ file, articleId, slug, slot });
-  const { error } = await client.storage.from(BLOG_IMAGES_BUCKET).upload(path, file, {
+  const path = buildArticleImagePath({ file, articleId, slug, slot });
+  const { error } = await client.storage.from(ARTICLE_IMAGES_BUCKET).upload(path, file, {
     cacheControl: '31536000',
     contentType: file.type,
     upsert: false
@@ -63,7 +63,7 @@ export async function uploadBlogImage({ file, articleId, slug, slot = 'content' 
 
   if (error) throw error;
 
-  const { data } = client.storage.from(BLOG_IMAGES_BUCKET).getPublicUrl(path);
+  const { data } = client.storage.from(ARTICLE_IMAGES_BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new Error('Impossible de récupérer l’URL publique de l’image.');
   return data.publicUrl;
 }

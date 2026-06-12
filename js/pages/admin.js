@@ -8,7 +8,7 @@ import {
   publishArticle,
   updateArticle
 } from '../services/articles-service.js';
-import { uploadBlogImage, createArticleStorageId } from '../services/image-upload-service.js';
+import { createArticleStorageId, uploadArticleImageToStorage } from '../services/image-upload-service.js';
 import { getPlainTextFromArticleHtml, isSafeArticleMediaUrl, sanitizeArticleHtml } from '../utils/article-html.js';
 import { getArticleEditorContent, initArticleEditor, setArticleEditorContent, syncArticleEditor } from './admin-rich-editor.js';
 
@@ -395,7 +395,7 @@ async function saveArticle(forcedStatus = null) {
     const coverFile = elements.articleCoverFile?.files?.[0];
     if (coverFile) {
       setMessage(elements.dashboardMessage, 'Upload de l’image principale vers Supabase Storage…', 'info');
-      payload.cover_image_url = await uploadBlogImage({
+      payload.cover_image_url = await uploadArticleImageToStorage({
         file: coverFile,
         articleId: ensureArticleStorageId(),
         slug: payload.slug,

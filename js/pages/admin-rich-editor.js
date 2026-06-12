@@ -1,4 +1,4 @@
-import { uploadBlogImage } from '../services/image-upload-service.js';
+import { uploadArticleImageToStorage } from '../services/image-upload-service.js';
 import { sanitizeArticleHtml } from '../utils/article-html.js';
 
 const EDITOR_SELECTOR = '#articleContentField';
@@ -21,7 +21,7 @@ function getEditor() {
 
 async function uploadEditorImage(file) {
   try {
-    return await uploadBlogImage({
+    return await uploadArticleImageToStorage({
       file,
       articleId: uploadContext.getArticleId(),
       slug: uploadContext.getSlug(),

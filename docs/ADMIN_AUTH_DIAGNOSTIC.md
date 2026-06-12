@@ -82,5 +82,5 @@ La Publishable key est acceptable dans un site statique parce que les droits ré
 - [ ] Session active : Oui après login.
 - [ ] La liste des articles se charge sans erreur RLS.
 - [ ] Création, modification, publication, retour en brouillon et suppression fonctionnent.
-- [ ] Upload Storage vers `blog-images` fonctionne.
+- [ ] Upload Storage vers `article-images` fonctionne.
 - [ ] Aucun secret n’est affiché dans la console.

@@ -32,6 +32,30 @@ export function getSafeErrorMessage(context = 'default', error = null) {
     return 'Connexion au serveur impossible. Vérifiez votre connexion internet puis réessayez.';
   }
 
+  if (context === 'upload') {
+    if (/bucket.*not found|not found.*bucket|nosuchbucket|storage bucket|bucket introuvable/.test(rawMessage)) {
+      return 'Bucket Supabase Storage introuvable. Vérifiez que le bucket article-images existe.';
+    }
+
+    if (/row-level security|\brls\b|policy|permission|forbidden|unauthorized|not authorized|access denied|403/.test(rawMessage)) {
+      return 'Upload refusé par Supabase. Vérifiez les policies Storage et vos droits admin.';
+    }
+
+    if (/not an image|doit être une image|invalid mime|mime|type.*file|file.*type|fichier/.test(rawMessage) && /image|mime|type|fichier|file/.test(rawMessage)) {
+      return 'Le fichier sélectionné doit être une image.';
+    }
+
+    if (/limit|size|too large|payload too large|413|dépasse|trop lourd/.test(rawMessage)) {
+      return 'L’image dépasse la taille autorisée. Choisissez un fichier de 4 Mo maximum.';
+    }
+
+    if (/already exists|duplicate|resource already exists|conflict/.test(rawMessage)) {
+      return 'L’image n’a pas pu être envoyée. Renommez le fichier ou réessayez.';
+    }
+
+    return 'L’image n’a pas pu être envoyée. Vérifiez le fichier, le bucket article-images et vos droits.';
+  }
+
   if (/row-level security|\brls\b|policy|permission|forbidden|unauthorized|not authorized|access denied/.test(rawMessage)) {
     return 'Action impossible pour le moment. Vérifiez vos droits d’accès ou réessayez.';
   }
@@ -46,22 +70,6 @@ export function getSafeErrorMessage(context = 'default', error = null) {
 
   if (context === 'article') {
     return 'Article introuvable ou indisponible.';
-  }
-
-  if (context === 'upload') {
-    if (/not an image|doit être une image|image/.test(rawMessage) && /type|fichier|file/.test(rawMessage)) {
-      return 'Le fichier sélectionné doit être une image.';
-    }
-
-    if (/limit|size|too large|dépasse/.test(rawMessage)) {
-      return 'L’image dépasse la taille autorisée. Choisissez un fichier plus léger.';
-    }
-
-    if (/already exists|duplicate|resource already exists|conflict/.test(rawMessage)) {
-      return 'L’image n’a pas pu être envoyée. Renommez le fichier ou réessayez.';
-    }
-
-    return 'L’image n’a pas pu être envoyée. Vérifiez le fichier puis réessayez.';
   }
 
   if (context === 'load-admin-articles') {
