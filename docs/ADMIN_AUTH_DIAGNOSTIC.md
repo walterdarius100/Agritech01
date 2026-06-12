@@ -81,6 +81,6 @@ La Publishable key est acceptable dans un site statique parce que les droits ré
 - [ ] Login Supabase Auth réussi.
 - [ ] Session active : Oui après login.
 - [ ] La liste des articles se charge sans erreur RLS.
-- [ ] Création, modification, publication, archivage et suppression fonctionnent.
-- [ ] Upload Storage vers `article-images` fonctionne.
+- [ ] Création, modification, publication, retour en brouillon et suppression fonctionnent.
+- [ ] Upload Storage vers `blog-images` fonctionne.
 - [ ] Aucun secret n’est affiché dans la console.

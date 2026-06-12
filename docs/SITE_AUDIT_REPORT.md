@@ -28,7 +28,7 @@
   * formulaires publics exposés au spam malgré honeypot et limite EmailJS ;
   * rendu HTML dynamique à surveiller pour éviter toute régression XSS ;
   * sitemap statique insuffisant pour les slugs d’articles réels.
-* **Recommandation globale :** publier uniquement après une passe de validation fonctionnelle complète et après confirmation écrite que les policies RLS Supabase empêchent la lecture des brouillons/archives et toutes les écritures non autorisées.
+* **Recommandation globale :** publier uniquement après une passe de validation fonctionnelle complète et après confirmation écrite que les policies RLS Supabase empêchent la lecture des brouillons et toutes les écritures non autorisées.
 
 ## 4. Problèmes détectés
 
@@ -36,9 +36,9 @@
 
 * **Page/fichier concerné :** `js/services/articles-service.js`, `js/config/supabase-config.js`, documentation Supabase.
 * **Gravité :** critique.
-* **Impact :** si les policies RLS sont absentes ou trop permissives, un visiteur peut potentiellement lire des brouillons, lire des archives ou tenter des écritures via la clé publique.
+* **Impact :** si les policies RLS sont absentes ou trop permissives, un visiteur peut potentiellement lire des brouillons ou tenter des écritures via la clé publique.
 * **Cause probable :** les règles de sécurité sont configurées dans Supabase, donc elles ne sont pas prouvées uniquement par le code frontend.
-* **Solution recommandée :** vérifier dans Supabase que RLS est activé sur `articles` et `article-images`, que la lecture publique filtre uniquement `status = 'published'`, et que les opérations insert/update/delete nécessitent un utilisateur authentifié autorisé.
+* **Solution recommandée :** vérifier dans Supabase que RLS est activé sur `articles` et `blog-images`, que la lecture publique filtre uniquement `status = 'published'`, et que les opérations insert/update/delete nécessitent un utilisateur authentifié autorisé.
 * **Effort estimé :** moyen.
 
 ### Problème 2 — Configuration Supabase exposée côté client
@@ -152,8 +152,8 @@
 
 * RLS doit être activé sur toutes les tables exposées au navigateur.
 * La table `articles` doit autoriser la lecture publique uniquement pour `status = 'published'`.
-* Les statuts `draft` et `archived` ne doivent jamais être lisibles publiquement.
-* Les opérations de création, modification, archivage, suppression et mise à la une doivent être réservées à des comptes admin authentifiés.
+* Les statuts `draft` ne doivent jamais être lisibles publiquement.
+* Les opérations de création, modification, retour en brouillon, suppression et mise à la une doivent être réservées à des comptes admin authentifiés.
 
 ### Clés publiques / clés secrètes
 
@@ -268,9 +268,9 @@
 
 ## Priorité 1 — À corriger avant publication officielle
 
-* Vérifier et documenter les policies RLS Supabase pour `articles` et `article-images`.
+* Vérifier et documenter les policies RLS Supabase pour `articles` et `blog-images`.
 * Tester que seuls les articles `published` sont visibles publiquement.
-* Tester que les brouillons et archives ne sont jamais visibles via `actualites.html` ou `article.html?slug=...`.
+* Tester que les brouillons ne sont jamais visibles via `actualites.html` ou `article.html?slug=...`.
 * Tester l’accès admin avec un compte autorisé et avec un utilisateur non autorisé.
 * Confirmer qu’aucune clé secrète Supabase, EmailJS, Google, GitHub ou Vercel n’est exposée.
 * Tester EmailJS contact + newsletter avec domaines autorisés.
@@ -308,7 +308,7 @@
 - [ ] Création article fonctionnelle
 - [ ] Articles publiés visibles publiquement
 - [ ] Brouillons non visibles publiquement
-- [ ] Archives non visibles publiquement
+- [ ] Brouillons non visibles publiquement
 - [ ] RLS vérifié
 - [ ] Aucune clé secrète exposée
 - [ ] Formulaire EmailJS testé
@@ -323,7 +323,7 @@
 * **Ce qui peut bloquer la publication :**
   * RLS non confirmé ou policies Supabase trop larges ;
   * admin incapable de créer/publier un article ;
-  * brouillons ou archives visibles publiquement ;
+  * brouillons visibles publiquement ;
   * clé secrète exposée dans le dépôt ou dans le navigateur ;
   * formulaire EmailJS inutilisable ou domaines non restreints ;
   * erreurs console critiques sur les pages principales.
@@ -335,7 +335,7 @@
   * monitoring et analytics avancés.
 * **Ordre recommandé des prochaines corrections :**
   1. Valider Supabase Auth, RLS et Storage.
-  2. Tester le workflow admin complet : connexion, création, publication, archive, suppression, upload.
+  2. Tester le workflow admin complet : connexion, création, publication, retour en brouillon, suppression, upload.
   3. Tester le site public : accueil, services, formations, actualités, article, pages légales, mobile.
   4. Tester EmailJS et l’endpoint de stockage lead.
   5. Corriger les erreurs console et liens cassés.

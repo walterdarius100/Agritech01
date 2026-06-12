@@ -22,7 +22,7 @@ L’admin est une page statique. La sécurité repose sur Supabase Auth et RLS, 
 2. Renseignez le titre. Le slug est généré automatiquement, par exemple `Comment lancer un projet avicole en Haïti` devient `comment-lancer-un-projet-avicole-en-haiti`.
 3. Le slug reste modifiable manuellement.
 4. Ajoutez catégorie, résumé, auteur, contenu et éventuellement image.
-5. Choisissez le statut : brouillon, publié ou archivé.
+5. Choisissez le statut : brouillon ou publié.
 6. Cochez **Article à la une** si cet article doit être mis en avant.
 
 ## Enregistrer un brouillon
@@ -43,9 +43,10 @@ Cliquez sur **Publier**. Si aucune date de publication n’est saisie, la date c
 
 Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enregistré à la une, les autres articles sont automatiquement remis à `featured = false`. Si aucun article n’est marqué à la une, le site public met automatiquement en avant l’article publié le plus récent.
 
-## Archiver ou supprimer
+## Brouillon, publication ou suppression
 
-- **Archiver** : l’article ne s’affiche plus publiquement mais reste dans la base.
+- **Brouillon** : l’article reste dans Supabase mais n’est pas visible publiquement.
+- **Publié** : l’article devient visible sur `actualites.html` et `article.html?slug=...`.
 - **Supprimer** : l’article est supprimé définitivement après confirmation.
 
 ## Uploader une image
@@ -53,7 +54,9 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 1. Sélectionnez une image depuis votre ordinateur.
 2. Formats image acceptés par le navigateur : JPG, PNG, WebP, etc.
 3. Taille maximale : 4 Mo.
-4. L’image est envoyée dans le bucket Supabase Storage `article-images` et l’URL est enregistrée dans `cover_image_url`.
+4. L’image principale est envoyée dans le bucket Supabase Storage `blog-images`, chemin `articles/{article-id}/cover/`, et l’URL est enregistrée dans `cover_image_url`.
+5. Les images insérées via TinyMCE sont envoyées dans `blog-images`, chemin `articles/{article-id}/content/`, puis insérées dans `content_html` sous forme d’URL Supabase.
+6. Les images en base64 ne doivent pas être utilisées.
 
 ## Bonnes pratiques éditoriales
 
@@ -61,4 +64,4 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 - Slug : sans accents, en minuscules, avec tirets.
 - Résumé : 1 à 2 phrases qui expliquent l’intérêt de l’article.
 - Image : carrée ou paysage, nette, légère, cohérente avec l’agriculture en Haïti.
-- Contenu : paragraphes courts. Le rendu échappe le HTML pour éviter toute injection de HTML brut non sécurisé.
+- Contenu : utilisez TinyMCE pour les titres, listes, citations, liens et images. Le rendu public nettoie `content_html` avec DOMPurify avant injection dans le DOM.

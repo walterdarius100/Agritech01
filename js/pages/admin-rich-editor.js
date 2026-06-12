@@ -1,3 +1,4 @@
+import { uploadBlogImage } from '../services/image-upload-service.js';
 import { sanitizeArticleHtml } from '../utils/article-html.js';
 
 const EDITOR_SELECTOR = '#articleContentField';
@@ -8,12 +9,49 @@ const EDITOR_TOOLBAR = [
 ].join(' | ');
 
 let editorReadyPromise = null;
+let uploadContext = {
+  getArticleId: () => '',
+  getSlug: () => 'article',
+  onError: () => {}
+};
 
 function getEditor() {
   return window.tinymce?.get('articleContentField') || null;
 }
 
-export function initArticleEditor() {
+async function uploadEditorImage(file) {
+  try {
+    return await uploadBlogImage({
+      file,
+      articleId: uploadContext.getArticleId(),
+      slug: uploadContext.getSlug(),
+      slot: 'content'
+    });
+  } catch (error) {
+    uploadContext.onError(error);
+    throw error;
+  }
+}
+
+function pickImageFile(callback) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const url = await uploadEditorImage(file);
+      callback(url, { alt: file.name.replace(/\.[^.]+$/, '') });
+    } catch (_error) {
+      // The central admin message is already updated by uploadContext.onError.
+    }
+  });
+  input.click();
+}
+
+export function initArticleEditor(context = {}) {
+  uploadContext = { ...uploadContext, ...context };
   if (editorReadyPromise) return editorReadyPromise;
 
   if (!window.tinymce) {
@@ -39,12 +77,21 @@ export function initArticleEditor() {
       aligncenter: { selector: 'p,h2,h3,h4,blockquote,div', classes: 'article-align-center' },
       alignright: { selector: 'p,h2,h3,h4,blockquote,div', classes: 'article-align-right' }
     },
-    automatic_uploads: false,
+    automatic_uploads: true,
     paste_data_images: false,
     image_advtab: false,
     image_dimensions: false,
     file_picker_types: 'image',
-    images_file_types: '',
+    images_file_types: 'jpeg,jpg,png,webp,gif,avif',
+    images_upload_handler: async (blobInfo, progress) => {
+      progress?.(15);
+      const url = await uploadEditorImage(blobInfo.blob());
+      progress?.(100);
+      return url;
+    },
+    file_picker_callback: (callback, _value, meta) => {
+      if (meta.filetype === 'image') pickImageFile(callback);
+    },
     convert_urls: false,
     default_link_target: '_blank',
     link_assume_external_targets: 'https',

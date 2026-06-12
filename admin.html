@@ -73,7 +73,6 @@
           <article class="stat-card"><span>Total articles</span><strong id="statTotalArticles">0</strong></article>
           <article class="stat-card"><span>Publiés</span><strong id="statPublishedArticles">0</strong></article>
           <article class="stat-card"><span>Brouillons</span><strong id="statDraftArticles">0</strong></article>
-          <article class="stat-card"><span>Archivés</span><strong id="statArchivedArticles">0</strong></article>
         </div>
         <div class="overview-grid">
           <article class="admin-card summary-card">
@@ -109,7 +108,6 @@
               <button class="filter-pill is-active" type="button" data-article-filter="all">Tous</button>
               <button class="filter-pill" type="button" data-article-filter="published">Publiés</button>
               <button class="filter-pill" type="button" data-article-filter="draft">Brouillons</button>
-              <button class="filter-pill" type="button" data-article-filter="archived">Archivés</button>
               <button class="filter-pill" type="button" data-article-filter="featured">À la une</button>
             </div>
             <label class="article-search" for="articleSearchInput">
@@ -163,13 +161,14 @@
             <legend>Image principale</legend>
             <div class="form-grid two media-form-grid">
               <div>
-                <label for="articleCoverUrl">URL image principale</label>
-                <input id="articleCoverUrl" name="cover_image_url" type="url" placeholder="https://..." />
-                <small>Première version : image déjà hébergée uniquement. Aucun upload ni clé privée côté frontend.</small>
+                <label for="articleCoverFile">Image principale à uploader</label>
+                <input id="articleCoverFile" name="cover_image" type="file" accept="image/*" />
+                <small>Stockage : Supabase Storage, bucket <code>blog-images</code>, 4 Mo maximum.</small>
               </div>
-              <div class="media-upload-note">
-                <strong>Images dans le contenu</strong>
-                <small>TinyMCE permet l’insertion par URL. La zone est prête pour ajouter plus tard Cloudinary ou Supabase Storage sans changer le rendu public.</small>
+              <div>
+                <label for="articleCoverUrl">URL image principale</label>
+                <input id="articleCoverUrl" name="cover_image_url" type="url" placeholder="URL Supabase générée après upload" />
+                <small>Vous pouvez conserver une URL Supabase existante. N’utilisez pas de base64.</small>
               </div>
             </div>
             <div class="cover-preview" id="coverPreviewBox">
@@ -185,7 +184,7 @@
             <legend>Contenu</legend>
             <label for="articleContentField">Contenu complet de l’article</label>
             <textarea id="articleContentField" name="content" rows="12" required></textarea>
-            <small>L’éditeur nettoie et sauvegarde un HTML contrôlé. Les images sont autorisées uniquement par URL.</small>
+            <small>TinyMCE uploade les images du contenu vers Supabase Storage puis sauvegarde uniquement les URLs dans le HTML nettoyé.</small>
             <button class="btn secondary preview-button" id="previewArticleButton" type="button">Prévisualiser l’article</button>
             <article class="article-preview" id="articlePreview" aria-live="polite" hidden>
               <span class="eyebrow">Prévisualisation</span>
@@ -201,7 +200,6 @@
                 <select id="articleStatus" name="status">
                   <option value="draft">brouillon</option>
                   <option value="published">publié</option>
-                  <option value="archived">archivé</option>
                 </select>
               </div>
               <div>
@@ -224,13 +222,13 @@
         <div class="admin-card media-card">
           <span class="eyebrow">Images</span>
           <h3 id="mediaTitle">Médias</h3>
-          <p>Cette version accepte les images par URL uniquement. La structure prépare un futur branchement vers Cloudinary ou Supabase Storage.</p>
+          <p>Les images principales et les images insérées dans TinyMCE sont envoyées dans Supabase Storage, bucket <code>blog-images</code>.</p>
           <div class="media-guidelines">
             <article><strong>Format recommandé</strong><span>WebP ou JPG compressé</span></article>
             <article><strong>Dimension idéale</strong><span>1200 × 675 px</span></article>
             <article><strong>Poids conseillé</strong><span>300 à 500 Ko</span></article>
           </div>
-          <p class="media-note">Aucune clé privée ne doit être ajoutée côté frontend. Une future intégration d’upload devra utiliser des politiques Storage, presets signés ou Edge Functions.</p>
+          <p class="media-note">Le frontend utilise uniquement la clé anon publique. Les droits d’upload et de lecture doivent être contrôlés par les policies RLS Supabase.</p>
         </div>
       </section>
 

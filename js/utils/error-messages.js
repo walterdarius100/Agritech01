@@ -76,9 +76,6 @@ export function getSafeErrorMessage(context = 'default', error = null) {
     return 'Impossible de publier l’article pour le moment. Réessayez.';
   }
 
-  if (context === 'archive-article') {
-    return 'Impossible d’archiver l’article pour le moment. Réessayez.';
-  }
 
   if (context === 'delete-article') {
     return 'Impossible de supprimer l’article pour le moment. Réessayez.';

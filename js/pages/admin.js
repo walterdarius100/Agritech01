@@ -1,7 +1,6 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 import {
-  archiveArticle,
   createArticle,
   deleteArticle,
   generateSlug,
@@ -9,6 +8,7 @@ import {
   publishArticle,
   updateArticle
 } from '../services/articles-service.js';
+import { uploadBlogImage, createArticleStorageId } from '../services/image-upload-service.js';
 import { getPlainTextFromArticleHtml, isSafeArticleMediaUrl, sanitizeArticleHtml } from '../utils/article-html.js';
 import { getArticleEditorContent, initArticleEditor, setArticleEditorContent, syncArticleEditor } from './admin-rich-editor.js';
 
@@ -38,6 +38,7 @@ const elements = {
   articleAuthor: document.querySelector('#articleAuthor'),
   articleExcerpt: document.querySelector('#articleExcerpt'),
   articleCoverUrl: document.querySelector('#articleCoverUrl'),
+  articleCoverFile: document.querySelector('#articleCoverFile'),
   articleContentField: document.querySelector('#articleContentField'),
   previewArticleButton: document.querySelector('#previewArticleButton'),
   articlePreview: document.querySelector('#articlePreview'),
@@ -55,7 +56,6 @@ const elements = {
   statTotalArticles: document.querySelector('#statTotalArticles'),
   statPublishedArticles: document.querySelector('#statPublishedArticles'),
   statDraftArticles: document.querySelector('#statDraftArticles'),
-  statArchivedArticles: document.querySelector('#statArchivedArticles'),
   summaryFeaturedArticle: document.querySelector('#summaryFeaturedArticle'),
   summaryLastPublished: document.querySelector('#summaryLastPublished'),
   summarySessionState: document.querySelector('#summarySessionState'),
@@ -72,6 +72,17 @@ let slugTouched = false;
 let activeArticleFilter = 'all';
 let articleSearchTerm = '';
 let previewObjectUrl = '';
+let pendingArticleId = '';
+
+function ensureArticleStorageId() {
+  if (elements.articleId?.value) return elements.articleId.value;
+  if (!pendingArticleId) pendingArticleId = createArticleStorageId();
+  return pendingArticleId;
+}
+
+function getCurrentArticleSlug() {
+  return generateSlug(elements.articleSlug?.value || elements.articleTitle?.value || 'article') || 'article';
+}
 
 function escapeHtml(value) {
   return String(value || '')
@@ -160,7 +171,7 @@ function getFriendlyError(error, context = 'default') {
 }
 
 function statusLabel(status) {
-  return { draft: 'brouillon', published: 'publié', archived: 'archivé' }[status] || status;
+  return { draft: 'brouillon', published: 'publié' }[status] || status;
 }
 
 function getFilteredArticles() {
@@ -178,14 +189,12 @@ function getFilteredArticles() {
 function updateOverview() {
   const publishedArticles = articles.filter((article) => article.status === 'published');
   const draftArticles = articles.filter((article) => article.status === 'draft');
-  const archivedArticles = articles.filter((article) => article.status === 'archived');
   const featuredArticle = articles.find((article) => article.featured);
   const lastPublished = [...publishedArticles].sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))[0];
 
   if (elements.statTotalArticles) elements.statTotalArticles.textContent = articles.length;
   if (elements.statPublishedArticles) elements.statPublishedArticles.textContent = publishedArticles.length;
   if (elements.statDraftArticles) elements.statDraftArticles.textContent = draftArticles.length;
-  if (elements.statArchivedArticles) elements.statArchivedArticles.textContent = archivedArticles.length;
   if (elements.summaryFeaturedArticle) {
     elements.summaryFeaturedArticle.textContent = featuredArticle
       ? `${featuredArticle.title} — ${statusLabel(featuredArticle.status)}`
@@ -230,7 +239,6 @@ function renderArticles() {
         ${article.status !== 'published' ? `<button class="btn mini success" data-action="publish" data-id="${escapeHtml(article.id)}" type="button">Publier</button>` : ''}
         ${!article.featured ? `<button class="btn mini" data-action="feature" data-id="${escapeHtml(article.id)}" type="button">À la une</button>` : ''}
         <button class="btn mini" data-action="edit" data-id="${escapeHtml(article.id)}" type="button">Modifier</button>
-        ${article.status !== 'archived' ? `<button class="btn mini warning" data-action="archive" data-id="${escapeHtml(article.id)}" type="button">Archiver</button>` : ''}
         <button class="btn mini danger" data-action="delete" data-id="${escapeHtml(article.id)}" type="button">Supprimer</button>
       </div>
     </article>
@@ -260,7 +268,8 @@ function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
   const previewSource = String(source || '').trim();
   elements.coverPreviewBox.hidden = false;
 
-  if (!previewSource || !isSafeArticleMediaUrl(previewSource)) {
+  const isLocalPreview = previewSource.startsWith('blob:');
+  if (!previewSource || (!isLocalPreview && !isSafeArticleMediaUrl(previewSource))) {
     elements.coverPreview.hidden = true;
     elements.coverPreview.removeAttribute('src');
     if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = false;
@@ -286,7 +295,8 @@ function renderArticlePreview() {
   const title = elements.articleTitle.value.trim() || 'Titre de l’article';
   const excerpt = elements.articleExcerpt.value.trim() || 'Résumé court de l’article.';
   const coverImage = elements.articleCoverUrl.value.trim();
-  const safeCoverImage = coverImage && isSafeArticleMediaUrl(coverImage) ? coverImage : '';
+  const previewCoverImage = previewObjectUrl || coverImage;
+  const safeCoverImage = previewCoverImage && (previewCoverImage.startsWith('blob:') || isSafeArticleMediaUrl(previewCoverImage)) ? previewCoverImage : '';
 
   if (!safeContent) {
     setMessage(elements.dashboardMessage, 'Ajoutez du contenu avant de prévisualiser l’article.', 'error');
@@ -311,6 +321,7 @@ function renderArticlePreview() {
 function resetForm() {
   elements.articleForm.reset();
   elements.articleId.value = '';
+  pendingArticleId = createArticleStorageId();
   elements.articleAuthor.value = 'Agri-tech';
   elements.articleStatus.value = 'draft';
   elements.articleFormTitle.textContent = 'Nouvel article';
@@ -333,6 +344,7 @@ function openForm(article = null) {
 
   elements.articleFormTitle.textContent = 'Modifier l’article';
   elements.articleId.value = article.id || '';
+  pendingArticleId = article.id || createArticleStorageId();
   elements.articleTitle.value = article.title || '';
   elements.articleSlug.value = article.slug || '';
   elements.articleCategory.value = article.category || '';
@@ -340,7 +352,7 @@ function openForm(article = null) {
   elements.articleExcerpt.value = article.excerpt || '';
   elements.articleCoverUrl.value = article.coverImage || '';
   setEditorContent(article.content || '');
-  elements.articleStatus.value = article.status || 'draft';
+  elements.articleStatus.value = article.status === 'published' ? 'published' : 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
   clearPreviewObjectUrl();
@@ -350,16 +362,19 @@ function openForm(article = null) {
 }
 
 function collectFormPayload(forcedStatus = null) {
-  const status = forcedStatus || elements.articleStatus.value || 'draft';
+  const requestedStatus = forcedStatus || elements.articleStatus.value || 'draft';
+  const status = requestedStatus === 'published' ? 'published' : 'draft';
   const publishedAt = elements.articlePublishedAt.value ? new Date(elements.articlePublishedAt.value).toISOString() : null;
   return {
+    id: elements.articleId.value || pendingArticleId || undefined,
     title: elements.articleTitle.value,
     slug: elements.articleSlug.value,
     category: elements.articleCategory.value,
     excerpt: elements.articleExcerpt.value,
     cover_image_url: isSafeArticleMediaUrl(elements.articleCoverUrl.value) ? elements.articleCoverUrl.value : '',
     author: elements.articleAuthor.value,
-    content: getSanitizedEditorContent(),
+    author_id: currentSession?.user?.id || null,
+    content_html: getSanitizedEditorContent(),
     status,
     featured: elements.articleFeatured.checked,
     published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
@@ -377,13 +392,29 @@ async function saveArticle(forcedStatus = null) {
   setMessage(elements.dashboardMessage, 'Enregistrement en cours…', 'info');
   try {
     const payload = collectFormPayload(forcedStatus);
+    const coverFile = elements.articleCoverFile?.files?.[0];
+    if (coverFile) {
+      setMessage(elements.dashboardMessage, 'Upload de l’image principale vers Supabase Storage…', 'info');
+      payload.cover_image_url = await uploadBlogImage({
+        file: coverFile,
+        articleId: ensureArticleStorageId(),
+        slug: payload.slug,
+        slot: 'cover'
+      });
+      elements.articleCoverUrl.value = payload.cover_image_url;
+      clearPreviewObjectUrl();
+      updateCoverPreview(payload.cover_image_url);
+    }
 
+    setMessage(elements.dashboardMessage, 'Sauvegarde de l’article dans Supabase Database…', 'info');
     const savedArticle = elements.articleId.value
       ? await updateArticle(elements.articleId.value, payload)
       : await createArticle(payload);
 
     setMessage(elements.dashboardMessage, `Article ${statusLabel(savedArticle.status)} enregistré avec succès.`, 'success');
     elements.articleId.value = savedArticle.id;
+    pendingArticleId = savedArticle.id;
+    if (elements.articleCoverFile) elements.articleCoverFile.value = '';
     await loadArticles();
   } catch (error) {
     logClientError('admin sauvegarde article', error);
@@ -495,6 +526,12 @@ function bindEvents() {
     clearPreviewObjectUrl();
     updateCoverPreview(elements.articleCoverUrl.value);
   });
+  elements.articleCoverFile?.addEventListener('change', () => {
+    clearPreviewObjectUrl();
+    const file = elements.articleCoverFile.files?.[0];
+    previewObjectUrl = file ? URL.createObjectURL(file) : '';
+    updateCoverPreview(previewObjectUrl || elements.articleCoverUrl.value);
+  });
   elements.coverPreview?.addEventListener('error', () => {
     elements.coverPreview.hidden = true;
     elements.coverPreview.removeAttribute('src');
@@ -535,18 +572,14 @@ function bindEvents() {
           excerpt: article.excerpt,
           cover_image_url: article.coverImage,
           author: article.author,
-          content: sanitizeArticleHtml(article.content),
+          content_html: sanitizeArticleHtml(article.content),
+          author_id: article.authorId || currentSession?.user?.id || null,
           status: article.status,
           featured: true,
           published_at: article.publishedAt || null
         };
         await updateArticle(article.id, payload);
         setMessage(elements.dashboardMessage, 'Article mis à la une avec succès.', 'success');
-      }
-      if (button.dataset.action === 'archive') {
-        if (!window.confirm('Archiver cet article ?')) return;
-        await archiveArticle(article.id);
-        setMessage(elements.dashboardMessage, 'Article archivé avec succès.', 'success');
       }
       if (button.dataset.action === 'delete') {
         if (!window.confirm('Supprimer définitivement cet article ?')) return;
@@ -562,7 +595,14 @@ function bindEvents() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await initArticleEditor();
+  await initArticleEditor({
+    getArticleId: ensureArticleStorageId,
+    getSlug: getCurrentArticleSlug,
+    onError: (error) => {
+      logClientError('admin upload image TinyMCE', error);
+      setMessage(elements.dashboardMessage, getFriendlyError(error, 'upload'), 'error');
+    }
+  });
   bindEvents();
   updateDiagnostics();
   await initSession();
