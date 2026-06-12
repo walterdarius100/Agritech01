@@ -1,3 +1,4 @@
+import { isSafeArticleMediaUrl, renderArticleHtmlForDisplay } from '../utils/article-html.js';
 import { escapeHtml } from '../utils/sanitize.js';
 import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
@@ -48,7 +49,8 @@ function setMeta(selector, value) {
 function updateArticleMeta(article) {
   const title = stripHtml(article.title) || 'Agri-tech - Actualités agricoles';
   const description = getArticleDescription(article);
-  const image = toAbsoluteUrl(article.coverImage || article.cover_image_url || FALLBACK_IMAGE);
+  const coverImage = article.coverImage || article.cover_image_url || '';
+  const image = toAbsoluteUrl(isSafeArticleMediaUrl(coverImage) ? coverImage : FALLBACK_IMAGE);
   const url = window.location.href;
 
   document.title = `${title} | Agri-tech`;
@@ -131,7 +133,7 @@ function renderRelatedArticleCard(article) {
   return `
     <article class="article-card related-article-card reveal">
       <a class="article-card-image" href="${articleUrl}" aria-label="Lire : ${escapeHtml(article.title)}">
-        <img src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
+        <img src="${escapeHtml(isSafeArticleMediaUrl(article.coverImage) ? article.coverImage : FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" loading="lazy" decoding="async" />
       </a>
       <div class="article-card-body">
         <div class="article-meta">
@@ -192,7 +194,7 @@ function renderArticle(article, relatedArticles = []) {
   updateArticleMeta(article);
   currentArticleShareData = getShareData(article);
 
-  const paragraphs = Array.isArray(article.content) ? article.content : String(article.content || '').split(/\n{2,}/).filter(Boolean);
+  const safeArticleBody = renderArticleHtmlForDisplay(article.content);
 
   articleContainer.innerHTML = `
     <article>
@@ -209,7 +211,7 @@ function renderArticle(article, relatedArticles = []) {
       </section>
       <section class="section-pad article-layout">
         <div class="article-cover-wrap reveal">
-          <img class="article-cover" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
+          <img class="article-cover" src="${escapeHtml(isSafeArticleMediaUrl(article.coverImage) ? article.coverImage : FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
           <button class="article-share-button" type="button" aria-label="Partager cet article" title="Partager cet article">
             <span class="share-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
@@ -219,7 +221,7 @@ function renderArticle(article, relatedArticles = []) {
           <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <div class="article-content reveal">
-          ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+          ${safeArticleBody}
         </div>
       </section>
       ${renderRelatedSection(relatedArticles, article.slug)}

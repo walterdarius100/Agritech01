@@ -154,22 +154,22 @@
                 <input id="articleAuthor" name="author" type="text" value="Agri-tech" />
               </div>
             </div>
-            <label for="articleExcerpt">Résumé / extrait</label>
-            <textarea id="articleExcerpt" name="excerpt" rows="3"></textarea>
+            <label for="articleExcerpt">Résumé court</label>
+            <textarea id="articleExcerpt" name="excerpt" rows="3" maxlength="260" placeholder="Résumé concis affiché dans les cartes et l’en-tête de l’article."></textarea>
+            <small>Gardez un résumé clair et court : il sert aussi aux aperçus de partage.</small>
           </fieldset>
 
           <fieldset class="form-block">
-            <legend>Image de couverture</legend>
+            <legend>Image principale</legend>
             <div class="form-grid two media-form-grid">
               <div>
-                <label for="articleCoverUrl">URL image de couverture</label>
+                <label for="articleCoverUrl">URL image principale</label>
                 <input id="articleCoverUrl" name="cover_image_url" type="url" placeholder="https://..." />
-                <small>Conservez ce champ pour une image déjà hébergée ou après upload Supabase Storage.</small>
+                <small>Première version : image déjà hébergée uniquement. Aucun upload ni clé privée côté frontend.</small>
               </div>
-              <div>
-                <label for="articleImage">Uploader une image</label>
-                <input id="articleImage" name="image" type="file" accept="image/*" />
-                <small>Image JPG/PNG/WebP, 4 Mo maximum.</small>
+              <div class="media-upload-note">
+                <strong>Images dans le contenu</strong>
+                <small>TinyMCE permet l’insertion par URL. La zone est prête pour ajouter plus tard Cloudinary ou Supabase Storage sans changer le rendu public.</small>
               </div>
             </div>
             <div class="cover-preview" id="coverPreviewBox">
@@ -185,6 +185,12 @@
             <legend>Contenu</legend>
             <label for="articleContentField">Contenu complet de l’article</label>
             <textarea id="articleContentField" name="content" rows="12" required></textarea>
+            <small>L’éditeur nettoie et sauvegarde un HTML contrôlé. Les images sont autorisées uniquement par URL.</small>
+            <button class="btn secondary preview-button" id="previewArticleButton" type="button">Prévisualiser l’article</button>
+            <article class="article-preview" id="articlePreview" aria-live="polite" hidden>
+              <span class="eyebrow">Prévisualisation</span>
+              <div id="articlePreviewContent"></div>
+            </article>
           </fieldset>
 
           <fieldset class="form-block publication-block">
@@ -218,13 +224,13 @@
         <div class="admin-card media-card">
           <span class="eyebrow">Images</span>
           <h3 id="mediaTitle">Médias</h3>
-          <p>Les images publiées dans les articles sont envoyées dans Supabase Storage via le formulaire d’article.</p>
+          <p>Cette version accepte les images par URL uniquement. La structure prépare un futur branchement vers Cloudinary ou Supabase Storage.</p>
           <div class="media-guidelines">
             <article><strong>Format recommandé</strong><span>WebP ou JPG compressé</span></article>
             <article><strong>Dimension idéale</strong><span>1200 × 675 px</span></article>
             <article><strong>Poids conseillé</strong><span>300 à 500 Ko</span></article>
           </div>
-          <p class="media-note">Google Drive peut rester une archive interne des visuels sources. Supabase Storage doit rester la source des images effectivement publiées.</p>
+          <p class="media-note">Aucune clé privée ne doit être ajoutée côté frontend. Une future intégration d’upload devra utiliser des politiques Storage, presets signés ou Edge Functions.</p>
         </div>
       </section>
 
@@ -245,6 +251,8 @@
       </section>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin" defer></script>
   <script type="module" src="js/pages/admin.js"></script>
 </body>
 </html>

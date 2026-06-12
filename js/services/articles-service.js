@@ -1,3 +1,4 @@
+import { sanitizeArticleHtml } from '../utils/article-html.js';
 import { getSupabaseClient, isSupabaseConfigured } from './supabase-client.js';
 
 const ARTICLE_DATA_URL = 'data/articles.json';
@@ -52,7 +53,7 @@ function toDatabasePayload(article) {
     excerpt: String(article.excerpt || '').trim(),
     cover_image_url: String(article.cover_image_url || article.coverImage || '').trim() || null,
     author: String(article.author || 'Agri-tech').trim() || 'Agri-tech',
-    content: String(article.content || '').trim(),
+    content: sanitizeArticleHtml(article.content || ''),
     status,
     featured: Boolean(article.featured),
     published_at: publishedAt
