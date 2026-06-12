@@ -56,7 +56,8 @@
 }
 
 .admin-image-preview {
-  width: min(100%, 420px);
+  width: min(100%, 280px);
+  max-width: 280px;
   aspect-ratio: 16 / 9;
   margin-top: 4px;
   border: 1px solid rgba(34, 139, 80, 0.18);
@@ -94,8 +95,10 @@
 @media (max-width: 640px) {
   .admin-image-preview {
     width: 100%;
-    max-width: none;
+    max-width: 320px;
     aspect-ratio: 16 / 9;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
