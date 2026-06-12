@@ -55,6 +55,20 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 3. Taille maximale : 4 Mo.
 4. L’image est envoyée dans le bucket Supabase Storage `article-images` et l’URL est enregistrée dans `cover_image_url`.
 
+
+## Rédaction des articles
+
+Le champ Contenu utilise une syntaxe Markdown simple :
+- `##` pour un titre de section
+- `###` pour un sous-titre
+- `**texte**` pour le gras
+- `*texte*` pour l’italique
+- `[texte](lien)` pour un lien
+- `- élément` pour une liste
+- `> citation` pour une citation
+
+L’aperçu de l’admin affiche uniquement un sous-ensemble Markdown sécurisé : le HTML brut est échappé et les liens dangereux sont ignorés.
+
 ## Bonnes pratiques éditoriales
 
 - Titre : clair, court et orienté bénéfice lecteur.

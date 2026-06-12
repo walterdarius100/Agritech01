@@ -3,6 +3,7 @@ import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
 import { logClientError } from '../utils/error-messages.js';
+import { renderSafeMarkdown } from '../utils/markdown.js';
 
 const articleContainer = document.querySelector('#articleContent');
 const params = new URLSearchParams(window.location.search);
@@ -192,7 +193,7 @@ function renderArticle(article, relatedArticles = []) {
   updateArticleMeta(article);
   currentArticleShareData = getShareData(article);
 
-  const paragraphs = Array.isArray(article.content) ? article.content : String(article.content || '').split(/\n{2,}/).filter(Boolean);
+  const articleBody = renderSafeMarkdown(article.content);
 
   articleContainer.innerHTML = `
     <article>
@@ -219,7 +220,7 @@ function renderArticle(article, relatedArticles = []) {
           <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <div class="article-content reveal">
-          ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+          ${articleBody}
         </div>
       </section>
       ${renderRelatedSection(relatedArticles, article.slug)}

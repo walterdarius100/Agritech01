@@ -1,5 +1,6 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
+import { renderSafeMarkdown } from '../utils/markdown.js';
 import {
   archiveArticle,
   createArticle,
@@ -39,6 +40,10 @@ const elements = {
   articleCoverUrl: document.querySelector('#articleCoverUrl'),
   articleImage: document.querySelector('#articleImage'),
   articleContentField: document.querySelector('#articleContentField'),
+  editorToolbar: document.querySelector('.editor-toolbar'),
+  editorPreview: document.querySelector('#articleContentPreview'),
+  editorPreviewBody: document.querySelector('#articleContentPreviewBody'),
+  editorPreviewButton: document.querySelector('[data-editor-action="preview"]'),
   articleStatus: document.querySelector('#articleStatus'),
   articlePublishedAt: document.querySelector('#articlePublishedAt'),
   articleFeatured: document.querySelector('#articleFeatured'),
@@ -252,6 +257,100 @@ function clearPreviewObjectUrl() {
   previewObjectUrl = '';
 }
 
+
+function setTextSelection(field, start, end) {
+  field.focus();
+  field.setSelectionRange(start, end);
+}
+
+function replaceEditorSelection(replacement, selectStartOffset = replacement.length, selectEndOffset = selectStartOffset) {
+  const field = elements.articleContentField;
+  if (!field) return;
+
+  const start = field.selectionStart || 0;
+  const end = field.selectionEnd || start;
+  const currentValue = field.value;
+  field.value = `${currentValue.slice(0, start)}${replacement}${currentValue.slice(end)}`;
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  setTextSelection(field, start + selectStartOffset, start + selectEndOffset);
+}
+
+function wrapEditorSelection(before, after, placeholder) {
+  const field = elements.articleContentField;
+  if (!field) return;
+
+  const start = field.selectionStart || 0;
+  const end = field.selectionEnd || start;
+  const selectedText = field.value.slice(start, end) || placeholder;
+  replaceEditorSelection(`${before}${selectedText}${after}`, before.length, before.length + selectedText.length);
+}
+
+function prefixEditorLines(prefix, placeholder) {
+  const field = elements.articleContentField;
+  if (!field) return;
+
+  const start = field.selectionStart || 0;
+  const end = field.selectionEnd || start;
+  const selectedText = field.value.slice(start, end);
+  const text = selectedText || placeholder;
+  const prefixedText = text
+    .split('\n')
+    .map((line) => (line.trim() ? `${prefix}${line.replace(/^\s+/, '')}` : line))
+    .join('\n');
+
+  replaceEditorSelection(prefixedText, prefix.length, prefixedText.length);
+}
+
+function insertEditorBlock(markdown, cursorOffset = markdown.length) {
+  const field = elements.articleContentField;
+  if (!field) return;
+
+  const start = field.selectionStart || 0;
+  const before = field.value.slice(0, start);
+  const after = field.value.slice(field.selectionEnd || start);
+  const needsLeadingBreak = before && !before.endsWith('\n') ? '\n\n' : '';
+  const needsTrailingBreak = after && !after.startsWith('\n') ? '\n\n' : '';
+  const insertion = `${needsLeadingBreak}${markdown}${needsTrailingBreak}`;
+  replaceEditorSelection(insertion, needsLeadingBreak.length + cursorOffset, needsLeadingBreak.length + cursorOffset);
+}
+
+function updateArticleContentPreview() {
+  if (!elements.editorPreviewBody) return;
+  elements.editorPreviewBody.innerHTML = renderSafeMarkdown(elements.articleContentField?.value || '');
+}
+
+function toggleArticleContentPreview() {
+  if (!elements.editorPreview || !elements.editorPreviewButton) return;
+
+  const willShow = elements.editorPreview.hidden;
+  if (willShow) updateArticleContentPreview();
+  elements.editorPreview.hidden = !willShow;
+  elements.editorPreviewButton.classList.toggle('is-active', willShow);
+  elements.editorPreviewButton.setAttribute('aria-expanded', String(willShow));
+}
+
+function handleEditorAction(action) {
+  const field = elements.articleContentField;
+  if (!field) return;
+
+  const selectedText = field.value.slice(field.selectionStart || 0, field.selectionEnd || field.selectionStart || 0);
+
+  if (action === 'h2') prefixEditorLines('## ', 'Titre de section');
+  if (action === 'h3') prefixEditorLines('### ', 'Sous-titre');
+  if (action === 'bold') wrapEditorSelection('**', '**', 'texte en gras');
+  if (action === 'italic') wrapEditorSelection('*', '*', 'texte en italique');
+  if (action === 'link') {
+    const label = selectedText || 'texte du lien';
+    const url = window.prompt('URL du lien', 'https://exemple.com') || 'https://exemple.com';
+    replaceEditorSelection(`[${label}](${url.trim()})`, 1, 1 + label.length);
+  }
+  if (action === 'ul') insertEditorBlock('- élément\n- élément', 2);
+  if (action === 'ol') insertEditorBlock('1. élément\n2. élément', 3);
+  if (action === 'quote') prefixEditorLines('> ', 'citation');
+  if (action === 'hr') insertEditorBlock('---');
+  if (action === 'preview') toggleArticleContentPreview();
+}
+
 function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
   if (!elements.coverPreviewBox || !elements.coverPreview) return;
   const previewSource = String(source || '').trim();
@@ -278,6 +377,12 @@ function resetForm() {
   slugTouched = false;
   clearPreviewObjectUrl();
   updateCoverPreview('');
+  if (elements.editorPreview) elements.editorPreview.hidden = true;
+  if (elements.editorPreviewButton) {
+    elements.editorPreviewButton.classList.remove('is-active');
+    elements.editorPreviewButton.setAttribute('aria-expanded', 'false');
+  }
+  if (elements.editorPreviewBody) elements.editorPreviewBody.textContent = '';
 }
 
 function openForm(article = null) {
@@ -303,6 +408,7 @@ function openForm(article = null) {
   elements.articleFeatured.checked = Boolean(article.featured);
   clearPreviewObjectUrl();
   updateCoverPreview(article.coverImage || '');
+  if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
   slugTouched = true;
   elements.articleTitle?.focus();
 }
@@ -458,6 +564,16 @@ function bindEvents() {
     clearPreviewObjectUrl();
     updateCoverPreview(elements.articleCoverUrl.value);
   });
+  elements.articleContentField?.addEventListener('input', () => {
+    if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
+  });
+
+  elements.editorToolbar?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-editor-action]');
+    if (!button) return;
+    handleEditorAction(button.dataset.editorAction);
+  });
+
   elements.articleImage?.addEventListener('change', () => {
     clearPreviewObjectUrl();
     const file = elements.articleImage.files?.[0];

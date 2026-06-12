@@ -109,3 +109,83 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+.editor-form-block textarea{
+  min-height:320px;
+  line-height:1.7;
+}
+.editor-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:2px;
+}
+.editor-toolbar button{
+  border:1px solid rgba(15,90,50,.16);
+  background:#fff;
+  color:var(--green-700);
+  border-radius:10px;
+  padding:8px 11px;
+  font:inherit;
+  font-size:.9rem;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+.editor-toolbar button:hover,
+.editor-toolbar button:focus-visible,
+.editor-toolbar button.is-active{
+  background:rgba(15,90,50,.08);
+  border-color:rgba(15,90,50,.34);
+  color:var(--green-950);
+  box-shadow:0 8px 18px rgba(6,40,31,.08);
+  transform:translateY(-1px);
+}
+.editor-toolbar button:focus-visible{
+  outline:3px solid rgba(242,184,75,.45);
+  outline-offset:2px;
+}
+.editor-preview{
+  margin-top:4px;
+  padding:16px;
+  border:1px solid rgba(15,90,50,.12);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(6,40,31,.06);
+}
+.editor-preview-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(15,90,50,.1);
+}
+.editor-preview-heading span{
+  color:var(--green-950);
+  font-weight:950;
+}
+.editor-preview-heading small{
+  color:var(--muted);
+  font-weight:700;
+}
+.editor-preview-content{
+  max-width:none;
+  margin:0;
+  font-size:1rem;
+}
+.editor-preview-content:empty::before{
+  content:'Aucun contenu à prévisualiser.';
+  color:var(--muted);
+  font-weight:700;
+}
+@media(max-width:620px){
+  .editor-form-block textarea{min-height:260px}
+  .editor-toolbar{gap:7px}
+  .editor-toolbar button{flex:1 1 auto;padding:8px 9px;font-size:.84rem}
+  .editor-preview{padding:14px;border-radius:16px}
+  .editor-preview-heading{display:grid;gap:5px}
+}
