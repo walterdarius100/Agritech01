@@ -1,6 +1,7 @@
 import { getFeaturedArticle, getPublishedArticles, renderArticleCards, renderFeaturedArticle } from '../components/render-articles.js';
 import { escapeHtml } from '../utils/sanitize.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
+import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 
 const ARTICLES_PER_PAGE = 4;
 const grid = document.querySelector('#articlesGrid');
@@ -121,8 +122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderList();
     setupFilters();
   } catch (error) {
-    console.error('Erreur actualités:', error);
-    renderArticleCards({ container: grid, articles: [], emptyMessage: 'Les actualités sont indisponibles pour le moment.' });
+    logClientError('actualités', error);
+    renderArticleCards({ container: grid, articles: [], emptyMessage: getSafeErrorMessage('articles-list', error) });
   }
 
   initScrollReveal();
