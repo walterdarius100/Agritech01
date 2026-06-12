@@ -3,7 +3,7 @@ import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
 import { logClientError } from '../utils/error-messages.js';
-import { renderSafeMarkdown } from '../utils/markdown.js';
+import { renderSafeArticleContent } from '../utils/markdown.js';
 
 const articleContainer = document.querySelector('#articleContent');
 const params = new URLSearchParams(window.location.search);
@@ -193,7 +193,7 @@ function renderArticle(article, relatedArticles = []) {
   updateArticleMeta(article);
   currentArticleShareData = getShareData(article);
 
-  const articleBody = renderSafeMarkdown(article.content);
+  const articleBody = renderSafeArticleContent(article.content);
 
   articleContainer.innerHTML = `
     <article>

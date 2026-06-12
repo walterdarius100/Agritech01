@@ -1,6 +1,6 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
-import { renderSafeMarkdown } from '../utils/markdown.js';
+import { renderSafeArticleContent, sanitizeArticleHtml, sanitizeArticleUrl } from '../utils/markdown.js';
 import {
   archiveArticle,
   createArticle,
@@ -40,6 +40,7 @@ const elements = {
   articleCoverUrl: document.querySelector('#articleCoverUrl'),
   articleImage: document.querySelector('#articleImage'),
   articleContentField: document.querySelector('#articleContentField'),
+  articleVisualEditor: document.querySelector('#articleVisualEditor'),
   editorToolbar: document.querySelector('.editor-toolbar'),
   editorPreview: document.querySelector('#articleContentPreview'),
   editorPreviewBody: document.querySelector('#articleContentPreviewBody'),
@@ -258,65 +259,36 @@ function clearPreviewObjectUrl() {
 }
 
 
-function setTextSelection(field, start, end) {
-  field.focus();
-  field.setSelectionRange(start, end);
+function focusEditor() {
+  elements.articleVisualEditor?.focus();
 }
 
-function replaceEditorSelection(replacement, selectStartOffset = replacement.length, selectEndOffset = selectStartOffset) {
-  const field = elements.articleContentField;
-  if (!field) return;
-
-  const start = field.selectionStart || 0;
-  const end = field.selectionEnd || start;
-  const currentValue = field.value;
-  field.value = `${currentValue.slice(0, start)}${replacement}${currentValue.slice(end)}`;
-  field.dispatchEvent(new Event('input', { bubbles: true }));
-  setTextSelection(field, start + selectStartOffset, start + selectEndOffset);
+function syncEditorToTextarea() {
+  if (!elements.articleContentField || !elements.articleVisualEditor) return '';
+  const sanitizedContent = sanitizeArticleHtml(elements.articleVisualEditor.innerHTML);
+  elements.articleContentField.value = sanitizedContent;
+  return sanitizedContent;
 }
 
-function wrapEditorSelection(before, after, placeholder) {
-  const field = elements.articleContentField;
-  if (!field) return;
-
-  const start = field.selectionStart || 0;
-  const end = field.selectionEnd || start;
-  const selectedText = field.value.slice(start, end) || placeholder;
-  replaceEditorSelection(`${before}${selectedText}${after}`, before.length, before.length + selectedText.length);
+function sanitizeEditorContent() {
+  if (!elements.articleVisualEditor) return '';
+  const sanitizedContent = syncEditorToTextarea();
+  elements.articleVisualEditor.innerHTML = sanitizedContent;
+  return sanitizedContent;
 }
 
-function prefixEditorLines(prefix, placeholder) {
-  const field = elements.articleContentField;
-  if (!field) return;
-
-  const start = field.selectionStart || 0;
-  const end = field.selectionEnd || start;
-  const selectedText = field.value.slice(start, end);
-  const text = selectedText || placeholder;
-  const prefixedText = text
-    .split('\n')
-    .map((line) => (line.trim() ? `${prefix}${line.replace(/^\s+/, '')}` : line))
-    .join('\n');
-
-  replaceEditorSelection(prefixedText, prefix.length, prefixedText.length);
-}
-
-function insertEditorBlock(markdown, cursorOffset = markdown.length) {
-  const field = elements.articleContentField;
-  if (!field) return;
-
-  const start = field.selectionStart || 0;
-  const before = field.value.slice(0, start);
-  const after = field.value.slice(field.selectionEnd || start);
-  const needsLeadingBreak = before && !before.endsWith('\n') ? '\n\n' : '';
-  const needsTrailingBreak = after && !after.startsWith('\n') ? '\n\n' : '';
-  const insertion = `${needsLeadingBreak}${markdown}${needsTrailingBreak}`;
-  replaceEditorSelection(insertion, needsLeadingBreak.length + cursorOffset, needsLeadingBreak.length + cursorOffset);
+function setEditorContent(content = '') {
+  if (!elements.articleVisualEditor || !elements.articleContentField) return;
+  const sanitizedContent = renderSafeArticleContent(content);
+  elements.articleVisualEditor.innerHTML = sanitizedContent;
+  elements.articleContentField.value = sanitizedContent;
+  updateArticleContentPreview();
 }
 
 function updateArticleContentPreview() {
   if (!elements.editorPreviewBody) return;
-  elements.editorPreviewBody.innerHTML = renderSafeMarkdown(elements.articleContentField?.value || '');
+  const sanitizedContent = syncEditorToTextarea();
+  elements.editorPreviewBody.innerHTML = sanitizedContent;
 }
 
 function toggleArticleContentPreview() {
@@ -329,26 +301,69 @@ function toggleArticleContentPreview() {
   elements.editorPreviewButton.setAttribute('aria-expanded', String(willShow));
 }
 
+function runEditorCommand(command, value = null) {
+  focusEditor();
+  document.execCommand(command, false, value);
+  syncEditorToTextarea();
+  if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
+}
+
+function insertEditorHtml(html) {
+  runEditorCommand('insertHTML', sanitizeArticleHtml(html));
+}
+
 function handleEditorAction(action) {
-  const field = elements.articleContentField;
-  if (!field) return;
+  if (!elements.articleVisualEditor) return;
 
-  const selectedText = field.value.slice(field.selectionStart || 0, field.selectionEnd || field.selectionStart || 0);
-
-  if (action === 'h2') prefixEditorLines('## ', 'Titre de section');
-  if (action === 'h3') prefixEditorLines('### ', 'Sous-titre');
-  if (action === 'bold') wrapEditorSelection('**', '**', 'texte en gras');
-  if (action === 'italic') wrapEditorSelection('*', '*', 'texte en italique');
+  if (action === 'h2') runEditorCommand('formatBlock', 'h2');
+  if (action === 'h3') runEditorCommand('formatBlock', 'h3');
+  if (action === 'paragraph') runEditorCommand('formatBlock', 'p');
+  if (action === 'bold') runEditorCommand('bold');
+  if (action === 'italic') runEditorCommand('italic');
   if (action === 'link') {
-    const label = selectedText || 'texte du lien';
-    const url = window.prompt('URL du lien', 'https://exemple.com') || 'https://exemple.com';
-    replaceEditorSelection(`[${label}](${url.trim()})`, 1, 1 + label.length);
+    const url = window.prompt('URL du lien', 'https://exemple.com');
+    const safeUrl = sanitizeArticleUrl(url || '');
+    if (!safeUrl) {
+      setMessage(elements.dashboardMessage, 'Lien refusé : utilisez une URL http(s), mailto, tel ou relative.', 'error');
+      focusEditor();
+      return;
+    }
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      insertEditorHtml(`<a href="${safeUrl}">texte du lien</a>`);
+    } else {
+      runEditorCommand('createLink', safeUrl);
+    }
+    sanitizeEditorContent();
+    if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
   }
-  if (action === 'ul') insertEditorBlock('- élément\n- élément', 2);
-  if (action === 'ol') insertEditorBlock('1. élément\n2. élément', 3);
-  if (action === 'quote') prefixEditorLines('> ', 'citation');
-  if (action === 'hr') insertEditorBlock('---');
+  if (action === 'ul') runEditorCommand('insertUnorderedList');
+  if (action === 'ol') runEditorCommand('insertOrderedList');
+  if (action === 'quote') runEditorCommand('formatBlock', 'blockquote');
+  if (action === 'hr') insertEditorHtml('<hr><p><br></p>');
+  if (action === 'undo') runEditorCommand('undo');
+  if (action === 'redo') runEditorCommand('redo');
   if (action === 'preview') toggleArticleContentPreview();
+}
+
+function insertPlainTextIntoEditor(text) {
+  focusEditor();
+  document.execCommand('insertText', false, String(text || ''));
+  syncEditorToTextarea();
+}
+
+function handleEditorPaste(event) {
+  event.preventDefault();
+  const html = event.clipboardData?.getData('text/html') || '';
+  const text = event.clipboardData?.getData('text/plain') || '';
+
+  if (html) {
+    insertEditorHtml(html);
+    sanitizeEditorContent();
+    return;
+  }
+
+  insertPlainTextIntoEditor(text);
 }
 
 function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
@@ -377,6 +392,7 @@ function resetForm() {
   slugTouched = false;
   clearPreviewObjectUrl();
   updateCoverPreview('');
+  setEditorContent('');
   if (elements.editorPreview) elements.editorPreview.hidden = true;
   if (elements.editorPreviewButton) {
     elements.editorPreviewButton.classList.remove('is-active');
@@ -402,7 +418,7 @@ function openForm(article = null) {
   elements.articleAuthor.value = article.author || 'Agri-tech';
   elements.articleExcerpt.value = article.excerpt || '';
   elements.articleCoverUrl.value = article.coverImage || '';
-  elements.articleContentField.value = article.content || '';
+  setEditorContent(article.content || '');
   elements.articleStatus.value = article.status || 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
@@ -414,6 +430,7 @@ function openForm(article = null) {
 }
 
 function collectFormPayload(forcedStatus = null) {
+  const sanitizedContent = syncEditorToTextarea();
   const status = forcedStatus || elements.articleStatus.value || 'draft';
   const publishedAt = elements.articlePublishedAt.value ? new Date(elements.articlePublishedAt.value).toISOString() : null;
   return {
@@ -423,7 +440,7 @@ function collectFormPayload(forcedStatus = null) {
     excerpt: elements.articleExcerpt.value,
     cover_image_url: elements.articleCoverUrl.value,
     author: elements.articleAuthor.value,
-    content: elements.articleContentField.value,
+    content: sanitizedContent,
     status,
     featured: elements.articleFeatured.checked,
     published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
@@ -431,7 +448,8 @@ function collectFormPayload(forcedStatus = null) {
 }
 
 async function saveArticle(forcedStatus = null) {
-  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim() || !elements.articleContentField.value.trim()) {
+  const sanitizedContent = syncEditorToTextarea();
+  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim() || !sanitizedContent.trim()) {
     setMessage(elements.dashboardMessage, 'Titre, slug, catégorie et contenu sont obligatoires.', 'error');
     return;
   }
@@ -564,9 +582,15 @@ function bindEvents() {
     clearPreviewObjectUrl();
     updateCoverPreview(elements.articleCoverUrl.value);
   });
-  elements.articleContentField?.addEventListener('input', () => {
+  elements.articleVisualEditor?.addEventListener('input', () => {
+    syncEditorToTextarea();
     if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
   });
+  elements.articleVisualEditor?.addEventListener('blur', () => {
+    sanitizeEditorContent();
+    if (elements.editorPreview && !elements.editorPreview.hidden) updateArticleContentPreview();
+  });
+  elements.articleVisualEditor?.addEventListener('paste', handleEditorPaste);
 
   elements.editorToolbar?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-editor-action]');

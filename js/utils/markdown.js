@@ -1,6 +1,8 @@
 import { escapeHtml } from './sanitize.js';
 
-const ALLOWED_URL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+const SAFE_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+const ALLOWED_ARTICLE_TAGS = new Set(['h2', 'h3', 'p', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'blockquote', 'hr', 'br']);
+const DANGEROUS_CONTAINER_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'style', 'form', 'input', 'button', 'textarea', 'select', 'option', 'svg', 'math']);
 
 function isSafeRelativeUrl(value) {
   return value.startsWith('/')
@@ -10,13 +12,13 @@ function isSafeRelativeUrl(value) {
     || !/^[a-z][a-z0-9+.-]*:/i.test(value);
 }
 
-function sanitizeMarkdownUrl(value) {
+export function sanitizeArticleUrl(value) {
   const url = String(value || '').trim();
-  if (!url) return '';
+  if (!url || /[\u0000-\u001F<>"']/.test(url)) return '';
 
   try {
     const parsedUrl = new URL(url, window.location.origin);
-    if (ALLOWED_URL_PROTOCOLS.has(parsedUrl.protocol) || isSafeRelativeUrl(url)) return url;
+    if (SAFE_LINK_PROTOCOLS.has(parsedUrl.protocol) || isSafeRelativeUrl(url)) return url;
   } catch (error) {
     if (isSafeRelativeUrl(url)) return url;
   }
@@ -40,7 +42,7 @@ function renderInlineMarkdown(value) {
   while ((match = linkPattern.exec(source)) !== null) {
     rendered += renderEmphasis(source.slice(lastIndex, match.index));
     const label = renderEmphasis(match[1]);
-    const href = sanitizeMarkdownUrl(match[2]);
+    const href = sanitizeArticleUrl(match[2]);
 
     if (href) {
       rendered += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
@@ -171,4 +173,87 @@ export function renderSafeMarkdown(value) {
   }
 
   return blocks.join('');
+}
+
+function appendSanitizedChildren(sourceNode, targetNode) {
+  Array.from(sourceNode.childNodes).forEach((childNode) => {
+    const cleanChild = sanitizeArticleNode(childNode);
+    if (cleanChild) targetNode.appendChild(cleanChild);
+  });
+}
+
+function sanitizeArticleNode(node) {
+  if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent || '');
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+  const tagName = node.tagName.toLowerCase();
+  if (DANGEROUS_CONTAINER_TAGS.has(tagName)) return null;
+
+  if (tagName === 'b') {
+    const strong = document.createElement('strong');
+    appendSanitizedChildren(node, strong);
+    return strong;
+  }
+
+  if (tagName === 'i') {
+    const em = document.createElement('em');
+    appendSanitizedChildren(node, em);
+    return em;
+  }
+
+  if (tagName === 'div') {
+    const paragraph = document.createElement('p');
+    appendSanitizedChildren(node, paragraph);
+    return paragraph.textContent.trim() || paragraph.querySelector('br') ? paragraph : null;
+  }
+
+  if (tagName === 'h1') {
+    const heading = document.createElement('h2');
+    appendSanitizedChildren(node, heading);
+    return heading;
+  }
+
+  if (!ALLOWED_ARTICLE_TAGS.has(tagName)) {
+    const fragment = document.createDocumentFragment();
+    appendSanitizedChildren(node, fragment);
+    return fragment;
+  }
+
+  const cleanElement = document.createElement(tagName);
+  if (tagName === 'a') {
+    const safeHref = sanitizeArticleUrl(node.getAttribute('href') || '');
+    if (!safeHref) {
+      const fragment = document.createDocumentFragment();
+      appendSanitizedChildren(node, fragment);
+      return fragment;
+    }
+    cleanElement.setAttribute('href', safeHref);
+    cleanElement.setAttribute('target', '_blank');
+    cleanElement.setAttribute('rel', 'noopener noreferrer');
+  }
+
+  if (tagName !== 'br' && tagName !== 'hr') appendSanitizedChildren(node, cleanElement);
+  return cleanElement;
+}
+
+export function sanitizeArticleHtml(html) {
+  const source = String(html || '').trim();
+  if (!source) return '';
+  if (typeof document === 'undefined') return escapeHtml(source);
+
+  const template = document.createElement('template');
+  template.innerHTML = source;
+  const output = document.createElement('div');
+  appendSanitizedChildren(template.content, output);
+  return output.innerHTML;
+}
+
+function looksLikeHtml(value) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(value || ''));
+}
+
+export function renderSafeArticleContent(value) {
+  const source = Array.isArray(value) ? value.join('\n\n') : String(value || '');
+  const html = looksLikeHtml(source) ? source : renderSafeMarkdown(source);
+  return sanitizeArticleHtml(html);
 }

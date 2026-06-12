@@ -56,18 +56,20 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 4. L’image est envoyée dans le bucket Supabase Storage `article-images` et l’URL est enregistrée dans `cover_image_url`.
 
 
-## Rédaction des articles
+## Éditeur d’articles
 
-Le champ Contenu utilise une syntaxe Markdown simple :
-- `##` pour un titre de section
-- `###` pour un sous-titre
-- `**texte**` pour le gras
-- `*texte*` pour l’italique
-- `[texte](lien)` pour un lien
-- `- élément` pour une liste
-- `> citation` pour une citation
+L’admin utilise un éditeur visuel sécurisé pour rédiger les articles. Les formats autorisés sont :
+- titres ;
+- sous-titres ;
+- paragraphes ;
+- gras ;
+- italique ;
+- liens ;
+- listes ;
+- citations ;
+- séparateurs.
 
-L’aperçu de l’admin affiche uniquement un sous-ensemble Markdown sécurisé : le HTML brut est échappé et les liens dangereux sont ignorés.
+Le contenu est nettoyé avant enregistrement et avant affichage public afin d’éviter l’exécution de HTML dangereux. Les anciens contenus en texte simple ou Markdown restent convertis vers un rendu sûr lors de la modification ou de l’affichage.
 
 ## Bonnes pratiques éditoriales
 

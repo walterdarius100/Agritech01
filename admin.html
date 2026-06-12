@@ -183,10 +183,11 @@
 
           <fieldset class="form-block editor-form-block">
             <legend>Contenu</legend>
-            <label for="articleContentField">Contenu complet de l’article</label>
-            <div class="editor-toolbar" aria-label="Outils de mise en forme Markdown">
+            <label for="articleVisualEditor">Contenu complet de l’article</label>
+            <div class="editor-toolbar" aria-label="Outils de mise en forme de l’article">
               <button type="button" data-editor-action="h2">Titre H2</button>
               <button type="button" data-editor-action="h3">Sous-titre H3</button>
+              <button type="button" data-editor-action="paragraph">Paragraphe</button>
               <button type="button" data-editor-action="bold">Gras</button>
               <button type="button" data-editor-action="italic">Italique</button>
               <button type="button" data-editor-action="link">Lien</button>
@@ -194,13 +195,17 @@
               <button type="button" data-editor-action="ol">Liste numérotée</button>
               <button type="button" data-editor-action="quote">Citation</button>
               <button type="button" data-editor-action="hr">Séparateur</button>
+              <button type="button" data-editor-action="undo">Annuler</button>
+              <button type="button" data-editor-action="redo">Rétablir</button>
               <button type="button" data-editor-action="preview" aria-controls="articleContentPreview" aria-expanded="false">Aperçu</button>
             </div>
-            <textarea id="articleContentField" name="content" rows="14" required></textarea>
+            <div class="article-visual-editor article-content" id="articleVisualEditor" contenteditable="true" role="textbox" aria-multiline="true" aria-describedby="articleEditorHelp" data-placeholder="Rédigez votre article ici…"></div>
+            <small id="articleEditorHelp">Mettez en forme visuellement votre article. Le HTML est nettoyé avant l’enregistrement et l’affichage public.</small>
+            <textarea class="editor-storage-field" id="articleContentField" name="content" rows="4" required aria-hidden="true" tabindex="-1"></textarea>
             <div class="editor-preview" id="articleContentPreview" hidden>
               <div class="editor-preview-heading">
-                <span>Aperçu du contenu</span>
-                <small>Rendu Markdown sécurisé, sans HTML brut exécuté.</small>
+                <span>Aperçu avant publication</span>
+                <small>Rendu final sécurisé avec le même nettoyage que la page publique.</small>
               </div>
               <div class="article-content editor-preview-content" id="articleContentPreviewBody"></div>
             </div>
