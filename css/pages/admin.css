@@ -56,8 +56,9 @@
 }
 
 .admin-image-preview {
-  width: 100%;
+  width: min(100%, 420px);
   aspect-ratio: 16 / 9;
+  margin-top: 4px;
   border: 1px solid rgba(34, 139, 80, 0.18);
   border-radius: 16px;
   background: #f8faf8;
@@ -87,6 +88,14 @@
   .article-form .form-block {
     padding: 16px;
     border-radius: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-image-preview {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: 16 / 9;
   }
 }
 
