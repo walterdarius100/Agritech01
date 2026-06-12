@@ -181,10 +181,47 @@
             </div>
           </fieldset>
 
-          <fieldset class="form-block">
+          <fieldset class="form-block editor-form-block">
             <legend>Contenu</legend>
-            <label for="articleContentField">Contenu complet de l’article</label>
-            <textarea id="articleContentField" name="content" rows="12" required></textarea>
+            <div class="rich-editor-shell" data-rich-editor>
+              <div class="rich-editor-header">
+                <div>
+                  <label for="articleContentEditor">Contenu complet de l’article</label>
+                  <small>Structurez le texte avec des titres, listes, citations et liens. Le contenu est enregistré dans le champ Supabase <code>content</code>.</small>
+                </div>
+                <span class="rich-editor-status" id="articleEditorStatus" role="status" aria-live="polite">Prêt</span>
+              </div>
+
+              <div class="rich-editor-toolbar" role="toolbar" aria-label="Mise en forme de l’article">
+                <button type="button" data-editor-command="formatBlock" data-editor-value="h2">Titre</button>
+                <button type="button" data-editor-command="formatBlock" data-editor-value="h3">Sous-titre</button>
+                <button type="button" data-editor-command="formatBlock" data-editor-value="p">Paragraphe</button>
+                <span aria-hidden="true"></span>
+                <button type="button" data-editor-command="bold"><strong>Gras</strong></button>
+                <button type="button" data-editor-command="italic"><em>Italique</em></button>
+                <button type="button" data-editor-command="createLink">Lien</button>
+                <span aria-hidden="true"></span>
+                <button type="button" data-editor-command="insertUnorderedList">Liste</button>
+                <button type="button" data-editor-command="formatBlock" data-editor-value="blockquote">Citation</button>
+                <button type="button" data-editor-command="insertHorizontalRule">Séparateur</button>
+              </div>
+
+              <div
+                id="articleContentEditor"
+                class="rich-editor-area"
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-describedby="articleEditorHelp"
+                data-placeholder="Rédigez votre article ici…"></div>
+              <textarea id="articleContentField" name="content" rows="12" required hidden></textarea>
+              <small id="articleEditorHelp">Astuce : sélectionnez un texte puis cliquez sur “Lien” pour ajouter une URL. Les scripts et attributs dangereux sont supprimés automatiquement.</small>
+
+              <details class="article-preview-panel" open>
+                <summary>Aperçu du rendu public</summary>
+                <div class="article-content article-editor-preview" id="articleContentPreview" aria-live="polite"></div>
+              </details>
+            </div>
           </fieldset>
 
           <fieldset class="form-block publication-block">

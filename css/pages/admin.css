@@ -109,3 +109,33 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+/* Éditeur riche pour la rédaction des articles */
+.editor-form-block{overflow:visible}
+.rich-editor-shell{display:grid;gap:14px;min-width:0}
+.rich-editor-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-width:0}
+.rich-editor-header label{margin:0 0 6px}
+.rich-editor-header small{display:block;color:var(--muted);font-weight:750;line-height:1.45}
+.rich-editor-header code{padding:2px 6px;border-radius:8px;background:#eef7f1;color:var(--green-900);font-weight:900}
+.rich-editor-status{flex:0 0 auto;border:1px solid rgba(23,107,72,.16);border-radius:999px;background:#eef7f1;color:var(--green-700);font-size:.8rem;font-weight:900;padding:7px 10px;white-space:nowrap}
+.rich-editor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid rgba(23,107,72,.16);border-radius:18px;background:linear-gradient(135deg,#fff,#f8fcf6);box-shadow:0 10px 24px rgba(6,40,31,.05)}
+.rich-editor-toolbar button{border:1px solid rgba(23,107,72,.18);border-radius:999px;background:#fff;color:var(--green-900);font:inherit;font-size:.9rem;font-weight:900;line-height:1;padding:10px 12px;cursor:pointer;transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
+.rich-editor-toolbar button:hover,.rich-editor-toolbar button:focus-visible{background:var(--green-700);border-color:var(--green-700);color:#fff;transform:translateY(-1px);outline:none}
+.rich-editor-toolbar span[aria-hidden="true"]{width:1px;align-self:stretch;background:rgba(23,107,72,.16);margin:0 2px}
+.rich-editor-area{min-height:340px;padding:clamp(16px,2vw,22px);border:1px solid rgba(23,107,72,.2);border-radius:20px;background:#fff;color:var(--green-950);font-size:1rem;line-height:1.75;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 14px 30px rgba(6,40,31,.05);outline:none;overflow:auto}
+.rich-editor-area:focus{border-color:var(--green-700);box-shadow:0 0 0 4px rgba(23,107,72,.12),0 14px 30px rgba(6,40,31,.06)}
+.rich-editor-area:empty::before{content:attr(data-placeholder);color:rgba(15,61,46,.45);font-weight:800;pointer-events:none}
+.rich-editor-area h2,.rich-editor-area h3,.article-editor-preview h2,.article-editor-preview h3{color:var(--green-950);line-height:1.2;letter-spacing:-.025em;margin:1.1em 0 .45em}
+.rich-editor-area h2,.article-editor-preview h2{font-size:clamp(1.45rem,2.5vw,2rem)}
+.rich-editor-area h3,.article-editor-preview h3{font-size:clamp(1.16rem,2vw,1.45rem)}
+.rich-editor-area p,.article-editor-preview p{margin:0 0 1em;color:var(--muted)}
+.rich-editor-area ul,.rich-editor-area ol,.article-editor-preview ul,.article-editor-preview ol{display:grid;gap:8px;margin:0 0 1em;padding-left:1.35rem;color:var(--muted)}
+.rich-editor-area blockquote,.article-editor-preview blockquote{margin:1.1em 0;padding:16px 18px;border-left:5px solid var(--green-700);border-radius:0 16px 16px 0;background:#eef7f1;color:var(--green-900);font-weight:800}
+.rich-editor-area blockquote p,.article-editor-preview blockquote p{color:inherit;margin:0}
+.rich-editor-area a,.article-editor-preview a{color:var(--green-700);font-weight:900;text-decoration:underline;text-underline-offset:3px}
+.rich-editor-area hr,.article-editor-preview hr{height:1px;border:0;background:linear-gradient(90deg,transparent,rgba(23,107,72,.35),transparent);margin:24px 0}
+.article-preview-panel{border:1px solid rgba(23,107,72,.16);border-radius:20px;background:#fbfdf9;overflow:hidden}
+.article-preview-panel summary{cursor:pointer;padding:14px 16px;color:var(--green-950);font-weight:900;background:#eef7f1}
+.article-editor-preview{padding:clamp(16px,2vw,22px);background:#fff}
+.editor-preview-empty{color:rgba(15,61,46,.55)!important;font-weight:800}
+@media(max-width:720px){.rich-editor-header{flex-direction:column}.rich-editor-status{white-space:normal}.rich-editor-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.rich-editor-toolbar button{width:100%}.rich-editor-toolbar span[aria-hidden="true"]{display:none}.rich-editor-area{min-height:280px}}

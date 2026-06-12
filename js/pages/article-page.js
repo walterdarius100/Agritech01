@@ -1,4 +1,5 @@
 import { escapeHtml } from '../utils/sanitize.js';
+import { sanitizeArticleContent } from '../utils/article-content.js';
 import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
@@ -192,7 +193,7 @@ function renderArticle(article, relatedArticles = []) {
   updateArticleMeta(article);
   currentArticleShareData = getShareData(article);
 
-  const paragraphs = Array.isArray(article.content) ? article.content : String(article.content || '').split(/\n{2,}/).filter(Boolean);
+  const articleContentHtml = sanitizeArticleContent(article.content);
 
   articleContainer.innerHTML = `
     <article>
@@ -219,7 +220,7 @@ function renderArticle(article, relatedArticles = []) {
           <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <div class="article-content reveal">
-          ${paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+          ${articleContentHtml}
         </div>
       </section>
       ${renderRelatedSection(relatedArticles, article.slug)}

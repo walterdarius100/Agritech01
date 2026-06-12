@@ -1,5 +1,6 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
+import { createSafeArticleLink, sanitizeArticleContent } from '../utils/article-content.js';
 import {
   archiveArticle,
   createArticle,
@@ -38,7 +39,11 @@ const elements = {
   articleExcerpt: document.querySelector('#articleExcerpt'),
   articleCoverUrl: document.querySelector('#articleCoverUrl'),
   articleImage: document.querySelector('#articleImage'),
+  articleContentEditor: document.querySelector('#articleContentEditor'),
   articleContentField: document.querySelector('#articleContentField'),
+  articleContentPreview: document.querySelector('#articleContentPreview'),
+  articleEditorStatus: document.querySelector('#articleEditorStatus'),
+  articleEditorButtons: document.querySelectorAll('[data-editor-command]'),
   articleStatus: document.querySelector('#articleStatus'),
   articlePublishedAt: document.querySelector('#articlePublishedAt'),
   articleFeatured: document.querySelector('#articleFeatured'),
@@ -269,6 +274,54 @@ function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
   if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = true;
 }
 
+
+function setEditorStatus(message = 'Prêt') {
+  if (elements.articleEditorStatus) elements.articleEditorStatus.textContent = message;
+}
+
+function updateArticleEditorPreview() {
+  if (!elements.articleContentEditor || !elements.articleContentField) return;
+  const sanitizedContent = sanitizeArticleContent(elements.articleContentEditor.innerHTML);
+  elements.articleContentField.value = sanitizedContent;
+  if (elements.articleContentPreview) {
+    elements.articleContentPreview.innerHTML = sanitizedContent || '<p class="editor-preview-empty">L’aperçu apparaîtra ici.</p>';
+  }
+}
+
+function setArticleEditorContent(content = '') {
+  if (!elements.articleContentEditor || !elements.articleContentField) return;
+  const sanitizedContent = sanitizeArticleContent(content);
+  elements.articleContentEditor.innerHTML = sanitizedContent;
+  elements.articleContentField.value = sanitizedContent;
+  updateArticleEditorPreview();
+}
+
+function focusArticleEditor() {
+  elements.articleContentEditor?.focus();
+}
+
+function applyArticleEditorCommand(command, value = null) {
+  if (!elements.articleContentEditor) return;
+  focusArticleEditor();
+
+  if (command === 'createLink') {
+    const selectedText = window.getSelection()?.toString().trim();
+    const url = window.prompt('URL du lien', selectedText?.startsWith('http') ? selectedText : 'https://');
+    if (url === null) return;
+    const safeUrl = createSafeArticleLink(url);
+    if (!safeUrl) {
+      setEditorStatus('Lien refusé : URL invalide ou non sécurisée.');
+      return;
+    }
+    document.execCommand('createLink', false, safeUrl);
+  } else {
+    document.execCommand(command, false, value);
+  }
+
+  updateArticleEditorPreview();
+  setEditorStatus('Mise en forme appliquée.');
+}
+
 function resetForm() {
   elements.articleForm.reset();
   elements.articleId.value = '';
@@ -278,7 +331,9 @@ function resetForm() {
   slugTouched = false;
   clearPreviewObjectUrl();
   updateCoverPreview('');
+  setArticleEditorContent('');
 }
+
 
 function openForm(article = null) {
   elements.articleFormPanel.hidden = false;
@@ -297,7 +352,7 @@ function openForm(article = null) {
   elements.articleAuthor.value = article.author || 'Agri-tech';
   elements.articleExcerpt.value = article.excerpt || '';
   elements.articleCoverUrl.value = article.coverImage || '';
-  elements.articleContentField.value = article.content || '';
+  setArticleEditorContent(article.content || '');
   elements.articleStatus.value = article.status || 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
@@ -317,7 +372,7 @@ function collectFormPayload(forcedStatus = null) {
     excerpt: elements.articleExcerpt.value,
     cover_image_url: elements.articleCoverUrl.value,
     author: elements.articleAuthor.value,
-    content: elements.articleContentField.value,
+    content: sanitizeArticleContent(elements.articleContentField.value),
     status,
     featured: elements.articleFeatured.checked,
     published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
@@ -325,6 +380,7 @@ function collectFormPayload(forcedStatus = null) {
 }
 
 async function saveArticle(forcedStatus = null) {
+  updateArticleEditorPreview();
   if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim() || !elements.articleContentField.value.trim()) {
     setMessage(elements.dashboardMessage, 'Titre, slug, catégorie et contenu sont obligatoires.', 'error');
     return;
@@ -469,6 +525,19 @@ function bindEvents() {
     elements.coverPreview.hidden = true;
     elements.coverPreview.removeAttribute('src');
     if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = false;
+  });
+
+
+  elements.articleContentEditor?.addEventListener('input', () => {
+    updateArticleEditorPreview();
+    setEditorStatus('Aperçu mis à jour.');
+  });
+  elements.articleContentEditor?.addEventListener('blur', () => {
+    setArticleEditorContent(elements.articleContentEditor.innerHTML);
+    setEditorStatus('Contenu nettoyé et prêt.');
+  });
+  elements.articleEditorButtons.forEach((button) => {
+    button.addEventListener('click', () => applyArticleEditorCommand(button.dataset.editorCommand, button.dataset.editorValue || null));
   });
 
   elements.articleForm?.addEventListener('submit', async (event) => {
