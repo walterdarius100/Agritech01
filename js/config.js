@@ -9,7 +9,7 @@ export const EMAILJS_CONFIG = {
 
 export const PARTNERSHIP_NEED = 'Partenariat';
 export const FORM_STATUS_DURATION = 10000;
-export const FORM_SUCCESS_MESSAGE = 'Votre demande a bien été envoyée. Notre équipe vous recontactera dans les meilleurs délais.';
-export const FORM_ERROR_MESSAGE = 'Une erreur est survenue lors de l’envoi. Veuillez réessayer ou nous contacter directement.';
+export const FORM_SUCCESS_MESSAGE = 'Votre message a bien été envoyé. Agri-tech vous répondra dès que possible.';
+export const FORM_ERROR_MESSAGE = 'Le message n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes.';
 export const NEWSLETTER_SUCCESS_MESSAGE = 'Merci, votre inscription à la newsletter est confirmée.';
-export const NEWSLETTER_ERROR_MESSAGE = 'Inscription impossible pour le moment. Veuillez réessayer.';
+export const NEWSLETTER_ERROR_MESSAGE = 'Le message n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes.';

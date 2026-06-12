@@ -11,6 +11,7 @@ import { storeLead as storeLeadRequest } from './components/contact-form.js';
 import { initFloatingActions } from './components/floating-actions.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
 import { isEmailValid } from './utils/validation.js';
+import { getSafeErrorMessage, logClientError } from './utils/error-messages.js';
 
 // Agri-Tech application bootstrap.
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
@@ -233,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       renderArticleCards({ container: elements.homeArticlesGrid, articles: articles.slice(0, 3) });
       setupScrollReveal(elements.homeArticlesGrid.querySelectorAll('.reveal'));
     } catch (error) {
-      console.error('Erreur actualités:', error);
-      renderArticleCards({ container: elements.homeArticlesGrid, articles: [], emptyMessage: 'Les actualités sont indisponibles pour le moment.' });
+      logClientError('actualités accueil', error);
+      renderArticleCards({ container: elements.homeArticlesGrid, articles: [], emptyMessage: getSafeErrorMessage('home-articles', error) });
     }
   }
 
@@ -617,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         if (website) return;
 
         if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
-          setFormStatus('error', 'Veuillez remplir les champs requis et accepter d’être recontacté.');
+          setFormStatus('error', 'Veuillez compléter les champs obligatoires avant d’envoyer.');
           return;
         }
 
@@ -627,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         }
 
         if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', 'EmailJS n’est pas encore configuré. Ajoutez vos identifiants dans js/config.js.');
+          setFormStatus('error', FORM_ERROR_MESSAGE);
           return;
         }
 
@@ -664,8 +665,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
             formResetTimer = null;
           }, 500);
         } catch (error) {
-          console.error('Erreur EmailJS:', error);
-          setFormStatus('error', FORM_ERROR_MESSAGE, true, true);
+          logClientError('formulaire contact', error);
+          setFormStatus('error', getSafeErrorMessage('email', error), true, true);
         } finally {
           setSubmitState(false);
         }
@@ -691,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         }
 
         if (!window.emailjs || !isEmailJsConfigured()) {
-          setNewsletterStatus('error', 'EmailJS n’est pas encore configuré.');
+          setNewsletterStatus('error', NEWSLETTER_ERROR_MESSAGE);
           return;
         }
 
@@ -718,8 +719,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           setNewsletterStatus('success', NEWSLETTER_SUCCESS_MESSAGE, true);
           elements.newsletterForm.reset();
         } catch (error) {
-          console.error('Erreur newsletter:', error);
-          setNewsletterStatus('error', NEWSLETTER_ERROR_MESSAGE, true);
+          logClientError('newsletter', error);
+          setNewsletterStatus('error', getSafeErrorMessage('newsletter', error), true);
         } finally {
           setNewsletterSubmitState(false);
         }

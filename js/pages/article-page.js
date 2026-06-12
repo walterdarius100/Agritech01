@@ -2,6 +2,7 @@ import { escapeHtml } from '../utils/sanitize.js';
 import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
+import { logClientError } from '../utils/error-messages.js';
 
 const articleContainer = document.querySelector('#articleContent');
 const params = new URLSearchParams(window.location.search);
@@ -177,7 +178,7 @@ function renderNotFound() {
         <section class="legal-section">
           <span class="eyebrow">Actualités</span>
           <h1>Article introuvable</h1>
-          <p>L’article demandé n’existe pas ou n’est plus disponible.</p>
+          <p>Article introuvable ou indisponible.</p>
           <a href="actualites.html" class="article-back-link">← Retour aux actualités</a>
         </section>
       </div>
@@ -247,12 +248,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         relatedArticles = await getPublishedArticles();
       } catch (relatedError) {
-        console.warn('Actualités liées indisponibles:', relatedError);
+        console.warn('[Agri-tech article] Actualités liées indisponibles:', relatedError?.message || relatedError);
       }
       renderArticle(article, relatedArticles);
     }
   } catch (error) {
-    console.error('Erreur article:', error);
+    logClientError('article', error);
     renderNotFound();
   }
 
