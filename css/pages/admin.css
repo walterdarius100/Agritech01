@@ -4,3 +4,96 @@
 .admin-login #loginTitle{max-width:100%;overflow-wrap:break-word;word-break:normal;text-align:center;font-size:clamp(1.65rem,5.8vw,2.25rem);line-height:1.15;letter-spacing:-.035em}
 .admin-login .admin-card-heading{text-align:center}
 @media(max-width:480px){.admin-login #loginTitle{font-size:1.35rem;line-height:1.2}.admin-login{padding-left:20px;padding-right:20px}}
+
+/* Corrections ciblées pour le formulaire “Nouvel article” */
+.article-form-card,
+.article-form,
+.article-form .form-block,
+.article-form .form-grid,
+.article-form .form-grid > div,
+.article-form .admin-section-heading,
+.article-form-card .admin-section-heading,
+.article-form-card .admin-section-heading > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.article-form-card .admin-section-heading.inline-heading {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.article-form-card h3,
+.article-form .form-block legend,
+.article-form .form-block label,
+.article-form .form-block small {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.25;
+}
+
+.article-form .form-block {
+  overflow: hidden;
+}
+
+.article-form .form-block legend {
+  display: block;
+  width: min(100%, max-content);
+  white-space: normal;
+}
+
+.article-form .cover-preview {
+  min-width: 0;
+  max-width: 100%;
+  gap: 8px;
+}
+
+.article-form .cover-preview > span {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  line-height: 1.25;
+}
+
+.admin-image-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(34, 139, 80, 0.18);
+  border-radius: 16px;
+  background: #f8faf8;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.admin-image-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.admin-image-preview-placeholder {
+  padding: 18px;
+  color: rgba(15, 90, 50, 0.7);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .article-form .form-block {
+    padding: 16px;
+    border-radius: 18px;
+  }
+}
+
+.article-form .admin-image-preview img {
+  max-width: none;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}

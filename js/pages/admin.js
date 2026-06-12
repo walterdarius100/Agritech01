@@ -44,6 +44,7 @@ const elements = {
   articleFeatured: document.querySelector('#articleFeatured'),
   coverPreviewBox: document.querySelector('#coverPreviewBox'),
   coverPreview: document.querySelector('#coverPreview'),
+  coverPreviewPlaceholder: document.querySelector('#coverPreviewPlaceholder'),
   saveDraftButton: document.querySelector('#saveDraftButton'),
   publishButton: document.querySelector('#publishButton'),
   updateButton: document.querySelector('#updateButton'),
@@ -245,15 +246,27 @@ async function loadArticles() {
   }
 }
 
+function clearPreviewObjectUrl() {
+  if (!previewObjectUrl) return;
+  URL.revokeObjectURL(previewObjectUrl);
+  previewObjectUrl = '';
+}
+
 function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
   if (!elements.coverPreviewBox || !elements.coverPreview) return;
-  if (!source) {
-    elements.coverPreviewBox.hidden = true;
+  const previewSource = String(source || '').trim();
+  elements.coverPreviewBox.hidden = false;
+
+  if (!previewSource) {
+    elements.coverPreview.hidden = true;
     elements.coverPreview.removeAttribute('src');
+    if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = false;
     return;
   }
-  elements.coverPreview.src = source;
-  elements.coverPreviewBox.hidden = false;
+
+  elements.coverPreview.src = previewSource;
+  elements.coverPreview.hidden = false;
+  if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = true;
 }
 
 function resetForm() {
@@ -263,6 +276,7 @@ function resetForm() {
   elements.articleStatus.value = 'draft';
   elements.articleFormTitle.textContent = 'Nouvel article';
   slugTouched = false;
+  clearPreviewObjectUrl();
   updateCoverPreview('');
 }
 
@@ -287,6 +301,7 @@ function openForm(article = null) {
   elements.articleStatus.value = article.status || 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
+  clearPreviewObjectUrl();
   updateCoverPreview(article.coverImage || '');
   slugTouched = true;
   elements.articleTitle?.focus();
@@ -322,6 +337,7 @@ async function saveArticle(forcedStatus = null) {
     if (file) {
       payload.cover_image_url = await uploadArticleImage(file, payload.slug);
       elements.articleCoverUrl.value = payload.cover_image_url;
+      clearPreviewObjectUrl();
       updateCoverPreview(payload.cover_image_url);
     }
 
@@ -438,12 +454,21 @@ function bindEvents() {
   });
   elements.articleSlug?.addEventListener('input', () => { slugTouched = true; });
   elements.articleSlug?.addEventListener('blur', () => { elements.articleSlug.value = generateSlug(elements.articleSlug.value); });
-  elements.articleCoverUrl?.addEventListener('input', () => updateCoverPreview(elements.articleCoverUrl.value));
+  elements.articleCoverUrl?.addEventListener('input', () => {
+    clearPreviewObjectUrl();
+    updateCoverPreview(elements.articleCoverUrl.value);
+  });
   elements.articleImage?.addEventListener('change', () => {
-    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    clearPreviewObjectUrl();
     const file = elements.articleImage.files?.[0];
     previewObjectUrl = file ? URL.createObjectURL(file) : '';
     updateCoverPreview(previewObjectUrl || elements.articleCoverUrl.value);
+  });
+
+  elements.coverPreview?.addEventListener('error', () => {
+    elements.coverPreview.hidden = true;
+    elements.coverPreview.removeAttribute('src');
+    if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = false;
   });
 
   elements.articleForm?.addEventListener('submit', async (event) => {
