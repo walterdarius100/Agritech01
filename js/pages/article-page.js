@@ -194,30 +194,38 @@ function renderArticle(article, relatedArticles = []) {
   currentArticleShareData = getShareData(article);
 
   const sanitizedContent = sanitizeArticleHtml(article.content);
+  const category = String(article.category || '').trim();
+  const excerpt = String(article.excerpt || '').trim();
+  const author = String(article.author || 'Agri-tech').trim();
 
   articleContainer.innerHTML = `
     <article>
-      <section class="hero page-hero legal-hero article-hero section-pad">
-        <div class="reveal is-visible">
-          <span class="eyebrow">${escapeHtml(article.category)}</span>
-          <h1>${escapeHtml(article.title)}</h1>
-          <p>${escapeHtml(article.excerpt)}</p>
-          <div class="article-byline">
-            <span>${escapeHtml(article.author)}</span>
-            <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
+      <section class="article-detail-hero">
+        <div class="article-detail-hero-inner reveal is-visible">
+          <div class="article-detail-meta">
+            ${category ? `<span class="article-detail-category">${escapeHtml(category)}</span>` : ''}
+            <time class="article-detail-date" datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
           </div>
+
+          <h1 class="article-detail-title">${escapeHtml(article.title)}</h1>
+
+          ${excerpt ? `<p class="article-detail-excerpt">${escapeHtml(excerpt)}</p>` : ''}
+
+          <div class="article-detail-footer">
+            <span class="article-detail-author">Par ${escapeHtml(author)}</span>
+            <button class="article-detail-share" type="button" aria-label="Partager cet article" title="Partager cet article">
+              <span class="share-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
+              </span>
+              <span>Partager</span>
+            </button>
+          </div>
+          <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
       </section>
       <section class="section-pad article-layout">
         <div class="article-cover-wrap reveal">
           <img class="article-cover" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
-          <button class="article-share-button" type="button" aria-label="Partager cet article" title="Partager cet article">
-            <span class="share-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.7a3.3 3.3 0 0 0 0-1.4L16 7.1A3 3 0 1 0 15 5l-7.1 4.2a3 3 0 1 0 0 5.6L15 19a3 3 0 1 0 3-2.9Z"/></svg>
-            </span>
-            <span>Partager</span>
-          </button>
-          <span class="article-share-toast" id="articleShareToast" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <div class="article-content reveal">
           ${sanitizedContent}
@@ -227,7 +235,7 @@ function renderArticle(article, relatedArticles = []) {
     </article>
   `;
 
-  articleContainer.querySelector('.article-share-button')?.addEventListener('click', handleArticleShare);
+  articleContainer.querySelector('.article-detail-share')?.addEventListener('click', handleArticleShare);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
