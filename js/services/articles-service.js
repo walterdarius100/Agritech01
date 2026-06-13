@@ -3,6 +3,7 @@ import { getSupabaseClient, isSupabaseConfigured } from './supabase-client.js';
 const ARTICLE_DATA_URL = 'data/articles.json';
 const IMAGE_BUCKET = 'article-images';
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
 export function generateSlug(value) {
   return String(value || '')
@@ -75,6 +76,53 @@ async function unsetOtherFeaturedArticles(client, currentArticleId = null) {
   if (currentArticleId) query = query.neq('id', currentArticleId);
   const { error } = await query;
   if (error) throw error;
+}
+
+
+function getCleanImageExtension(file) {
+  const extension = String(file?.name || '')
+    .split('.')
+    .pop()
+    ?.toLowerCase()
+    .replace(/[^a-z0-9]/g, '') || '';
+
+  if (ALLOWED_IMAGE_EXTENSIONS.has(extension)) return extension;
+
+  const mimeExtension = String(file?.type || '').split('/').pop()?.toLowerCase() || 'jpg';
+  return ALLOWED_IMAGE_EXTENSIONS.has(mimeExtension) ? mimeExtension : 'jpg';
+}
+
+function sanitizeStorageFileName(fileName) {
+  const baseName = String(fileName || 'image')
+    .replace(/\.[^.]+$/, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 70);
+
+  return baseName || 'image';
+}
+
+function validateArticleImageFile(file) {
+  if (!file || file.size === 0) throw new Error('Veuillez sélectionner un fichier image valide.');
+  if (!file.type?.startsWith('image/')) throw new Error('Veuillez sélectionner un fichier image valide.');
+  if (file.size > MAX_IMAGE_SIZE_BYTES) throw new Error('L’image est trop lourde. Utilisez une image de 4 Mo maximum.');
+}
+
+async function uploadImageFileToBucket(file, path) {
+  const client = await getClientOrThrow();
+  const { error } = await client.storage.from(IMAGE_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    contentType: file.type,
+    upsert: false
+  });
+
+  if (error) throw error;
+  const { data } = client.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+  return data?.publicUrl || '';
 }
 
 async function getClientOrThrow() {
@@ -198,21 +246,21 @@ export async function setFeaturedArticle(id) {
 }
 
 export async function uploadArticleImage(file, slug) {
-  const client = await getClientOrThrow();
   if (!file) return '';
-  if (!file.type?.startsWith('image/')) throw new Error('Le fichier sélectionné doit être une image.');
-  if (file.size > MAX_IMAGE_SIZE_BYTES) throw new Error('L’image dépasse la limite de 4 Mo.');
+  validateArticleImageFile(file);
 
-  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const extension = getCleanImageExtension(file);
   const cleanSlug = generateSlug(slug) || 'article';
   const path = `${Date.now()}-${cleanSlug}.${extension}`;
-  const { error } = await client.storage.from(IMAGE_BUCKET).upload(path, file, {
-    cacheControl: '3600',
-    contentType: file.type,
-    upsert: false
-  });
+  return uploadImageFileToBucket(file, path);
+}
 
-  if (error) throw error;
-  const { data } = client.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-  return data?.publicUrl || '';
+export async function uploadArticleContentImage(file, articleKey = '') {
+  validateArticleImageFile(file);
+
+  const extension = getCleanImageExtension(file);
+  const cleanArticleKey = generateSlug(articleKey) || `draft-${Date.now()}`;
+  const cleanFileName = sanitizeStorageFileName(file.name);
+  const path = `articles/${cleanArticleKey}/content/${Date.now()}-${cleanFileName}.${extension}`;
+  return uploadImageFileToBucket(file, path);
 }

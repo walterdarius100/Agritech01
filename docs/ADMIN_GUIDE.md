@@ -61,4 +61,32 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 - Slug : sans accents, en minuscules, avec tirets.
 - Résumé : 1 à 2 phrases qui expliquent l’intérêt de l’article.
 - Image : carrée ou paysage, nette, légère, cohérente avec l’agriculture en Haïti.
-- Contenu : paragraphes courts. Le rendu échappe le HTML pour éviter toute injection de HTML brut non sécurisé.
+- Contenu : paragraphes courts, titres structurés, liens utiles et listes lisibles. Le HTML riche est nettoyé avant sauvegarde et avant affichage public pour éviter les injections XSS.
+
+
+## Éditeur d’articles
+
+L’admin utilise TinyMCE pour rédiger les articles.
+Le contenu riche est nettoyé avant sauvegarde/affichage et reste stocké dans le champ existant `content`.
+Les statuts existants restent : `draft`, `published`, `archived`.
+
+## Images dans le contenu des articles
+
+L’éditeur TinyMCE permet d’insérer des images dans le corps de l’article.
+Les images sont envoyées dans Supabase Storage, bucket `article-images`.
+Elles sont ensuite insérées dans le contenu sous forme d’URL publique.
+Les images base64 ne doivent pas être utilisées.
+Poids recommandé : moins de 1 Mo.
+Poids maximum : 4 Mo.
+
+
+## Légendes et crédits photo
+
+Lorsqu’une image est insérée dans le contenu d’un article, ajoutez une légende sous l’image pour expliquer le visuel ou indiquer le crédit photo.
+
+Exemples :
+- `Photo : Agri-tech.`
+- `Crédit photo : Nom de la source.`
+- `Image utilisée à titre illustratif.`
+
+Les légendes sont enregistrées dans le contenu de l’article avec la structure HTML `figure` / `figcaption`.

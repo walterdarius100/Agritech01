@@ -1,5 +1,13 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
+import { escapeHtml } from '../utils/sanitize.js';
+import { hasEmbeddedBase64Image, hasReadableArticleContent, sanitizeArticleHtml } from '../utils/article-html.js';
+import {
+  getArticleEditorContent,
+  initArticleEditor,
+  setArticleEditorContent,
+  syncArticleEditor
+} from './admin-rich-editor.js';
 import {
   archiveArticle,
   createArticle,
@@ -8,6 +16,7 @@ import {
   getAllArticlesForAdmin,
   publishArticle,
   updateArticle,
+  uploadArticleContentImage,
   uploadArticleImage
 } from '../services/articles-service.js';
 
@@ -59,7 +68,9 @@ const elements = {
   diagConfigured: document.querySelector('#diagConfigured'),
   diagProject: document.querySelector('#diagProject'),
   diagClient: document.querySelector('#diagClient'),
-  diagSession: document.querySelector('#diagSession')
+  diagSession: document.querySelector('#diagSession'),
+  previewArticleButton: document.querySelector('#previewArticleButton'),
+  articlePreviewPanel: document.querySelector('#articlePreviewPanel')
 };
 
 let supabase = null;
@@ -69,15 +80,7 @@ let slugTouched = false;
 let activeArticleFilter = 'all';
 let articleSearchTerm = '';
 let previewObjectUrl = '';
-
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+let editorDraftStorageKey = `draft-${Date.now()}`;
 
 function setMessage(element, message = '', type = 'info') {
   if (!element) return;
@@ -278,6 +281,8 @@ function resetForm() {
   slugTouched = false;
   clearPreviewObjectUrl();
   updateCoverPreview('');
+  setArticleEditorContent('');
+  renderArticlePreview();
 }
 
 function openForm(article = null) {
@@ -297,7 +302,7 @@ function openForm(article = null) {
   elements.articleAuthor.value = article.author || 'Agri-tech';
   elements.articleExcerpt.value = article.excerpt || '';
   elements.articleCoverUrl.value = article.coverImage || '';
-  elements.articleContentField.value = article.content || '';
+  setArticleEditorContent(article.content || '');
   elements.articleStatus.value = article.status || 'draft';
   elements.articlePublishedAt.value = article.publishedAt ? article.publishedAt.slice(0, 16) : '';
   elements.articleFeatured.checked = Boolean(article.featured);
@@ -305,6 +310,65 @@ function openForm(article = null) {
   updateCoverPreview(article.coverImage || '');
   slugTouched = true;
   elements.articleTitle?.focus();
+  renderArticlePreview();
+}
+
+function getCurrentArticleContent() {
+  syncArticleEditor();
+  return getArticleEditorContent();
+}
+
+function getArticleStorageKey() {
+  return elements.articleId?.value || elements.articleSlug?.value || editorDraftStorageKey;
+}
+
+function getEditorUploadMessage(error) {
+  const message = String(error?.message || '');
+  if (/4 Mo|trop lourde|size/i.test(message)) return 'L’image est trop lourde. Utilisez une image de 4 Mo maximum.';
+  if (/image valide|image\./i.test(message)) return 'Veuillez sélectionner un fichier image valide.';
+  if (/Supabase client|storage|network|fetch|connexion/i.test(message)) return 'Connexion au stockage impossible. Vérifiez votre connexion.';
+  return 'L’image n’a pas pu être envoyée. Réessayez.';
+}
+
+async function uploadEditorImageToSupabase(file) {
+  try {
+    const publicUrl = await uploadArticleContentImage(file, getArticleStorageKey());
+    setMessage(elements.dashboardMessage, 'Image insérée dans l’article.', 'success');
+    return publicUrl;
+  } catch (error) {
+    logClientError('admin upload image TinyMCE', error);
+    const message = getEditorUploadMessage(error);
+    setMessage(elements.dashboardMessage, message, 'error');
+    throw new Error(message);
+  }
+}
+
+function getCurrentSanitizedArticleContent() {
+  return sanitizeArticleHtml(getCurrentArticleContent());
+}
+
+function getPreviewImageSource() {
+  return previewObjectUrl || elements.articleCoverUrl?.value || '';
+}
+
+function renderArticlePreview() {
+  if (!elements.articlePreviewPanel) return;
+
+  const sanitizedContent = getCurrentSanitizedArticleContent();
+  const title = elements.articleTitle?.value?.trim() || 'Titre de l’article';
+  const category = elements.articleCategory?.value?.trim() || 'Catégorie';
+  const excerpt = elements.articleExcerpt?.value?.trim() || 'Résumé de l’article';
+  const imageSource = getPreviewImageSource();
+
+  elements.articlePreviewPanel.innerHTML = `
+    <div class="article-preview-card">
+      ${imageSource ? `<img src="${escapeHtml(imageSource)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async" />` : ''}
+      <div class="article-preview-meta">${escapeHtml(category)}</div>
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(excerpt)}</p>
+      <div class="article-preview-content article-content">${sanitizedContent || '<p>Le contenu riche apparaîtra ici.</p>'}</div>
+    </div>
+  `;
 }
 
 function collectFormPayload(forcedStatus = null) {
@@ -317,7 +381,7 @@ function collectFormPayload(forcedStatus = null) {
     excerpt: elements.articleExcerpt.value,
     cover_image_url: elements.articleCoverUrl.value,
     author: elements.articleAuthor.value,
-    content: elements.articleContentField.value,
+    content: getCurrentSanitizedArticleContent(),
     status,
     featured: elements.articleFeatured.checked,
     published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
@@ -325,8 +389,19 @@ function collectFormPayload(forcedStatus = null) {
 }
 
 async function saveArticle(forcedStatus = null) {
-  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim() || !elements.articleContentField.value.trim()) {
-    setMessage(elements.dashboardMessage, 'Titre, slug, catégorie et contenu sont obligatoires.', 'error');
+  const rawContent = getCurrentArticleContent();
+  if (hasEmbeddedBase64Image(rawContent)) {
+    setMessage(elements.dashboardMessage, 'Certaines images n’ont pas été envoyées correctement. Veuillez les réinsérer avant d’enregistrer.', 'error');
+    return;
+  }
+
+  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim()) {
+    setMessage(elements.dashboardMessage, 'Titre, slug et catégorie sont obligatoires.', 'error');
+    return;
+  }
+
+  if (!hasReadableArticleContent(rawContent)) {
+    setMessage(elements.dashboardMessage, 'Veuillez ajouter un contenu à l’article.', 'error');
     return;
   }
 
@@ -345,6 +420,7 @@ async function saveArticle(forcedStatus = null) {
       ? await updateArticle(elements.articleId.value, payload)
       : await createArticle(payload);
 
+    editorDraftStorageKey = `draft-${Date.now()}`;
     setMessage(elements.dashboardMessage, `Article ${statusLabel(savedArticle.status)} enregistré avec succès.`, 'success');
     elements.articleId.value = savedArticle.id;
     await loadArticles();
@@ -454,15 +530,23 @@ function bindEvents() {
   });
   elements.articleSlug?.addEventListener('input', () => { slugTouched = true; });
   elements.articleSlug?.addEventListener('blur', () => { elements.articleSlug.value = generateSlug(elements.articleSlug.value); });
+  ['input', 'change'].forEach((eventName) => {
+    elements.articleTitle?.addEventListener(eventName, renderArticlePreview);
+    elements.articleCategory?.addEventListener(eventName, renderArticlePreview);
+    elements.articleExcerpt?.addEventListener(eventName, renderArticlePreview);
+    elements.articleCoverUrl?.addEventListener(eventName, renderArticlePreview);
+  });
   elements.articleCoverUrl?.addEventListener('input', () => {
     clearPreviewObjectUrl();
     updateCoverPreview(elements.articleCoverUrl.value);
+    renderArticlePreview();
   });
   elements.articleImage?.addEventListener('change', () => {
     clearPreviewObjectUrl();
     const file = elements.articleImage.files?.[0];
     previewObjectUrl = file ? URL.createObjectURL(file) : '';
     updateCoverPreview(previewObjectUrl || elements.articleCoverUrl.value);
+    renderArticlePreview();
   });
 
   elements.coverPreview?.addEventListener('error', () => {
@@ -477,6 +561,7 @@ function bindEvents() {
   });
   elements.saveDraftButton?.addEventListener('click', async () => { await saveArticle('draft'); });
   elements.publishButton?.addEventListener('click', async () => { await saveArticle('published'); });
+  elements.previewArticleButton?.addEventListener('click', renderArticlePreview);
 
   elements.articlesList?.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-action]');
@@ -532,5 +617,10 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   updateDiagnostics();
+  await initArticleEditor({
+    imagesUploadHandler: uploadEditorImageToSupabase,
+    onUploadError: (error) => logClientError('admin upload image TinyMCE', error)
+  });
+  renderArticlePreview();
   await initSession();
 });
