@@ -185,6 +185,7 @@
             <legend>Contenu</legend>
             <label for="articleContentField">Contenu complet de l’article</label>
             <textarea id="articleContentField" name="content" rows="12" required></textarea>
+            <small>Utilisez l’éditeur riche pour structurer l’article. Le HTML est nettoyé avant sauvegarde dans le champ existant <code>content</code>.</small>
           </fieldset>
 
           <fieldset class="form-block publication-block">
@@ -208,10 +209,12 @@
               <button class="btn ghost" id="saveDraftButton" type="button">Enregistrer comme brouillon</button>
               <button class="btn primary" id="publishButton" type="button">Publier</button>
               <button class="btn secondary" id="updateButton" type="submit">Mettre à jour</button>
+              <button class="btn ghost" id="previewArticleButton" type="button">Aperçu</button>
               <button class="btn text-btn" id="cancelEditButton" type="button">Annuler</button>
             </div>
           </fieldset>
         </form>
+        <aside class="article-preview-panel" id="articlePreviewPanel" aria-live="polite" aria-label="Aperçu sécurisé de l’article"></aside>
       </section>
 
       <section class="admin-section" id="adminSectionMedia" data-admin-section="media" aria-labelledby="mediaTitle" hidden>
@@ -245,6 +248,8 @@
       </section>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
   <script type="module" src="js/pages/admin.js"></script>
 </body>
 </html>

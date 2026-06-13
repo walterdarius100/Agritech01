@@ -61,4 +61,11 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 - Slug : sans accents, en minuscules, avec tirets.
 - Résumé : 1 à 2 phrases qui expliquent l’intérêt de l’article.
 - Image : carrée ou paysage, nette, légère, cohérente avec l’agriculture en Haïti.
-- Contenu : paragraphes courts. Le rendu échappe le HTML pour éviter toute injection de HTML brut non sécurisé.
+- Contenu : paragraphes courts, titres structurés, liens utiles et listes lisibles. Le HTML riche est nettoyé avant sauvegarde et avant affichage public pour éviter les injections XSS.
+
+
+## Éditeur d’articles
+
+L’admin utilise TinyMCE pour rédiger les articles.
+Le contenu riche est nettoyé avant sauvegarde/affichage et reste stocké dans le champ existant `content`.
+Les statuts existants restent : `draft`, `published`, `archived`.
