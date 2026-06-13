@@ -69,3 +69,12 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 L’admin utilise TinyMCE pour rédiger les articles.
 Le contenu riche est nettoyé avant sauvegarde/affichage et reste stocké dans le champ existant `content`.
 Les statuts existants restent : `draft`, `published`, `archived`.
+
+## Images dans le contenu des articles
+
+L’éditeur TinyMCE permet d’insérer des images dans le corps de l’article.
+Les images sont envoyées dans Supabase Storage, bucket `article-images`.
+Elles sont ensuite insérées dans le contenu sous forme d’URL publique.
+Les images base64 ne doivent pas être utilisées.
+Poids recommandé : moins de 1 Mo.
+Poids maximum : 4 Mo.

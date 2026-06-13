@@ -13,10 +13,11 @@ const ALLOWED_TAGS = [
   'hr',
   'br',
   'figure',
-  'figcaption'
+  'figcaption',
+  'img'
 ];
 
-const ALLOWED_ATTR = ['href', 'target', 'rel', 'class'];
+const ALLOWED_ATTR = ['href', 'target', 'rel', 'class', 'src', 'alt', 'width', 'height', 'loading', 'decoding'];
 const ALIGNMENT_CLASSES = new Set(['ag-align-left', 'ag-align-center', 'ag-align-right']);
 const DANGEROUS_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'style', 'form', 'input', 'button']);
 const LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
@@ -52,16 +53,40 @@ function normalizeArticleHtml(value) {
   return hasHtmlMarkup(html) ? html : legacyTextToHtml(html);
 }
 
-function isSafeLink(value) {
-  const href = String(value || '').trim();
-  if (!href || href.startsWith('#') || href.startsWith('/')) return true;
+function isBase64Image(value) {
+  return /^data:image\//i.test(String(value || '').trim());
+}
+
+function isSafeUrl(value) {
+  const urlValue = String(value || '').trim();
+  if (!urlValue || urlValue.startsWith('#') || urlValue.startsWith('/')) return true;
+
+  if (isBase64Image(urlValue)) return false;
 
   try {
-    const url = new URL(href, window.location.origin);
+    const url = new URL(urlValue, window.location.origin);
     return LINK_PROTOCOLS.has(url.protocol);
   } catch (error) {
     return false;
   }
+}
+
+function isSafeLink(value) {
+  return isSafeUrl(value);
+}
+
+function cleanImages(root) {
+  root.querySelectorAll('img').forEach((image) => {
+    const src = image.getAttribute('src') || '';
+    if (!isSafeUrl(src)) {
+      image.remove();
+      return;
+    }
+
+    image.setAttribute('loading', 'lazy');
+    image.setAttribute('decoding', 'async');
+    image.removeAttribute('srcset');
+  });
 }
 
 function hardenLinks(root) {
@@ -124,6 +149,7 @@ function fallbackSanitize(html) {
   });
 
   hardenLinks(template.content);
+  cleanImages(template.content);
   cleanAlignmentClasses(template.content);
   return template.innerHTML.trim();
 }
@@ -146,8 +172,13 @@ export function sanitizeArticleHtml(html) {
   const template = document.createElement('template');
   template.innerHTML = sanitizedHtml;
   hardenLinks(template.content);
+  cleanImages(template.content);
   cleanAlignmentClasses(template.content);
   return template.innerHTML.trim();
+}
+
+export function hasEmbeddedBase64Image(html) {
+  return /<img\b[^>]*\bsrc=["']?data:image\//i.test(String(html || ''));
 }
 
 export function getArticleText(html) {

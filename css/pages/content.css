@@ -201,3 +201,13 @@
 .article-content .ag-align-left { text-align: left; }
 .article-content .ag-align-center { text-align: center; }
 .article-content .ag-align-right { text-align: right; }
+
+.article-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 28px auto;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 139, 80, 0.16);
+  box-shadow: 0 12px 28px rgba(6, 40, 31, 0.06);
+}

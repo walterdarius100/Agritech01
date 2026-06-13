@@ -1,7 +1,7 @@
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 import { escapeHtml } from '../utils/sanitize.js';
-import { hasReadableArticleContent, sanitizeArticleHtml } from '../utils/article-html.js';
+import { hasEmbeddedBase64Image, hasReadableArticleContent, sanitizeArticleHtml } from '../utils/article-html.js';
 import {
   getArticleEditorContent,
   initArticleEditor,
@@ -16,6 +16,7 @@ import {
   getAllArticlesForAdmin,
   publishArticle,
   updateArticle,
+  uploadArticleContentImage,
   uploadArticleImage
 } from '../services/articles-service.js';
 
@@ -79,6 +80,7 @@ let slugTouched = false;
 let activeArticleFilter = 'all';
 let articleSearchTerm = '';
 let previewObjectUrl = '';
+let editorDraftStorageKey = `draft-${Date.now()}`;
 
 function setMessage(element, message = '', type = 'info') {
   if (!element) return;
@@ -316,6 +318,31 @@ function getCurrentArticleContent() {
   return getArticleEditorContent();
 }
 
+function getArticleStorageKey() {
+  return elements.articleId?.value || elements.articleSlug?.value || editorDraftStorageKey;
+}
+
+function getEditorUploadMessage(error) {
+  const message = String(error?.message || '');
+  if (/4 Mo|trop lourde|size/i.test(message)) return 'L’image est trop lourde. Utilisez une image de 4 Mo maximum.';
+  if (/image valide|image\./i.test(message)) return 'Veuillez sélectionner un fichier image valide.';
+  if (/Supabase client|storage|network|fetch|connexion/i.test(message)) return 'Connexion au stockage impossible. Vérifiez votre connexion.';
+  return 'L’image n’a pas pu être envoyée. Réessayez.';
+}
+
+async function uploadEditorImageToSupabase(file) {
+  try {
+    const publicUrl = await uploadArticleContentImage(file, getArticleStorageKey());
+    setMessage(elements.dashboardMessage, 'Image insérée dans l’article.', 'success');
+    return publicUrl;
+  } catch (error) {
+    logClientError('admin upload image TinyMCE', error);
+    const message = getEditorUploadMessage(error);
+    setMessage(elements.dashboardMessage, message, 'error');
+    throw new Error(message);
+  }
+}
+
 function getCurrentSanitizedArticleContent() {
   return sanitizeArticleHtml(getCurrentArticleContent());
 }
@@ -363,6 +390,11 @@ function collectFormPayload(forcedStatus = null) {
 
 async function saveArticle(forcedStatus = null) {
   const rawContent = getCurrentArticleContent();
+  if (hasEmbeddedBase64Image(rawContent)) {
+    setMessage(elements.dashboardMessage, 'Certaines images n’ont pas été envoyées correctement. Veuillez les réinsérer avant d’enregistrer.', 'error');
+    return;
+  }
+
   if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim()) {
     setMessage(elements.dashboardMessage, 'Titre, slug et catégorie sont obligatoires.', 'error');
     return;
@@ -388,6 +420,7 @@ async function saveArticle(forcedStatus = null) {
       ? await updateArticle(elements.articleId.value, payload)
       : await createArticle(payload);
 
+    editorDraftStorageKey = `draft-${Date.now()}`;
     setMessage(elements.dashboardMessage, `Article ${statusLabel(savedArticle.status)} enregistré avec succès.`, 'success');
     elements.articleId.value = savedArticle.id;
     await loadArticles();
@@ -584,7 +617,10 @@ function bindEvents() {
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   updateDiagnostics();
-  await initArticleEditor();
+  await initArticleEditor({
+    imagesUploadHandler: uploadEditorImageToSupabase,
+    onUploadError: (error) => logClientError('admin upload image TinyMCE', error)
+  });
   renderArticlePreview();
   await initSession();
 });

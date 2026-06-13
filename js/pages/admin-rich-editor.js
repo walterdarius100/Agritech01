@@ -31,7 +31,7 @@ function waitForTinyMce(timeout = TINYMCE_TIMEOUT_MS) {
   });
 }
 
-export async function initArticleEditor() {
+export async function initArticleEditor({ imagesUploadHandler = null, onUploadError = null } = {}) {
   const textarea = getTextarea();
   if (!textarea) return null;
 
@@ -49,12 +49,29 @@ export async function initArticleEditor() {
     promotion: false,
     height: 420,
     min_height: 320,
-    plugins: 'autolink link lists advlist autoresize preview',
-    toolbar: 'undo redo | blocks | bold italic | bullist numlist blockquote hr | alignleft aligncenter alignright | link | removeformat preview',
+    plugins: 'autolink link lists advlist autoresize preview image',
+    toolbar: 'undo redo | blocks | bold italic | bullist numlist blockquote hr | alignleft aligncenter alignright | link image | removeformat preview',
     block_formats: 'Paragraphe=p; Titre H2=h2; Sous-titre H3=h3; Intertitre H4=h4',
-    valid_elements: 'h2[class],h3[class],h4[class],p[class],strong/b,em/i,a[href|target|rel],ul[class],ol[class],li,blockquote[class],hr,br,figure[class],figcaption',
-    invalid_elements: 'script,iframe,object,embed,style,form,input,button,img',
+    valid_elements: 'h2[class],h3[class],h4[class],p[class],strong/b,em/i,a[href|target|rel],ul[class],ol[class],li,blockquote[class],hr,br,figure[class],figcaption,img[src|alt|width|height|loading|decoding]',
+    invalid_elements: 'script,iframe,object,embed,style,form,input,button',
     convert_urls: false,
+    automatic_uploads: true,
+    images_upload_credentials: false,
+    paste_data_images: false,
+    image_title: true,
+    images_file_types: 'jpg,jpeg,png,webp,gif',
+    images_upload_handler: async (blobInfo) => {
+      if (typeof imagesUploadHandler !== 'function') {
+        throw new Error('Connexion au stockage impossible. Vérifiez votre connexion.');
+      }
+
+      try {
+        return await imagesUploadHandler(blobInfo.blob(), blobInfo.filename());
+      } catch (error) {
+        onUploadError?.(error);
+        throw new Error(error?.message || 'L’image n’a pas pu être envoyée. Réessayez.');
+      }
+    },
     default_link_target: '_blank',
     link_assume_external_targets: 'https',
     target_list: [
@@ -75,6 +92,7 @@ export async function initArticleEditor() {
       p { margin: 0 0 1em; }
       blockquote { border-left: 4px solid #228b50; color: #365447; margin: 1.2em 0; padding: .65em 1em; background: #f5fbf6; }
       a { color: #176b48; }
+      img { display: block; max-width: 100%; height: auto; margin: 1.4em auto; border-radius: 12px; border: 1px solid #d9e8dd; }
       hr { border: 0; border-top: 1px solid #d9e8dd; margin: 1.6em 0; }
       .ag-align-left { text-align: left; }
       .ag-align-center { text-align: center; }
