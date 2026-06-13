@@ -59,6 +59,7 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
     images_upload_credentials: false,
     paste_data_images: false,
     image_title: true,
+    image_caption: true,
     images_file_types: 'jpg,jpeg,png,webp,gif',
     images_upload_handler: async (blobInfo) => {
       if (typeof imagesUploadHandler !== 'function') {
@@ -92,6 +93,9 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
       p { margin: 0 0 1em; }
       blockquote { border-left: 4px solid #228b50; color: #365447; margin: 1.2em 0; padding: .65em 1em; background: #f5fbf6; }
       a { color: #176b48; }
+      figure { margin: 1.8em auto; }
+      figure img { display: block; max-width: 100%; height: auto; margin: 0 auto; border-radius: 12px; border: 1px solid #d9e8dd; }
+      figcaption { color: rgba(20, 33, 27, .68); font-size: .92em; line-height: 1.5; margin-top: .6em; text-align: center; }
       img { display: block; max-width: 100%; height: auto; margin: 1.4em auto; border-radius: 12px; border: 1px solid #d9e8dd; }
       hr { border: 0; border-top: 1px solid #d9e8dd; margin: 1.6em 0; }
       .ag-align-left { text-align: left; }

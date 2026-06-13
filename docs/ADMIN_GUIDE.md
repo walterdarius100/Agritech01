@@ -78,3 +78,15 @@ Elles sont ensuite insérées dans le contenu sous forme d’URL publique.
 Les images base64 ne doivent pas être utilisées.
 Poids recommandé : moins de 1 Mo.
 Poids maximum : 4 Mo.
+
+
+## Légendes et crédits photo
+
+Lorsqu’une image est insérée dans le contenu d’un article, ajoutez une légende sous l’image pour expliquer le visuel ou indiquer le crédit photo.
+
+Exemples :
+- `Photo : Agri-tech.`
+- `Crédit photo : Nom de la source.`
+- `Image utilisée à titre illustratif.`
+
+Les légendes sont enregistrées dans le contenu de l’article avec la structure HTML `figure` / `figcaption`.

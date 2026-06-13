@@ -188,14 +188,26 @@
 }
 
 .article-content figure {
-  margin: 28px 0;
+  margin: 32px auto;
+}
+
+.article-content figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 139, 80, 0.16);
+  box-shadow: 0 12px 28px rgba(6, 40, 31, 0.06);
 }
 
 .article-content figcaption {
   margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: rgba(20, 33, 27, 0.68);
+  font-size: 0.92rem;
   font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .article-content .ag-align-left { text-align: left; }

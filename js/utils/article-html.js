@@ -109,6 +109,28 @@ function hardenLinks(root) {
   });
 }
 
+
+function getAllowedAttributesForTag(tagName) {
+  if (tagName === 'a') return new Set(['href', 'target', 'rel']);
+  if (tagName === 'img') return new Set(['src', 'alt', 'width', 'height', 'loading', 'decoding']);
+  if (['h2', 'h3', 'h4', 'p', 'ul', 'ol', 'blockquote', 'figure', 'figcaption'].includes(tagName)) return new Set(['class']);
+  return new Set();
+}
+
+function cleanAllowedAttributes(root) {
+  root.querySelectorAll('*').forEach((element) => {
+    const tagName = element.tagName.toLowerCase();
+    const allowedAttributes = getAllowedAttributesForTag(tagName);
+
+    [...element.attributes].forEach((attribute) => {
+      const attrName = attribute.name.toLowerCase();
+      if (attrName.startsWith('on') || !allowedAttributes.has(attrName)) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+  });
+}
+
 function cleanAlignmentClasses(root) {
   root.querySelectorAll('[class]').forEach((element) => {
     const safeClasses = String(element.getAttribute('class') || '')
@@ -140,14 +162,9 @@ function fallbackSanitize(html) {
       return;
     }
 
-    [...element.attributes].forEach((attribute) => {
-      const attrName = attribute.name.toLowerCase();
-      if (attrName.startsWith('on') || !ALLOWED_ATTR.includes(attrName)) {
-        element.removeAttribute(attribute.name);
-      }
-    });
   });
 
+  cleanAllowedAttributes(template.content);
   hardenLinks(template.content);
   cleanImages(template.content);
   cleanAlignmentClasses(template.content);
@@ -171,6 +188,7 @@ export function sanitizeArticleHtml(html) {
 
   const template = document.createElement('template');
   template.innerHTML = sanitizedHtml;
+  cleanAllowedAttributes(template.content);
   hardenLinks(template.content);
   cleanImages(template.content);
   cleanAlignmentClasses(template.content);
