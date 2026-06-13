@@ -55,7 +55,7 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 2. Formats image acceptés par le navigateur : JPG, PNG, WebP, etc.
 3. Taille maximale : 4 Mo.
 4. L’image principale est envoyée dans le bucket Supabase Storage `article-images`, chemin `articles/{article-id}/cover/`, et l’URL est enregistrée dans `cover_image_url`.
-5. Les images insérées via TinyMCE sont envoyées dans `article-images`, chemin `articles/{article-id}/content/`, puis insérées dans `content_html` sous forme d’URL Supabase.
+5. Les images insérées via TinyMCE sont envoyées dans `article-images`, chemin `articles/{article-id}/content/`, puis insérées dans `content` sous forme d’URL Supabase.
 6. Les images en base64 ne doivent pas être utilisées.
 
 ## Bonnes pratiques éditoriales
@@ -64,4 +64,4 @@ Cochez **Article à la une** dans le formulaire. Quand un nouvel article est enr
 - Slug : sans accents, en minuscules, avec tirets.
 - Résumé : 1 à 2 phrases qui expliquent l’intérêt de l’article.
 - Image : carrée ou paysage, nette, légère, cohérente avec l’agriculture en Haïti.
-- Contenu : utilisez TinyMCE pour les titres, listes, citations, liens et images. Le rendu public nettoie `content_html` avec DOMPurify avant injection dans le DOM.
+- Contenu : utilisez TinyMCE pour les titres, listes, citations, liens et images. Le rendu public nettoie `content` avec DOMPurify avant injection dans le DOM.

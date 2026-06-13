@@ -42,24 +42,20 @@ export function normalizeArticle(article = {}) {
   };
 }
 
-async function toDatabasePayload(client, article) {
+function toDatabasePayload(article) {
   const status = article.status === 'published' ? 'published' : 'draft';
   const publishedAt = status === 'published'
     ? (article.published_at || article.publishedAt || new Date().toISOString())
     : null;
 
-  const { data: userData } = await client.auth.getUser().catch(() => ({ data: null }));
-  const authorId = article.author_id || article.authorId || userData?.user?.id || null;
-
   return {
-    ...(article.id ? { id: article.id } : {}),
     title: String(article.title || '').trim(),
     slug: generateSlug(article.slug || article.title),
     category: String(article.category || '').trim(),
     excerpt: String(article.excerpt || '').trim(),
     cover_image_url: String(article.cover_image_url || article.coverImage || '').trim() || null,
-    author_id: authorId,
-    content_html: sanitizeArticleHtml(article.content_html || article.contentHtml || article.content || ''),
+    author: String(article.author || 'Agri-tech').trim() || 'Agri-tech',
+    content: sanitizeArticleHtml(article.content || article.content_html || article.contentHtml || ''),
     status,
     featured: Boolean(article.featured),
     published_at: publishedAt
@@ -145,7 +141,7 @@ export function getFeaturedArticle(articles) {
 
 export async function createArticle(article) {
   const client = await getClientOrThrow();
-  const payload = await toDatabasePayload(client, article);
+  const payload = toDatabasePayload(article);
   if (payload.featured) await unsetOtherFeaturedArticles(client);
 
   const { data, error } = await client.from('articles').insert(payload).select('*').single();
@@ -155,8 +151,7 @@ export async function createArticle(article) {
 
 export async function updateArticle(id, article) {
   const client = await getClientOrThrow();
-  const payload = await toDatabasePayload(client, article);
-  delete payload.id;
+  const payload = toDatabasePayload(article);
   if (payload.featured) await unsetOtherFeaturedArticles(client, id);
 
   const { data, error } = await client.from('articles').update(payload).eq('id', id).select('*').single();

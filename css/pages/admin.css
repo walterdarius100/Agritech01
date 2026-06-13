@@ -229,3 +229,42 @@
 .article-preview-body .article-align-left { text-align: left; }
 .article-preview-body .article-align-center { text-align: center; }
 .article-preview-body .article-align-right { text-align: right; }
+
+.article-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.article-preview-toolbar .eyebrow {
+  margin: 0;
+}
+
+.preview-close-button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(23, 107, 72, 0.16);
+  border-radius: 999px;
+  background: #f4fbf6;
+  color: var(--green-900);
+  font-weight: 900;
+}
+
+.preview-close-button:hover {
+  background: var(--green-700);
+  color: #fff;
+}
+
+@media (max-width: 620px) {
+  .article-preview-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .preview-close-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

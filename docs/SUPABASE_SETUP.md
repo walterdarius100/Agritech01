@@ -6,7 +6,7 @@ Ce guide décrit la configuration Supabase attendue par l’admin statique `admi
 
 ## 1. Table `articles`
 
-À exécuter dans **Supabase → SQL Editor**. Cette version utilise `content_html` pour le HTML contrôlé produit par TinyMCE et `author_id` pour l’utilisateur Supabase Auth connecté.
+L’admin est compatible avec la structure existante du projet : le HTML TinyMCE nettoyé est sauvegardé dans la colonne `content`, et le nom d’auteur dans la colonne `author`.
 
 ```sql
 create extension if not exists pgcrypto;
@@ -15,23 +15,22 @@ create table if not exists public.articles (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   slug text not null unique,
-  excerpt text,
-  content_html text not null,
-  cover_image_url text,
   category text not null,
+  excerpt text,
+  cover_image_url text,
+  author text default 'Agri-tech',
+  content text not null,
   status text not null default 'draft',
-  author_id uuid references auth.users(id) on delete set null,
-  featured boolean not null default false,
+  featured boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
   published_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
   constraint articles_status_check check (status in ('draft', 'published'))
 );
 
 create index if not exists articles_slug_idx on public.articles (slug);
 create index if not exists articles_status_idx on public.articles (status);
 create index if not exists articles_published_at_idx on public.articles (published_at desc);
-create index if not exists articles_author_id_idx on public.articles (author_id);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -50,20 +49,9 @@ for each row
 execute function public.set_updated_at();
 ```
 
-### Migration si vous aviez l’ancienne table
-
-Si votre ancienne table utilisait `content` au lieu de `content_html`, exécutez cette migration avant d’appliquer les contraintes :
+### Migration légère si votre contrainte de statut autorisait encore `archived`
 
 ```sql
-alter table public.articles add column if not exists content_html text;
-update public.articles
-set content_html = coalesce(content_html, content, '')
-where content_html is null;
-alter table public.articles alter column content_html set not null;
-
-alter table public.articles add column if not exists author_id uuid references auth.users(id) on delete set null;
-alter table public.articles add column if not exists featured boolean not null default false;
-
 update public.articles set status = 'draft' where status not in ('draft', 'published');
 alter table public.articles drop constraint if exists articles_status_check;
 alter table public.articles add constraint articles_status_check check (status in ('draft', 'published'));
@@ -99,30 +87,30 @@ for select
 to anon, authenticated
 using (status = 'published');
 
-drop policy if exists "Blog admins can read all articles" on public.articles;
-create policy "Blog admins can read all articles"
+drop policy if exists "Article admins can read all articles" on public.articles;
+create policy "Article admins can read all articles"
 on public.articles
 for select
 to authenticated
 using (public.is_blog_admin());
 
-drop policy if exists "Blog admins can create articles" on public.articles;
-create policy "Blog admins can create articles"
+drop policy if exists "Article admins can create articles" on public.articles;
+create policy "Article admins can create articles"
 on public.articles
 for insert
 to authenticated
-with check (public.is_blog_admin() and author_id = (select auth.uid()));
+with check (public.is_blog_admin());
 
-drop policy if exists "Blog admins can update articles" on public.articles;
-create policy "Blog admins can update articles"
+drop policy if exists "Article admins can update articles" on public.articles;
+create policy "Article admins can update articles"
 on public.articles
 for update
 to authenticated
 using (public.is_blog_admin())
-with check (public.is_blog_admin() and author_id = (select auth.uid()));
+with check (public.is_blog_admin());
 
-drop policy if exists "Blog admins can delete articles" on public.articles;
-create policy "Blog admins can delete articles"
+drop policy if exists "Article admins can delete articles" on public.articles;
+create policy "Article admins can delete articles"
 on public.articles
 for delete
 to authenticated
@@ -131,7 +119,7 @@ using (public.is_blog_admin());
 
 ## 4. Bucket Supabase Storage `article-images`
 
-L’implémentation attend le bucket existant **public** `article-images`. Ne créez pas de bucket séparé pour TinyMCE : les URLs publiques retournées par Supabase sont sauvegardées dans `cover_image_url` et dans `content_html`.
+L’implémentation attend le bucket existant **public** `article-images`. Ne créez pas de bucket séparé pour TinyMCE : les URLs publiques retournées par Supabase sont sauvegardées dans `cover_image_url` et dans `content`.
 
 Structure utilisée par le code :
 
@@ -160,15 +148,15 @@ on conflict (id) do update set
 ## 5. RLS Storage
 
 ```sql
-drop policy if exists "Public can read blog images" on storage.objects;
-create policy "Public can read blog images"
+drop policy if exists "Public can read article images" on storage.objects;
+create policy "Public can read article images"
 on storage.objects
 for select
 to anon, authenticated
 using (bucket_id = 'article-images');
 
-drop policy if exists "Blog admins can upload blog images" on storage.objects;
-create policy "Blog admins can upload blog images"
+drop policy if exists "Article admins can upload article images" on storage.objects;
+create policy "Article admins can upload article images"
 on storage.objects
 for insert
 to authenticated
@@ -178,16 +166,16 @@ with check (
   and name like 'articles/%'
 );
 
-drop policy if exists "Blog admins can update blog images" on storage.objects;
-create policy "Blog admins can update blog images"
+drop policy if exists "Article admins can update article images" on storage.objects;
+create policy "Article admins can update article images"
 on storage.objects
 for update
 to authenticated
 using (bucket_id = 'article-images' and public.is_blog_admin())
 with check (bucket_id = 'article-images' and public.is_blog_admin());
 
-drop policy if exists "Blog admins can delete blog images" on storage.objects;
-create policy "Blog admins can delete blog images"
+drop policy if exists "Article admins can delete article images" on storage.objects;
+create policy "Article admins can delete article images"
 on storage.objects
 for delete
 to authenticated
@@ -197,7 +185,7 @@ using (bucket_id = 'article-images' and public.is_blog_admin());
 ## 6. Tests fonctionnels
 
 1. **Connexion admin** : ouvrir `/admin.html`, se connecter avec un utilisateur Supabase Auth ayant `app_metadata.role = 'admin'` ou `blog_admin`.
-2. **Création d’un brouillon** : créer un article, choisir `brouillon`, enregistrer. Vérifier la ligne dans `public.articles` avec `status = 'draft'` et `content_html` rempli.
+2. **Création d’un brouillon** : créer un article, choisir `brouillon`, enregistrer. Vérifier la ligne dans `public.articles` avec `status = 'draft'` et `content` rempli.
 3. **Image principale** : sélectionner une image dans “Image principale à uploader”. Vérifier que le fichier apparaît dans `Storage → article-images → articles/{article-id}/cover/` et que `cover_image_url` contient l’URL publique.
 4. **Image TinyMCE** : utiliser le bouton image de TinyMCE et choisir un fichier. Vérifier que l’image est uploadée dans `articles/{article-id}/content/` et que le HTML contient une URL Supabase, pas du base64.
 5. **Publication** : cliquer “Publier”. Vérifier `status = 'published'` et `published_at` non nul.

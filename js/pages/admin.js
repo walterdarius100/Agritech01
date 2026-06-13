@@ -43,6 +43,7 @@ const elements = {
   previewArticleButton: document.querySelector('#previewArticleButton'),
   articlePreview: document.querySelector('#articlePreview'),
   articlePreviewContent: document.querySelector('#articlePreviewContent'),
+  closeArticlePreviewButton: document.querySelector('#closeArticlePreviewButton'),
   articleStatus: document.querySelector('#articleStatus'),
   articlePublishedAt: document.querySelector('#articlePublishedAt'),
   articleFeatured: document.querySelector('#articleFeatured'),
@@ -290,6 +291,10 @@ function getSanitizedEditorContent() {
   return getArticleEditorContent();
 }
 
+function closeArticlePreview() {
+  if (elements.articlePreview) elements.articlePreview.hidden = true;
+}
+
 function renderArticlePreview() {
   const safeContent = getSanitizedEditorContent();
   const title = elements.articleTitle.value.trim() || 'Titre de l’article';
@@ -366,15 +371,13 @@ function collectFormPayload(forcedStatus = null) {
   const status = requestedStatus === 'published' ? 'published' : 'draft';
   const publishedAt = elements.articlePublishedAt.value ? new Date(elements.articlePublishedAt.value).toISOString() : null;
   return {
-    id: elements.articleId.value || pendingArticleId || undefined,
     title: elements.articleTitle.value,
     slug: elements.articleSlug.value,
     category: elements.articleCategory.value,
     excerpt: elements.articleExcerpt.value,
     cover_image_url: isSafeArticleMediaUrl(elements.articleCoverUrl.value) ? elements.articleCoverUrl.value : '',
     author: elements.articleAuthor.value,
-    author_id: currentSession?.user?.id || null,
-    content_html: getSanitizedEditorContent(),
+    content: getSanitizedEditorContent(),
     status,
     featured: elements.articleFeatured.checked,
     published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
@@ -539,6 +542,7 @@ function bindEvents() {
   });
 
   elements.previewArticleButton?.addEventListener('click', renderArticlePreview);
+  elements.closeArticlePreviewButton?.addEventListener('click', closeArticlePreview);
 
   elements.articleForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -572,8 +576,7 @@ function bindEvents() {
           excerpt: article.excerpt,
           cover_image_url: article.coverImage,
           author: article.author,
-          content_html: sanitizeArticleHtml(article.content),
-          author_id: article.authorId || currentSession?.user?.id || null,
+          content: sanitizeArticleHtml(article.content),
           status: article.status,
           featured: true,
           published_at: article.publishedAt || null

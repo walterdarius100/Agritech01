@@ -187,7 +187,10 @@
             <small>TinyMCE uploade les images du contenu vers Supabase Storage puis sauvegarde uniquement les URLs dans le HTML nettoyé.</small>
             <button class="btn secondary preview-button" id="previewArticleButton" type="button">Prévisualiser l’article</button>
             <article class="article-preview" id="articlePreview" aria-live="polite" hidden>
-              <span class="eyebrow">Prévisualisation</span>
+              <div class="article-preview-toolbar">
+                <span class="eyebrow">Prévisualisation</span>
+                <button class="btn text-btn preview-close-button" id="closeArticlePreviewButton" type="button">Fermer la prévisualisation</button>
+              </div>
               <div id="articlePreviewContent"></div>
             </article>
           </fieldset>

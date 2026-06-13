@@ -1,7 +1,15 @@
 const DEFAULT_USER_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer.';
 
 function getRawErrorMessage(error) {
-  return String(error?.message || error?.error_description || error?.statusText || error || '');
+  return [
+    error?.message,
+    error?.details,
+    error?.hint,
+    error?.code,
+    error?.error_description,
+    error?.statusText,
+    typeof error === 'string' ? error : ''
+  ].filter(Boolean).join(' ');
 }
 
 function maskSensitiveLogValue(value) {
@@ -56,6 +64,30 @@ export function getSafeErrorMessage(context = 'default', error = null) {
     return 'L’image n’a pas pu être envoyée. Vérifiez le fichier, le bucket article-images et vos droits.';
   }
 
+  if (context === 'save-article') {
+    if (/duplicate key|23505|already exists|unique constraint|articles_slug|slug/.test(rawMessage)) {
+      return 'Un article utilise déjà ce slug. Modifiez le slug avant d’enregistrer.';
+    }
+
+    if (/column.*does not exist|could not find.*column|schema cache|pgrst204|undefined column|42703/.test(rawMessage)) {
+      return 'La structure de la table articles ne correspond pas encore au formulaire.';
+    }
+
+    if (/row-level security|\brls\b|policy|permission|forbidden|unauthorized|not authorized|access denied|42501|403/.test(rawMessage)) {
+      return 'Permission Supabase insuffisante pour enregistrer l’article.';
+    }
+
+    if (/not-null|null value|violates not-null|23502|required/.test(rawMessage)) {
+      return 'Certains champs obligatoires de l’article sont manquants.';
+    }
+
+    if (/check constraint|invalid.*status|23514|articles_status/.test(rawMessage)) {
+      return 'Le statut de l’article est invalide. Utilisez brouillon ou publié.';
+    }
+
+    return 'Impossible d’enregistrer l’article pour le moment. Réessayez.';
+  }
+
   if (/row-level security|\brls\b|policy|permission|forbidden|unauthorized|not authorized|access denied/.test(rawMessage)) {
     return 'Action impossible pour le moment. Vérifiez vos droits d’accès ou réessayez.';
   }
@@ -74,10 +106,6 @@ export function getSafeErrorMessage(context = 'default', error = null) {
 
   if (context === 'load-admin-articles') {
     return 'Impossible de charger les articles. Vérifiez la connexion ou réessayez.';
-  }
-
-  if (context === 'save-article') {
-    return 'Impossible d’enregistrer l’article pour le moment. Réessayez.';
   }
 
   if (context === 'publish-article') {
@@ -101,8 +129,10 @@ export function logClientError(scope, error) {
     name: error?.name || 'Error',
     message: maskSensitiveLogValue(getRawErrorMessage(error)) || 'Aucun message technique disponible',
     status: error?.status || error?.statusCode || null,
-    code: maskSensitiveLogValue(error?.code || '') || null
+    code: maskSensitiveLogValue(error?.code || '') || null,
+    details: maskSensitiveLogValue(error?.details || '') || null,
+    hint: maskSensitiveLogValue(error?.hint || '') || null
   };
 
-  console.error(`[Agri-tech ${scope}]`, safeDetails);
+  console.error(`[Agri-tech ${scope}]`, safeDetails, error);
 }
