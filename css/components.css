@@ -44,7 +44,7 @@
 .service-image{width:100%;height:190px;display:block;object-fit:cover;background:var(--green-100);border-radius:var(--card-image-radius) var(--card-image-radius) 0 0}
 .service-content,.course-body{display:flex;flex:1;flex-direction:column;gap:12px;padding:22px}
 .service-card p,.testimonial-text,.course-card p{color:var(--muted);font-size:.96rem}
-.tag{display:inline-block;font-size:.78rem;font-weight:900;color:var(--green-700);background:var(--green-100);padding:6px 9px;border-radius:999px}
+.tag{display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;font-size:.78rem;font-weight:900;line-height:1.2;color:var(--green-700);background:var(--green-100);padding:6px 12px;border-radius:999px;white-space:normal;overflow-wrap:anywhere}
 .course-header{height:165px;position:relative;display:flex;align-items:flex-end;padding:14px;overflow:hidden;background:var(--green-900);border-radius:var(--card-image-radius) var(--card-image-radius) 0 0}
 .course-header img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
 .course-header::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.68),rgba(0,0,0,.08))}
