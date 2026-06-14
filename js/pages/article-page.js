@@ -125,6 +125,105 @@ async function handleArticleShare() {
   }
 }
 
+
+function renderShareIcon(platform) {
+  const icons = {
+    facebook: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.7v-2.9h2.7V9.8c0-2.7 1.6-4.2 4-4.2 1.2 0 2.4.2 2.4.2v2.6h-1.3c-1.3 0-1.7.8-1.7 1.6v1.9h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg>',
+    linkedin: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.1 8.7H1.9v10.7h3.2V8.7ZM3.5 7.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Zm15.9 12.2h3.2v-5.9c0-3.1-1.7-4.6-4-4.6a3.4 3.4 0 0 0-3.1 1.7h-.1V8.7h-3.1v10.7h3.2v-5.3c0-1.4.3-2.7 2-2.7s1.9 1.5 1.9 2.8v5.2ZM10.1 8.7H6.9v10.7h3.2V8.7Z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 3.5A11 11 0 0 0 3.7 17.8L2 22l4.4-1.6A11 11 0 1 0 20.5 3.5Zm-8.6 16a8.9 8.9 0 0 1-4.5-1.2l-.3-.2-2.6.9.9-2.5-.2-.3A8.9 8.9 0 1 1 11.9 19.5Zm4.9-6.7c-.3-.2-1.7-.8-2-.9s-.5-.2-.7.2-.8.9-1 .1a7.3 7.3 0 0 1-2.2-2.7c-.2-.4 0-.6.2-.8l.3-.3c.1-.1.2-.2.3-.4s0-.4 0-.6-.7-1.7-1-2.3c-.3-.6-.5-.5-.7-.5h-.6a1.1 1.1 0 0 0-.8.4 3.2 3.2 0 0 0-1 2.4 5.6 5.6 0 0 0 1.2 3c.2.3 2.1 3.2 5 4.5 2.9 1.2 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.4Z"/></svg>',
+    x: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.2 2.3h3.3l-7.2 8.2 8.5 11.2h-6.7l-5.2-6.8-6 6.8H1.7l7.7-8.8L1.3 2.3h6.8l4.7 6.2 5.4-6.2Zm-1.2 17.5h1.8L7.1 4.1h-2L17 19.8Z"/></svg>',
+    email: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm8 8 8-5V7l-8 5-8-5v1l8 5Z"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 7a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-1v1a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1V7Zm3-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-7Zm-3 4H7a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-1h-4a3 3 0 0 1-3-3v-4Z"/></svg>'
+  };
+
+  return icons[platform] || '';
+}
+
+function getArticleShareLinks(article) {
+  const articleUrl = window.location.href;
+  const articleTitle = stripHtml(article.title) || document.title;
+  const encodedUrl = encodeURIComponent(articleUrl);
+  const encodedTitle = encodeURIComponent(articleTitle);
+
+  return [
+    {
+      platform: 'facebook',
+      label: 'Partager sur Facebook',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      external: true
+    },
+    {
+      platform: 'linkedin',
+      label: 'Partager sur LinkedIn',
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+      external: true
+    },
+    {
+      platform: 'whatsapp',
+      label: 'Partager sur WhatsApp',
+      href: `https://wa.me/?text=${encodeURIComponent(`${articleTitle} ${articleUrl}`)}`,
+      external: true
+    },
+    {
+      platform: 'x',
+      label: 'Partager sur X',
+      href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+      external: true
+    },
+    {
+      platform: 'email',
+      label: 'Partager par email',
+      href: `mailto:?subject=${encodedTitle}&body=${encodedUrl}`,
+      external: false
+    }
+  ];
+}
+
+function renderArticleShareSection(article) {
+  const shareLinks = getArticleShareLinks(article);
+
+  return `
+    <section class="article-share-section reveal" aria-labelledby="articleShareTitle">
+      <h2 id="articleShareTitle">Partager cet article</h2>
+      <p>Vous avez aimé cet article ? Partagez-le avec vos proches et vos amis.</p>
+      <div class="article-share-list" aria-label="Options de partage de l’article">
+        ${shareLinks.map((link) => `
+          <a class="article-share-link" data-share-platform="${link.platform}" href="${escapeHtml(link.href)}" aria-label="${escapeHtml(link.label)}"${link.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>
+            ${renderShareIcon(link.platform)}
+          </a>
+        `).join('')}
+        <button class="article-share-link article-share-copy" type="button" data-share-platform="copy" aria-label="Copier le lien de l’article">
+          ${renderShareIcon('copy')}
+        </button>
+      </div>
+      <span class="article-share-copy-status" id="articleShareCopyStatus" role="status" aria-live="polite" aria-atomic="true"></span>
+    </section>
+  `;
+}
+
+function showCopyStatus(message) {
+  const status = document.querySelector('#articleShareCopyStatus');
+  if (!status) return;
+
+  status.textContent = message;
+  window.clearTimeout(shareToastTimeout);
+  shareToastTimeout = window.setTimeout(() => {
+    status.textContent = '';
+  }, 2600);
+}
+
+async function handleArticleCopyShare() {
+  if (!currentArticleShareData) return;
+
+  try {
+    await copyArticleUrl(currentArticleShareData.url);
+    showCopyStatus('Lien copié');
+  } catch (error) {
+    console.error('Copie indisponible:', error);
+    showCopyStatus('Copie indisponible');
+  }
+}
+
 function renderRelatedArticleCard(article) {
   const category = String(article.category || '').trim();
   const articleUrl = `article.html?slug=${encodeURIComponent(article.slug)}`;
@@ -230,12 +329,14 @@ function renderArticle(article, relatedArticles = []) {
         <div class="article-content reveal">
           ${sanitizedContent}
         </div>
+        ${renderArticleShareSection(article)}
       </section>
       ${renderRelatedSection(relatedArticles, article.slug)}
     </article>
   `;
 
   articleContainer.querySelector('.article-detail-share')?.addEventListener('click', handleArticleShare);
+  articleContainer.querySelector('.article-share-copy')?.addEventListener('click', handleArticleCopyShare);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
