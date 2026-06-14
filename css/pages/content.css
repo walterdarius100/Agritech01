@@ -236,26 +236,20 @@
 
 .article-share-section {
   width: min(100%, 820px);
-  margin: 48px auto 38px;
-  padding: clamp(22px, 4vw, 34px);
-  border: 1px solid rgba(34, 139, 80, 0.14);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(34, 139, 80, 0.06), rgba(255, 255, 255, 0.96));
+  margin: 42px auto 34px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(34, 139, 80, 0.18);
+  border-radius: 0;
+  background: transparent;
   text-align: center;
-  box-shadow: 0 12px 28px rgba(15, 79, 50, 0.06);
-}
-
-.article-share-section h2 {
-  margin: 0;
-  color: var(--green-950);
-  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
-  letter-spacing: -0.03em;
+  box-shadow: none;
 }
 
 .article-share-section p {
-  max-width: 540px;
-  margin: 8px auto 18px;
+  max-width: 620px;
+  margin: 0 auto 16px;
   color: var(--muted);
+  font-size: 0.98rem;
   line-height: 1.55;
 }
 
@@ -263,22 +257,22 @@
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
 .article-share-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(15, 79, 50, 0.10);
   border-radius: 999px;
   background: var(--green-700);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(15, 79, 50, 0.16);
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease;
 }
 
 .article-share-link svg {
@@ -290,7 +284,6 @@
 .article-share-link:hover {
   transform: translateY(-2px);
   background: var(--green-900);
-  box-shadow: 0 12px 24px rgba(15, 79, 50, 0.22);
 }
 
 .article-share-link:focus-visible {
@@ -313,13 +306,12 @@
 
 @media (max-width: 640px) {
   .article-share-section {
-    margin: 38px auto 30px;
-    padding: 22px 18px;
-    border-radius: 16px;
+    margin: 36px auto 28px;
+    padding-top: 22px;
   }
 
   .article-share-link {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
   }
 }

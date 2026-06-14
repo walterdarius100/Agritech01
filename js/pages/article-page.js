@@ -183,8 +183,7 @@ function renderArticleShareSection(article) {
   const shareLinks = getArticleShareLinks(article);
 
   return `
-    <section class="article-share-section reveal" aria-labelledby="articleShareTitle">
-      <h2 id="articleShareTitle">Partager cet article</h2>
+    <section class="article-share-section reveal" aria-label="Partager cet article">
       <p>Vous avez aimé cet article ? Partagez-le avec vos proches et vos amis.</p>
       <div class="article-share-list" aria-label="Options de partage de l’article">
         ${shareLinks.map((link) => `
