@@ -9,7 +9,7 @@
 .trust-row span{background:rgba(255,255,255,.72);border:1px solid var(--border);padding:10px 14px;border-radius:999px;color:var(--muted)}
 .trust-row strong{color:var(--green-900)}
 .hero-card,.contact-form,.proof-card,.steps article{background:rgba(255,255,255,.84);border:1px solid rgba(15,79,50,.10);box-shadow:var(--shadow-soft);border-radius:var(--radius-xl)}
-.service-card{background:rgba(255,255,255,.82);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--card-radius)}
+.service-card{background:rgba(255,255,255,.82);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--content-card-radius)}
 .hero-card{padding:28px}
 .card-top{display:flex;align-items:center;gap:8px;color:var(--green-700);font-weight:900;margin-bottom:20px}
 .status-dot{width:10px;height:10px;background:#2fd17c;border-radius:50%;box-shadow:0 0 0 6px rgba(47,209,124,.12)}
@@ -37,7 +37,7 @@
 .course-dot{width:8px;height:8px;padding:0;border:0;border-radius:999px;background:rgba(15,61,46,.24);box-shadow:0 0 0 1px rgba(255,255,255,.72);cursor:pointer;transition:width .25s ease,background-color .25s ease,box-shadow .25s ease,transform .25s ease}
 .course-dot:hover{background:rgba(15,61,46,.48);transform:scale(1.12)}
 .course-dot.is-active{width:24px;background:var(--green-900);box-shadow:0 6px 14px rgba(15,61,46,.2)}
-.service-card,.course-card{box-shadow:var(--shadow-soft);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;background:#fff;border:1px solid rgba(15,79,50,.10);border-radius:var(--card-radius)}
+.service-card,.course-card{box-shadow:var(--shadow-soft);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;background:#fff;border:1px solid rgba(15,79,50,.10);border-radius:var(--content-card-radius)}
 .testimonial-card{box-shadow:var(--shadow-soft);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;background:#fff;border:1px solid rgba(15,79,50,.10);border-radius:var(--card-radius)}
 .service-card,.course-card{display:flex;flex-direction:column}
 .service-card:hover,.course-card:hover,.testimonial-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:rgba(15,79,50,.18)}
