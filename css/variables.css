@@ -1,2 +1,2 @@
 /* Design tokens Agri-Tech. */
-:root{--green-950:#06281f;--green-900:#0f3d2e;--green-700:#176b48;--green-100:#e8f5ee;--gold:#f2b84b;--cream:#f8f4ea;--ink:#14211b;--muted:#64736b;--border:rgba(20,33,27,.12);--shadow:0 24px 70px rgba(6,40,31,.14);--card-radius:12px;--card-featured-radius:14px;--card-image-radius:12px}
+:root{--green-950:#06281f;--green-900:#0f3d2e;--green-700:#176b48;--green-100:#e8f5ee;--gold:#f2b84b;--cream:#f8f4ea;--ink:#14211b;--muted:#64736b;--border:rgba(20,33,27,.12);--shadow:0 14px 34px rgba(15,79,50,.10);--shadow-soft:0 8px 22px rgba(15,79,50,.055);--radius-xs:6px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--card-radius:var(--radius-lg);--card-featured-radius:var(--radius-xl);--card-image-radius:var(--radius-md)}
