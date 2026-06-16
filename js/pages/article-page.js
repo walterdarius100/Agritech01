@@ -10,6 +10,7 @@ const params = new URLSearchParams(window.location.search);
 const slug = params.get('slug');
 const FALLBACK_IMAGE = 'assets/images/irrigation.jpg';
 const DEFAULT_META_DESCRIPTION = 'Découvrez cet article publié par Agri-tech.';
+const OFFICIAL_SITE_ORIGIN = 'https://agritech509ht.com';
 let currentArticleShareData = null;
 let shareToastTimeout = null;
 
@@ -35,10 +36,21 @@ function getArticleDescription(article) {
 
 function toAbsoluteUrl(url) {
   try {
-    return new URL(url || FALLBACK_IMAGE, window.location.origin).href;
+    return new URL(url || FALLBACK_IMAGE, OFFICIAL_SITE_ORIGIN).href;
   } catch (error) {
-    return new URL(FALLBACK_IMAGE, window.location.origin).href;
+    return new URL(FALLBACK_IMAGE, OFFICIAL_SITE_ORIGIN).href;
   }
+}
+
+function getOfficialArticleUrl(articleSlug = slug) {
+  const url = new URL('article.html', OFFICIAL_SITE_ORIGIN);
+  if (articleSlug) url.searchParams.set('slug', articleSlug);
+  return url.href;
+}
+
+function setCanonical(url) {
+  const tag = document.querySelector('link[rel="canonical"]');
+  if (tag && url) tag.setAttribute('href', url);
 }
 
 function setMeta(selector, value) {
@@ -50,7 +62,7 @@ function updateArticleMeta(article) {
   const title = stripHtml(article.title) || 'Agri-tech - Actualités agricoles';
   const description = getArticleDescription(article);
   const image = toAbsoluteUrl(article.coverImage || article.cover_image_url || FALLBACK_IMAGE);
-  const url = window.location.href;
+  const url = getOfficialArticleUrl(article.slug);
 
   document.title = `${title} | Agri-tech`;
   setMeta('meta[name="description"]', description);
@@ -61,13 +73,14 @@ function updateArticleMeta(article) {
   setMeta('meta[name="twitter:title"]', title);
   setMeta('meta[name="twitter:description"]', description);
   setMeta('meta[name="twitter:image"]', image);
+  setCanonical(url);
 }
 
 function getShareData(article) {
   return {
     title: stripHtml(article.title) || document.title,
     text: getArticleDescription(article) || DEFAULT_META_DESCRIPTION,
-    url: window.location.href
+    url: getOfficialArticleUrl(article.slug)
   };
 }
 
@@ -140,7 +153,7 @@ function renderShareIcon(platform) {
 }
 
 function getArticleShareLinks(article) {
-  const articleUrl = window.location.href;
+  const articleUrl = getOfficialArticleUrl(article.slug);
   const articleTitle = stripHtml(article.title) || document.title;
   const encodedUrl = encodeURIComponent(articleUrl);
   const encodedTitle = encodeURIComponent(articleTitle);
