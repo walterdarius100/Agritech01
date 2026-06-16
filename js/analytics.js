@@ -2,8 +2,8 @@
 // Replace placeholder IDs below only after creating the real GA4 / Clarity properties
 // for https://agritech509ht.com. This file is intentionally not loaded on admin.html.
 window.ANALYTICS_CONFIG = window.ANALYTICS_CONFIG || {
-  ga4MeasurementId: 'G-XXXXXXXXXX',
-  clarityProjectId: 'XXXXXXXXXX',
+  ga4MeasurementId: 'G-XJ8ZJX3128',
+  clarityProjectId: 'wpmfu7lkb1',
   enabled: true
 };
 
