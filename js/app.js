@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const featuredServices = services.slice(0, 3);
   const featuredCourses = courses.slice(0, 3);
   const categories = ['Tous', ...new Set(featuredServices.map((service) => service.category))];
+  const requestFieldSelector = '#need';
   const demandeMap = {
     'poulet-chair': ['Poulet de chair'],
     'poules-pondeuses': ['Poule pondeuse', 'Poules pondeuses'],
@@ -284,15 +285,26 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[’']/g, '')
+      .replace(/[-_/]+/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
   }
 
-  function findMatchingNeedOption(demande) {
-    if (!elements.needSelect || !demande) return null;
+  function normalizeRequestKey(value) {
+    return normalizeRequestText(value).replace(/\s+/g, '-');
+  }
 
-    const aliases = demandeMap[demande] || [demande];
+  function getRequestField() {
+    return document.querySelector(requestFieldSelector);
+  }
+
+  function findMatchingNeedOption(demande, requestField = getRequestField()) {
+    if (!requestField || !demande) return null;
+
+    const demandeKey = normalizeRequestKey(demande);
+    const aliases = demandeMap[demandeKey] || [demande];
     const normalizedAliases = aliases.map(normalizeRequestText);
-    const options = Array.from(elements.needSelect.options || []);
+    const options = Array.from(requestField.options || []);
 
     return options.find((option) => {
       const optionValue = normalizeRequestText(option.value);
@@ -307,38 +319,40 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     });
   }
 
-  function selectNeedValue(value) {
-    if (!elements.needSelect || !value) return;
+  function selectNeedValue(value, requestField = getRequestField()) {
+    if (!requestField || !value) return;
 
-    if (![...elements.needSelect.options].some((option) => option.value === value)) {
-      elements.needSelect.add(new Option(value, value));
+    if (![...requestField.options].some((option) => option.value === value)) {
+      requestField.add(new Option(value, value));
     }
 
-    elements.needSelect.value = value;
-    elements.needSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    requestField.value = value;
+    requestField.dispatchEvent(new Event('change', { bubbles: true }));
     updateMessageFieldVisibility();
   }
 
 
   function selectNeedFromExternalLink() {
-    if (!elements.needSelect) return;
+    const requestField = getRequestField();
+    if (!requestField) return;
 
     const requestedNeed = new URLSearchParams(window.location.search).get('need');
     if (!requestedNeed) return;
 
-    selectNeedValue(requestedNeed);
+    selectNeedValue(requestedNeed, requestField);
   }
 
   function prefillContactRequest() {
-    if (!elements.needSelect) return;
+    const requestField = getRequestField();
+    if (!requestField) return;
 
     const demande = new URLSearchParams(window.location.search).get('demande');
     if (!demande) return;
 
-    const matchedOption = findMatchingNeedOption(demande);
+    const matchedOption = findMatchingNeedOption(demande, requestField);
     if (!matchedOption) return;
 
-    selectNeedValue(matchedOption.value);
+    selectNeedValue(matchedOption.value, requestField);
   }
 
   function scrollToContactForm() {
