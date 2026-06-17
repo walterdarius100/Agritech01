@@ -29,6 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="assets/images/irrigation.jpg" />
   <link rel="stylesheet" href="css/main.css" />
 </head>
 
@@ -62,43 +63,18 @@
   </header>
 
   <main id="main">
-    <section class="hero section-pad">
-      <div class="reveal is-visible">
-        <span class="eyebrow">Agriculture • Élevage • Technologies rurales</span>
-        <h1>Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.</h1>
-        <p>Agri-tech accompagne les entrepreneurs, institutions et producteurs dans la conception, l’installation et le suivi de projets agricoles modernes en Haïti.</p>
+    <section class="home-hero" aria-labelledby="homeHeroTitle">
+      <div class="home-hero-bg" aria-hidden="true"></div>
 
-        <div class="hero-actions">
-          <a href="#contact" class="btn primary">Obtenir une consultation</a>
-          <a href="services.html" class="btn secondary">Voir nos domaines</a>
-        </div>
+      <div class="home-hero-content reveal is-visible">
+        <h1 id="homeHeroTitle">Transformez votre idée agricole en projet rentable, structuré et prêt à exécuter.</h1>
+        <p>Agri-tech accompagne les entrepreneurs, institutions et producteurs en Haïti dans la conception, l’installation et le suivi de projets agricoles modernes, adaptés au terrain et prêts à avancer.</p>
 
-        <div class="trust-row" aria-label="Arguments de confiance">
-          <span><strong>12+</strong> domaines</span>
-          <span><strong>Projet</strong> clé en main</span>
-          <span><strong>Suivi</strong> technique</span>
+        <div class="home-hero-actions">
+          <a href="#contact" class="btn secondary home-training-cta hero-cta-primary">Obtenir une consultation <span aria-hidden="true">→</span></a>
+          <a href="#services" class="hero-cta-link">Voir nos domaines <span aria-hidden="true">→</span></a>
         </div>
       </div>
-
-      <aside class="hero-card reveal is-visible reveal-delay-1">
-        <div class="card-top"><span class="status-dot"></span>Diagnostic agricole rapide</div>
-        <h2>Besoin d’un projet solide ?</h2>
-        <p>Répondez à quelques questions et recevez une orientation claire pour démarrer.</p>
-        <ul>
-          <li>Choix du modèle de production</li>
-          <li>Estimation des besoins techniques</li>
-          <li>Plan d’action réaliste</li>
-        </ul>
-        <a href="#contact" class="btn primary full">Commencer maintenant</a>
-      </aside>
-    </section>
-
-    <section class="section-pad logos-strip reveal" aria-label="Prestations principales">
-      <span>Conception de projets</span>
-      <span>Formation pratique</span>
-      <span>Installation</span>
-      <span>Accompagnement</span>
-      <span>Équipements</span>
     </section>
 
     <section class="section-pad" id="services">
@@ -110,7 +86,7 @@
       <div class="filters reveal reveal-delay-1" id="filters" aria-label="Filtres de services"></div>
       <div class="service-grid" id="serviceGrid"></div>
       <div class="section-cta reveal">
-        <a href="services.html" class="btn primary">Voir tous nos services</a>
+        <a href="services.html" class="btn primary">Voir tous nos services <span aria-hidden="true">→</span></a>
       </div>
     </section>
 
@@ -258,7 +234,7 @@
       </div>
       <div class="article-grid" id="homeArticlesGrid"></div>
       <div class="section-cta reveal">
-        <a href="actualites.html" class="btn primary">Voir toutes les actualités</a>
+        <a href="actualites.html" class="btn primary">Voir toutes les actualités <span aria-hidden="true">→</span></a>
       </div>
     </section>
 
