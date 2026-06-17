@@ -1,5 +1,6 @@
 import { escapeHtml } from '../utils/sanitize.js';
 import { getDelayClass } from '../utils/validation.js';
+import { buildContactUrl } from '../pages/page-utils.js';
 
 export function renderCourses({ courseGrid, courses, setupScrollReveal, updateCourseCarousel }) {
   if (!courseGrid) return;
@@ -21,7 +22,7 @@ export function renderCourses({ courseGrid, courses, setupScrollReveal, updateCo
           </div>
           <div class="course-price">${escapeHtml(course.price)}</div>
           <p class="bonus">🎁 ${escapeHtml(course.bonus)}</p>
-          <a href="#contact" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="card-link">${/bientôt/i.test(course.status) ? 'Demander une information' : 'Voir la formation'} →</a>
+          <a href="${buildContactUrl(course.need || `Cours en ligne - ${course.title}`)}" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="card-link">${/bientôt/i.test(course.status) ? 'Demander une information' : 'Voir la formation'} →</a>
         </div>
       </article>
     `)

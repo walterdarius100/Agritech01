@@ -40,6 +40,28 @@ export function initScrollReveal(items = document.querySelectorAll('.reveal')) {
   });
 }
 
-export function buildContactUrl() {
-  return 'index.html#contact';
+function normalizeContactKey(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+const contactRequestSlugs = {
+  'poulet-de-chair': 'poulet-chair',
+  'poule-pondeuse': 'poules-pondeuses',
+  'cours-en-ligne-cuniculture-rentable-de-0-a-50-000-ht': 'formation-cuniculture',
+  'cours-en-ligne-poulet-de-chair-produire-et-vendre-efficacement': 'cours-en-ligne-poulet-chair',
+  'cours-en-ligne-apiculture-moderne-simplifiee': 'formation-apiculture',
+  'formation-poule-pondeuse': 'formation-poules-pondeuses',
+  'formation-en-pisciculture': 'formation-pisciculture'
+};
+
+export function buildContactUrl(need) {
+  const contactKey = normalizeContactKey(need);
+  const demande = contactRequestSlugs[contactKey] || contactKey;
+  return `index.html?demande=${encodeURIComponent(demande)}#contact-form`;
 }

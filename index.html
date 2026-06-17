@@ -190,7 +190,7 @@
       </div>
 
       <div class="partnership-cta reveal reveal-delay-2">
-        <a href="#contact" class="btn primary" data-need="Partenariat">Discuter d’un partenariat</a>
+        <a href="index.html?demande=partenariat#contact-form" class="btn primary" data-need="Partenariat">Discuter d’un partenariat</a>
       </div>
     </section>
 
@@ -245,7 +245,8 @@
         <p>Décrivez brièvement votre projet, vos besoins ou vos objectifs. Notre équipe vous recontactera pour échanger sur les meilleures solutions adaptées à votre réalité.</p>
       </div>
 
-      <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
+      <div id="contact-form">
+        <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
         <label for="name">Nom complet
           <input type="text" id="name" name="name" placeholder="Votre nom" autocomplete="name" required />
         </label>
@@ -278,7 +279,8 @@
         <button class="btn primary full" type="submit" id="submitBtn">Demander une consultation</button>
         <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
         <p class="form-note">Vos informations restent confidentielles et sont utilisées uniquement dans le cadre de votre demande.</p>
-      </form>
+        </form>
+      </div>
     </section>
   </main>
 

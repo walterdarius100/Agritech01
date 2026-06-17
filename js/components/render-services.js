@@ -1,5 +1,6 @@
 import { escapeHtml } from '../utils/sanitize.js';
 import { getDelayClass } from '../utils/validation.js';
+import { buildContactUrl } from '../pages/page-utils.js';
 
 export function renderFilters({ filters, categories }) {
   if (!filters) return;
@@ -20,7 +21,7 @@ export function renderServices({ serviceGrid, services, category = 'Tous', setup
           <span class="tag">${escapeHtml(service.category)}</span>
           <h3>${escapeHtml(service.title)}</h3>
           <p>${escapeHtml(service.text)}</p>
-          <a href="#contact" data-need="${escapeHtml(service.title)}" class="card-link">Demander ce service →</a>
+          <a href="${buildContactUrl(service.title)}" data-need="${escapeHtml(service.title)}" class="card-link">Demander ce service →</a>
         </div>
       </article>
     `)

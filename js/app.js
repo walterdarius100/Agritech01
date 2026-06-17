@@ -61,6 +61,28 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const featuredServices = services.slice(0, 3);
   const featuredCourses = courses.slice(0, 3);
   const categories = ['Tous', ...new Set(featuredServices.map((service) => service.category))];
+  const demandeMap = {
+    'poulet-chair': ['Poulet de chair'],
+    'poules-pondeuses': ['Poule pondeuse', 'Poules pondeuses'],
+    cuniculture: ['Cuniculture'],
+    apiculture: ['Apiculture'],
+    pisciculture: ['Pisciculture'],
+    pepiniere: ['Pépinière'],
+    porcherie: ['Porcherie'],
+    'incubateur-ecloserie': ['Incubateur / Écloserie'],
+    gabionnage: ['Gabionnage'],
+    irrigation: ['Irrigation'],
+    biogaz: ['Biogaz'],
+    'cloture-metallique': ['Clôture métallique'],
+    partenariat: [partnershipNeed, 'Collaboration'],
+    'formation-cuniculture': ['Cours en ligne - Cuniculture rentable (de 0 à 50 000 HT)', 'Formation cuniculture', 'Cours cuniculture'],
+    'formation-poulet-chair': ['Cours en ligne - Poulet de chair : produire et vendre efficacement', 'Cours en ligne poulet de chair', 'Formation poulet de chair'],
+    'cours-poulet-chair': ['Cours en ligne - Poulet de chair : produire et vendre efficacement', 'Cours en ligne poulet de chair', 'Formation poulet de chair'],
+    'cours-en-ligne-poulet-chair': ['Cours en ligne - Poulet de chair : produire et vendre efficacement', 'Cours en ligne poulet de chair', 'Formation poulet de chair'],
+    'formation-apiculture': ['Cours en ligne - Apiculture moderne simplifiée', 'Formation apiculture', 'Cours apiculture'],
+    'formation-poules-pondeuses': ['Formation poule pondeuse', 'Formation poules pondeuses', 'Cours poules pondeuses'],
+    'formation-pisciculture': ['Formation en pisciculture', 'Formation pisciculture', 'Cours pisciculture']
+  };
   let testimonialIndex = 0;
   let testimonialTimer = null;
   let partnershipIndex = 0;
@@ -256,6 +278,47 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     updateMessageFieldVisibility();
   }
 
+  function normalizeRequestText(value) {
+    return String(value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[’']/g, '')
+      .trim();
+  }
+
+  function findMatchingNeedOption(demande) {
+    if (!elements.needSelect || !demande) return null;
+
+    const aliases = demandeMap[demande] || [demande];
+    const normalizedAliases = aliases.map(normalizeRequestText);
+    const options = Array.from(elements.needSelect.options || []);
+
+    return options.find((option) => {
+      const optionValue = normalizeRequestText(option.value);
+      const optionText = normalizeRequestText(option.textContent);
+
+      return normalizedAliases.some((alias) => (
+        optionValue.includes(alias) ||
+        optionText.includes(alias) ||
+        alias.includes(optionValue) ||
+        alias.includes(optionText)
+      ));
+    });
+  }
+
+  function selectNeedValue(value) {
+    if (!elements.needSelect || !value) return;
+
+    if (![...elements.needSelect.options].some((option) => option.value === value)) {
+      elements.needSelect.add(new Option(value, value));
+    }
+
+    elements.needSelect.value = value;
+    elements.needSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    updateMessageFieldVisibility();
+  }
+
 
   function selectNeedFromExternalLink() {
     if (!elements.needSelect) return;
@@ -263,12 +326,42 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     const requestedNeed = new URLSearchParams(window.location.search).get('need');
     if (!requestedNeed) return;
 
-    if (![...elements.needSelect.options].some((option) => option.value === requestedNeed)) {
-      elements.needSelect.add(new Option(requestedNeed, requestedNeed));
-    }
+    selectNeedValue(requestedNeed);
+  }
 
-    elements.needSelect.value = requestedNeed;
-    updateMessageFieldVisibility();
+  function prefillContactRequest() {
+    if (!elements.needSelect) return;
+
+    const demande = new URLSearchParams(window.location.search).get('demande');
+    if (!demande) return;
+
+    const matchedOption = findMatchingNeedOption(demande);
+    if (!matchedOption) return;
+
+    selectNeedValue(matchedOption.value);
+  }
+
+  function scrollToContactForm() {
+    const formTarget = document.getElementById('contact-form') || elements.form;
+    if (!formTarget) return;
+
+    const headerOffset = 90;
+    const y = formTarget.getBoundingClientRect().top + window.scrollY - headerOffset;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    window.scrollTo({
+      top: y,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
+    });
+  }
+
+  function setupContactIntentScroll() {
+    const params = new URLSearchParams(window.location.search);
+    const hasContactIntent = window.location.hash === '#contact-form' || params.has('demande');
+
+    if (hasContactIntent) {
+      window.setTimeout(scrollToContactForm, 250);
+    }
   }
 
   function getVisibleCourseCount() {
@@ -535,11 +628,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       const link = event.target.closest('[data-need]');
       if (!link) return;
       if (elements.needSelect) {
-        if (link.dataset.need && ![...elements.needSelect.options].some((option) => option.value === link.dataset.need)) {
-          elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
-        }
-        elements.needSelect.value = link.dataset.need;
-        updateMessageFieldVisibility();
+        selectNeedValue(link.dataset.need);
       }
 
       if (link.dataset.contactCard === 'true') {
@@ -765,6 +854,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   renderHomeArticles();
   populateSelect();
   selectNeedFromExternalLink();
+  prefillContactRequest();
+  setupContactIntentScroll();
   setupEvents();
   initFloatingActions();
   setupCourseCarousel();
