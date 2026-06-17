@@ -40,6 +40,6 @@ export function initScrollReveal(items = document.querySelectorAll('.reveal')) {
   });
 }
 
-export function buildContactUrl(need) {
-  return `index.html?need=${encodeURIComponent(need)}#contact`;
+export function buildContactUrl() {
+  return 'index.html#contact';
 }
