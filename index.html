@@ -263,7 +263,8 @@
         </label>
 
         <label for="message" id="messageField">Décrivez brièvement votre projet
-          <textarea id="message" name="message" rows="4" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>
+          <textarea id="message" name="message" rows="4" maxlength="1200" placeholder="Lieu, budget approximatif, objectif, urgence..." required></textarea>
+          <span class="field-counter" id="messageCounter" aria-live="polite">0 / 1200 caractères</span>
         </label>
 
         <label class="consent-label" for="consent">

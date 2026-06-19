@@ -111,6 +111,9 @@ input,textarea,select{width:100%;border:1px solid var(--border);border-radius:16
 input[type="checkbox"]{width:16px}
 input:focus,textarea:focus,select:focus{border-color:var(--green-700);box-shadow:0 0 0 4px rgba(23,107,72,.12)}
 .form-note{color:var(--muted);font-size:.86rem;margin:0}
+.field-counter{display:flex;justify-content:flex-end;margin-top:2px;font-size:.78rem;font-weight:600;line-height:1.35;color:rgba(55,65,81,.72);text-align:right}
+.field-counter.is-warning{color:#b45309}
+.field-counter.is-limit{color:#b91c1c;font-weight:800}
 .message-field-hidden{display:none}
 .form-status{display:none;padding:12px 14px;border-radius:14px;font-weight:800;font-size:.9rem}
 .form-status.show{display:block}
