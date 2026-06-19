@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     form: document.querySelector('#leadForm'),
     messageField: document.querySelector('#messageField'),
     messageInput: document.querySelector('#message'),
+    messageCounter: document.querySelector('#messageCounter'),
     submitBtn: document.querySelector('#submitBtn'),
     formStatus: document.querySelector('#formStatus'),
     nameInput: document.querySelector('#name'),
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let formResetTimer = null;
   let formStatusTimer = null;
   let newsletterStatusTimer = null;
+  const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;
 
 
   function isEmailJsConfigured() {
@@ -185,6 +187,20 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     return value === partnershipNeed || /partenariat/i.test(value);
   }
 
+  function updateMessageCounter() {
+    if (!elements.messageInput || !elements.messageCounter) return;
+
+    const currentLength = elements.messageInput.value.length;
+    const isNearLimit = currentLength >= Math.floor(messageMaxLength * 0.85);
+    const isLimitReached = currentLength >= messageMaxLength;
+
+    elements.messageCounter.textContent = isLimitReached
+      ? `${currentLength} / ${messageMaxLength} caractères · Limite atteinte. Merci de résumer votre demande.`
+      : `${currentLength} / ${messageMaxLength} caractères`;
+    elements.messageCounter.classList.toggle('is-warning', isNearLimit && !isLimitReached);
+    elements.messageCounter.classList.toggle('is-limit', isLimitReached);
+  }
+
   function updateMessageFieldVisibility() {
     if (!elements.messageField || !elements.messageInput || !elements.needSelect) return;
 
@@ -197,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.messageInput.value = '';
     }
 
+    updateMessageCounter();
     updateSubmitButtonLabel();
   }
 
@@ -589,6 +606,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
     }
 
+    if (elements.messageInput) {
+      elements.messageInput.addEventListener('input', updateMessageCounter);
+      updateMessageCounter();
+    }
+
     if (elements.courseGrid || elements.partnershipTrack) {
       window.addEventListener('resize', scheduleCarouselResizeUpdate, { passive: true });
     }
@@ -739,6 +761,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
     console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(elements.newsletterForm === null || elements.newsletterEmailInput !== null, 'Test échoué : email newsletter manquant.');
+    console.assert(elements.messageInput === null || elements.messageInput.name === 'message', 'Test échoué : le nom du champ message doit rester inchangé.');
+    console.assert(elements.messageInput === null || Number(elements.messageInput.getAttribute('maxlength')) === messageMaxLength, 'Test échoué : limite du champ message inattendue.');
+    console.assert(elements.messageCounter === null || elements.messageCounter.textContent.includes(`/ ${messageMaxLength}`), 'Test échoué : compteur message initial inattendu.');
     console.assert(typeof updateCourseCarousel === 'function', 'Test échoué : carousel formations manquant.');
     console.assert(elements.testimonialDots === null || elements.testimonialDots.children.length === testimonials.length, 'Test échoué : indicateurs témoignages manquants.');
     console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
