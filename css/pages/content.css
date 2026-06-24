@@ -218,15 +218,40 @@
 .article-content .ag-align-right { text-align: right; }
 
 @media (max-width: 640px) {
+  .article-content,
+  .rich-content {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    transform: none;
+    color: var(--ink);
+  }
+
+  .article-content p,
+  .rich-content p {
+    display: block;
+    margin: 0 0 1rem;
+    color: var(--ink);
+    line-height: 1.75;
+  }
+
   .article-content figure,
+  .rich-content figure,
   .article-content > img,
-  .article-content p > img {
+  .rich-content > img,
+  .article-content p > img,
+  .rich-content p > img {
     width: 100%;
     max-width: 100%;
+    height: auto;
     margin: 24px auto;
   }
 
-  .article-content figcaption {
+  .article-content figcaption,
+  .rich-content figcaption {
     max-width: 100%;
     padding: 0 6px;
     font-size: 0.78rem;
