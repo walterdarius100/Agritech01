@@ -338,7 +338,7 @@ function renderArticle(article, relatedArticles = []) {
         <div class="article-cover-wrap reveal">
           <img class="article-cover" src="${escapeHtml(article.coverImage || FALLBACK_IMAGE)}" alt="${escapeHtml(article.title)}" width="1200" height="800" decoding="async" />
         </div>
-        <div class="article-content reveal">
+        <div class="article-content rich-content is-visible">
           ${sanitizedContent}
         </div>
         ${renderArticleShareSection(article)}
