@@ -13,6 +13,48 @@ const DEFAULT_META_DESCRIPTION = 'Découvrez cet article publié par Agri-tech.'
 const OFFICIAL_SITE_ORIGIN = 'https://agritech509ht.com';
 let currentArticleShareData = null;
 let shareToastTimeout = null;
+let readingProgressInitialized = false;
+let readingProgressRaf = null;
+
+function initArticleReadingProgress() {
+  const progressBar = document.querySelector('.article-reading-progress__bar');
+  const article = document.querySelector('.article-content');
+
+  if (!progressBar || !article) return;
+
+  const updateProgress = () => {
+    readingProgressRaf = null;
+
+    const headerHeight = document.querySelector('.site-header')?.offsetHeight || 0;
+    document.documentElement.style.setProperty('--article-progress-top', `${headerHeight}px`);
+
+    const articleRect = article.getBoundingClientRect();
+    const articleTop = articleRect.top + window.scrollY;
+    const articleHeight = article.offsetHeight;
+    const viewportHeight = window.innerHeight;
+    const start = articleTop - viewportHeight * 0.2;
+    const end = articleTop + articleHeight - viewportHeight * 0.8;
+    const scrollRange = end - start;
+    const progress = scrollRange > 0
+      ? Math.min(100, Math.max(0, ((window.scrollY - start) / scrollRange) * 100))
+      : 100;
+
+    progressBar.style.width = `${progress}%`;
+  };
+
+  const requestProgressUpdate = () => {
+    if (readingProgressRaf !== null) return;
+    readingProgressRaf = window.requestAnimationFrame(updateProgress);
+  };
+
+  if (!readingProgressInitialized) {
+    window.addEventListener('scroll', requestProgressUpdate, { passive: true });
+    window.addEventListener('resize', requestProgressUpdate);
+    readingProgressInitialized = true;
+  }
+
+  requestProgressUpdate();
+}
 
 function stripHtml(value) {
   return String(value || '')
@@ -349,6 +391,7 @@ function renderArticle(article, relatedArticles = []) {
 
   articleContainer.querySelector('.article-detail-share')?.addEventListener('click', handleArticleShare);
   articleContainer.querySelector('.article-share-copy')?.addEventListener('click', handleArticleCopyShare);
+  initArticleReadingProgress();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
