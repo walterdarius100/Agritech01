@@ -50,7 +50,7 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
     height: 420,
     min_height: 320,
     plugins: 'autolink link lists advlist autoresize preview image',
-    toolbar: 'undo redo | blocks | bold italic | bullist numlist blockquote hr | alignleft aligncenter alignright | link image | removeformat preview',
+    toolbar: 'undo redo | blocks | bold italic | bullist numlist blockquote hr | alignleft aligncenter alignright alignjustify | link image | removeformat preview',
     block_formats: 'Paragraphe=p; Titre H2=h2; Sous-titre H3=h3; Intertitre H4=h4',
     valid_elements: 'h2[class],h3[class],h4[class],p[class],strong/b,em/i,a[href|target|rel],ul[class],ol[class],li,blockquote[class],hr,br,figure[class],figcaption,img[src|alt|width|height|loading|decoding]',
     invalid_elements: 'script,iframe,object,embed,style,form,input,button',
@@ -85,7 +85,8 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
     formats: {
       alignleft: { selector: 'h2,h3,h4,p,blockquote,ul,ol,figure,figcaption', classes: 'ag-align-left' },
       aligncenter: { selector: 'h2,h3,h4,p,blockquote,ul,ol,figure,figcaption', classes: 'ag-align-center' },
-      alignright: { selector: 'h2,h3,h4,p,blockquote,ul,ol,figure,figcaption', classes: 'ag-align-right' }
+      alignright: { selector: 'h2,h3,h4,p,blockquote,ul,ol,figure,figcaption', classes: 'ag-align-right' },
+      alignjustify: { selector: 'h2,h3,h4,p,blockquote,ul,ol,figure,figcaption', classes: 'ag-align-justify' }
     },
     content_style: `
       body { color: #14211b; font-family: Inter, Arial, sans-serif; font-size: 16px; line-height: 1.75; }
@@ -101,6 +102,7 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
       .ag-align-left { text-align: left; }
       .ag-align-center { text-align: center; }
       .ag-align-right { text-align: right; }
+      .ag-align-justify { text-align: justify; text-justify: inter-word; hyphens: auto; }
     `,
     setup(editor) {
       editor.on('change keyup undo redo setcontent', () => editor.save());
