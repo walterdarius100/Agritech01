@@ -18,7 +18,7 @@ const ALLOWED_TAGS = [
 ];
 
 const ALLOWED_ATTR = ['href', 'target', 'rel', 'class', 'src', 'alt', 'width', 'height', 'loading', 'decoding'];
-const ALIGNMENT_CLASSES = new Set(['ag-align-left', 'ag-align-center', 'ag-align-right']);
+const ALIGNMENT_CLASSES = new Set(['ag-align-left', 'ag-align-center', 'ag-align-right', 'ag-align-justify']);
 const DANGEROUS_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'style', 'form', 'input', 'button']);
 const LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
