@@ -1,3 +1,5 @@
+> Archive historique : ce document peut contenir des informations obsolètes. Ne pas l’utiliser comme référence de l’état actuel de la V1 sans vérification avec le README.
+
 # Audit complet du site Agri-Tech
 
 ## 1. Résumé général

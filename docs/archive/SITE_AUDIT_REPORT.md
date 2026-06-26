@@ -1,3 +1,5 @@
+> Archive historique : ce document peut contenir des informations obsolètes. Ne pas l’utiliser comme référence de l’état actuel de la V1 sans vérification avec le README.
+
 # Rapport d’audit complet du site Agri-tech
 
 ## 2. Informations générales
@@ -213,12 +215,12 @@
 
 * **Navbar :** navigation principale cohérente entre les pages publiques ; menu mobile prévu avec bouton et `aria-expanded`.
 * **Footer :** liens de contact, newsletter et pages légales présents ; vérifier que toutes les pages utilisent le même footer et que les liens ne divergent pas.
-* **Liens CTA :** les CTA vers `index.html#contact` et les paramètres `?need=` sont utiles pour préremplir le formulaire ; tester chaque CTA après modification des services/formations.
+* **Liens CTA :** les CTA vers `index.html#leadForm` et les paramètres `?need=` sont utiles pour préremplir le formulaire ; tester chaque CTA après modification des services/formations.
 * **Pages légales :** `politique-confidentialite.html` et `mentions-legales.html` existent et sont listées dans le README/sitemap.
 * **Pages Actualités :** `actualites.html` liste les articles publiés, filtre par catégorie et pagine les résultats.
 * **Page Article :** `article.html?slug=...` charge un article publié ; si le slug manque ou est invalide, une page introuvable est affichée.
 * **Admin :** `admin.html` est séparé, noindex et protégé fonctionnellement par Supabase Auth ; accès réel à tester avec un compte valide.
-* **Ancres :** `#contact`, `#top` et les liens internes doivent être testés sur mobile et desktop.
+* **Ancres :** `#leadForm`, `#top` et les liens internes doivent être testés sur mobile et desktop.
 * **Liens cassés :** aucun lien cassé évident dans la structure principale, mais une vérification automatisée est recommandée avant merge.
 
 ## 7. Audit UX/UI

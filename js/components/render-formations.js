@@ -21,7 +21,7 @@ export function renderCourses({ courseGrid, courses, setupScrollReveal, updateCo
           </div>
           <div class="course-price">${escapeHtml(course.price)}</div>
           <p class="bonus">🎁 ${escapeHtml(course.bonus)}</p>
-          <a href="#contact" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="card-link">${/bientôt/i.test(course.status) ? 'Demander une information' : 'Voir la formation'} →</a>
+          <a href="#leadForm" data-need="${escapeHtml(course.need || `Cours en ligne - ${course.title}`)}" class="card-link">${/bientôt/i.test(course.status) ? 'Demander une information' : 'Voir la formation'} →</a>
         </div>
       </article>
     `)
