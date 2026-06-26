@@ -3,7 +3,7 @@
 ## Accéder à l’admin
 
 - Local : démarrez un serveur statique à la racine du projet puis ouvrez `http://localhost:8000/admin.html`.
-- Vercel Preview : ouvrez `https://<preview-vercel>/admin.html`.
+- prévisualisation de test : ouvrez `https://<preview-vercel>/admin.html`.
 - GitHub Pages après merge : ouvrez `https://<domaine-ou-pages>/admin.html`.
 
 L’admin est une page statique. La sécurité repose sur Supabase Auth et RLS, pas sur le masquage de la page.

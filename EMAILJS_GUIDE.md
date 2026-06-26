@@ -1,10 +1,38 @@
-# Guide EmailJS
+# Guide EmailJS — formulaire Agri-tech V1
 
-## Variables à créer dans ton template EmailJS
+Le formulaire principal est sur `index.html` et son id existant est :
 
-Utilise exactement ces variables :
+```text
+leadForm
+```
 
-```txt
+Les liens directs vers le formulaire doivent utiliser :
+
+```text
+index.html#leadForm
+```
+
+ou :
+
+```text
+https://agritech509ht.com/index.html#leadForm
+```
+
+## Réception des messages
+
+Les messages sont envoyés via EmailJS vers l’adresse professionnelle actuelle :
+
+```text
+contact@agritech509ht.com
+```
+
+Le destinataire est géré dans le template EmailJS. Ne pas modifier le template ou les identifiants si le formulaire fonctionne.
+
+## Variables utilisées dans le template EmailJS
+
+Conserver les noms de variables existants sauf vérification complète du template EmailJS :
+
+```text
 {{from_name}}
 {{from_email}}
 {{phone}}
@@ -15,30 +43,19 @@ Utilise exactement ces variables :
 {{date}}
 ```
 
-## Dans script.js
+## Règles importantes
 
-Remplace :
+- Le Reply-To doit rester l’email du visiteur (`from_email`).
+- Les noms des champs envoyés à EmailJS ne doivent pas être changés sans vérifier le template.
+- La clé EmailJS visible côté frontend est une clé publique, mais les domaines autorisés doivent être restreints dans EmailJS.
+- Ne pas modifier EmailJS inutilement si l’envoi fonctionne.
+- Après toute modification liée au contact, tester une soumission réelle et vérifier la réception sur `contact@agritech509ht.com`.
 
-```js
-publicKey: 'VOTRE_PUBLIC_KEY',
-serviceId: 'VOTRE_SERVICE_ID',
-templateId: 'VOTRE_TEMPLATE_ID',
-```
+## Test obligatoire après modification du formulaire
 
-par les valeurs de ton compte EmailJS.
-
-## Google Sheets
-
-L’endpoint Google Sheets est déjà intégré :
-
-```js
-sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw8az8ZK2FHqats3ukKjLgVu-90tkcv1CtoI8dyCmxm1Qg_Z2ucDWP89NBJUpc2CFYc/exec'
-```
-
-## Test obligatoire
-
-1. Configure EmailJS.
-2. Ouvre ton site.
-3. Remplis le formulaire.
-4. Vérifie l’email reçu.
-5. Vérifie Google Sheets.
+1. Ouvrir `index.html#leadForm`.
+2. Remplir le formulaire avec un email de test.
+3. Envoyer la demande.
+4. Vérifier le message de succès côté navigateur.
+5. Vérifier que l’email est reçu sur `contact@agritech509ht.com`.
+6. Vérifier que le Reply-To correspond à l’email du visiteur.

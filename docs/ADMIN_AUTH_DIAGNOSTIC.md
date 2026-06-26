@@ -30,7 +30,7 @@ Dans DevTools → Network :
 - `js/services/articles-service.js` doit répondre 200.
 - Le SDK Supabase CDN doit répondre 200.
 
-Une erreur `404 script not found` indique un mauvais chemin ou une preview Vercel pas à jour.
+Une erreur `404 script not found` indique un mauvais chemin ou une prévisualisation de test pas à jour.
 
 ## Vérifier la configuration Supabase
 
@@ -63,12 +63,12 @@ La Publishable key est acceptable dans un site statique parce que les droits ré
 - `Email not confirmed` : confirmez l’utilisateur dans Authentication.
 - `Supabase client not configured` : placeholders non remplacés, URL invalide ou clé refusée.
 - `Failed to fetch` : réseau, URL Supabase incorrecte, CDN bloqué ou preview obsolète.
-- `404 script not found` : chemin JS/CSS incorrect ou déploiement Vercel pas à jour.
+- `404 script not found` : chemin JS/CSS incorrect ou déploiement de test pas à jour.
 - `Cannot use import statement outside a module` : la balise script doit avoir `type="module"`.
 - `RLS policy violation` : RLS activé mais policies manquantes ou utilisateur non authentifié.
 - Mauvais projet Supabase : l’utilisateur existe dans un projet différent de celui des clés.
 - Mauvaise clé : clé secret ou service role refusée, clé anon/publishable d’un autre projet.
-- Vercel Preview pas à jour : redéployez la preview.
+- prévisualisation de test pas à jour : redéployez la preview.
 - Scripts non chargés : vérifiez Network et les chemins relatifs.
 
 ## Checklist de validation
