@@ -1,5 +1,5 @@
 // Agri-tech public analytics loader.
-// Replace placeholder IDs below only after creating the real GA4 / Clarity properties
+// Microsoft Clarity is the active analytics tool for the V1; do not add extra analytics without validation.
 // for https://agritech509ht.com. This file is intentionally not loaded on admin.html.
 window.ANALYTICS_CONFIG = window.ANALYTICS_CONFIG || {
   ga4MeasurementId: 'G-XJ8ZJX3128',

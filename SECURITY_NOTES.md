@@ -28,7 +28,7 @@ Cette restriction est importante parce qu’une clé publique EmailJS reste visi
 - Surveiller les quotas mensuels et les pics inhabituels.
 - Prévoir une adresse email de réception dédiée aux leads Agri-Tech.
 - Éviter d’envoyer plusieurs emails pour une seule soumission tant que le besoin n’est pas confirmé.
-- Conserver une copie minimale des demandes dans Google Sheets ou un outil équivalent, si l’intégration est activée.
+- Conserver une trace minimale des demandes uniquement dans les outils validés pour la V1.
 
 ## 4. Protection anti-abus du formulaire
 
@@ -48,27 +48,19 @@ Recommandations complémentaires :
 - limiter la longueur des champs si des abus apparaissent ;
 - surveiller les répétitions d’envois depuis les mêmes coordonnées.
 
-## 5. Recommandations Google Apps Script
+## 5. Suivi des demandes
 
-Si Google Apps Script est utilisé pour enregistrer les demandes :
-
-- ne pas exposer de secrets dans le code client ;
-- limiter le script à l’écriture des champs strictement nécessaires ;
-- valider et nettoyer les données reçues côté Apps Script ;
-- éviter de retourner des informations internes dans les réponses ;
-- surveiller les quotas Google Apps Script ;
-- protéger le Google Sheet avec des droits d’accès limités ;
-- séparer les comptes personnels et les comptes utilisés pour l’activité ;
-- tester les permissions après chaque modification de déploiement ;
-- documenter l’URL de déploiement active et supprimer les anciens déploiements inutiles.
+EmailJS transmet actuellement les messages vers `contact@agritech509ht.com`. Ne pas ajouter un nouvel outil de stockage des leads sans décision explicite, documentation et test de confidentialité.
 
 ## 6. Analytics et confidentialité
 
-- GA4 et Microsoft Clarity sont préparés avec des placeholders et ne se chargent pas tant que les vrais identifiants ne sont pas ajoutés.
+- Microsoft Clarity est actuellement utilisé pour l’analyse comportementale.
+- Cloudflare Web Analytics n’est pas activé pour le moment.
+- Google Analytics n’est pas prioritaire actuellement.
 - Ne pas ajouter Meta Pixel dans ce projet.
 - Ne pas suivre tous les clics par défaut.
-- Ajouter plus tard uniquement les événements nécessaires : clic WhatsApp, soumission formulaire, clic bouton réservation et clic formulaire/contact.
-- Mettre à jour la politique de confidentialité si le site commence à collecter des données analytics en production.
+- Ajouter plus tard uniquement les événements nécessaires après validation : clic WhatsApp, soumission formulaire, clic bouton réservation et clic formulaire/contact.
+- Mettre à jour la politique de confidentialité si un nouvel outil analytics est activé en production.
 
 ## 7. Limites de sécurité d’un site statique
 

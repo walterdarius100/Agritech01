@@ -1,6 +1,6 @@
 # Configuration Supabase — espace admin Agri-tech
 
-Ce guide décrit la configuration Supabase nécessaire pour gérer les articles depuis `admin.html` sur un site statique GitHub Pages ou Vercel Preview.
+Ce guide décrit la configuration Supabase nécessaire pour gérer les articles depuis `admin.html` sur un site statique GitHub Pages ou prévisualisation de test.
 
 ## 1. Créer le projet et récupérer les valeurs publiques
 
@@ -116,7 +116,7 @@ Le frontend remet les autres articles à `featured = false` lorsqu’un nouvel a
 
 1. Ouvrez **Storage → New bucket**.
 2. Nom : `article-images`.
-3. Pour une première version simple, créez un bucket public afin que `getPublicUrl()` serve les images directement sur GitHub Pages et Vercel.
+3. Pour une première version simple, créez un bucket public afin que `getPublicUrl()` serve les images directement sur GitHub Pages.
 4. Ajoutez des policies Storage adaptées : lecture publique, écriture réservée aux utilisateurs authentifiés.
 
 Exemple SQL si vous gérez les policies Storage manuellement :
@@ -168,7 +168,7 @@ L’admin refuse les fichiers non images et les images de plus de 4 Mo. Les fich
 
 ## 7. Test de l’admin
 
-1. Ouvrez `/admin.html` en local, sur Vercel Preview ou après publication GitHub Pages.
+1. Ouvrez `/admin.html` en local ou après publication GitHub Pages.
 2. Le panneau diagnostic doit afficher :
    - Supabase configuré : Oui ;
    - Projet Supabase : `xxxxx.supabase.co` ;
