@@ -26,3 +26,9 @@ Ce choix privilégie le contrôle éditorial : pendant une panne, aucune ancienn
 copie locale ne peut confirmer qu'un article est encore publié. Il réduit la
 disponibilité hors ligne, sans assurer la révocation de copies déjà téléchargées
 ou de caches externes. Supabase RLS reste responsable des autorisations serveur.
+
+## Images et administration
+
+`node --test tests/*.test.mjs` inclut les tests du chantier 02 sans dépendance
+supplémentaire. Le protocole, les échecs partiels et le contrôle Chromium
+facultatif sont décrits dans [admin-uploads-save.md](../docs/admin-uploads-save.md).

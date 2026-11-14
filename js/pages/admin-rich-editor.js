@@ -1,7 +1,9 @@
 import { sanitizeArticleHtml } from '../utils/article-html.js';
+import { getSafeErrorMessage } from '../utils/error-messages.js';
 
 const EDITOR_ID = 'articleContentField';
 const TINYMCE_TIMEOUT_MS = 5000;
+const pendingUploads = new Set();
 
 function getTextarea() {
   return document.querySelector(`#${EDITOR_ID}`);
@@ -67,10 +69,13 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
       }
 
       try {
-        return await imagesUploadHandler(blobInfo.blob(), blobInfo.filename());
+        const upload = Promise.resolve().then(() => imagesUploadHandler(blobInfo.blob(), blobInfo.filename()));
+        pendingUploads.add(upload);
+        try { return await upload; }
+        finally { pendingUploads.delete(upload); }
       } catch (error) {
         onUploadError?.(error);
-        throw new Error(error?.message || 'L’image n’a pas pu être envoyée. Réessayez.');
+        throw new Error(getSafeErrorMessage('upload', error));
       }
     },
     default_link_target: '_blank',
@@ -130,4 +135,39 @@ export function setArticleEditorContent(content = '') {
 
   const editor = getEditor();
   if (editor) editor.setContent(safeContent);
+}
+
+// A timeout blocks the save, but never retries or cancels an unknown Storage write.
+export async function prepareArticleEditorForSave(timeoutMs = 60000) {
+  const editor = getEditor();
+  let timer;
+  try {
+    if (editor) {
+      const results = await Promise.race([
+        (async () => {
+          await Promise.all([...pendingUploads]);
+          return editor.uploadImages();
+        })(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(Object.assign(new Error('Téléversement trop long ou interrompu. Attendez sa fin puis réessayez.'), { code: 'EDITOR_UPLOAD' })), timeoutMs);
+        })
+      ]);
+      if (results?.some((result) => !result.status)) {
+        throw Object.assign(new Error('Une image n’a pas été téléversée. Réinsérez-la puis réessayez.'), { code: 'EDITOR_UPLOAD' });
+      }
+    }
+    const content = getArticleEditorContent();
+    if (/<img\b[^>]*\bsrc\s*=\s*["']?\s*(?:blob:|data:)/i.test(content)) {
+      throw Object.assign(new Error('Certaines images sont encore temporaires. Attendez ou réinsérez-les avant d’enregistrer.'), { code: 'EDITOR_UPLOAD' });
+    }
+    syncArticleEditor();
+    return content;
+  } catch (error) {
+    if (error.code === 'EDITOR_UPLOAD') throw error;
+    throw Object.assign(new Error(getSafeErrorMessage('upload', error)), { code: 'EDITOR_UPLOAD', cause: error });
+  } finally { clearTimeout(timer); }
+}
+
+export function lockArticleEditor(locked) {
+  getEditor()?.mode?.set(locked ? 'readonly' : 'design');
 }

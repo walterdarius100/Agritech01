@@ -14,6 +14,12 @@ function maskSensitiveLogValue(value) {
 }
 
 export function getSafeErrorMessage(context = 'default', error = null) {
+  if (error?.code === 'IMAGE_SIZE') return 'L’image dépasse la limite de 4 Mio.';
+  if (error?.code === 'IMAGE_FORMAT') return 'Image refusée : utilisez JPEG, PNG, WebP ou GIF avec une extension et un contenu cohérents. SVG non accepté.';
+  if (error?.code === 'EDITOR_UPLOAD') return error.message;
+  if (error?.code === 'ARTICLE_PARTIAL') return 'Article enregistré, mais mise à la une partiellement effectuée. Vérifiez la liste.';
+  if (error?.code === '23505' && /slug/i.test(`${error?.message || ''} ${error?.details || ''}`)) return 'Ce slug est déjà utilisé. Choisissez-en un autre.';
+  if (context === 'upload' && /row-level security|permission|forbidden|access denied|unauthorized|policy/i.test(getRawErrorMessage(error))) return 'Accès au stockage refusé. Vérifiez vos droits ou reconnectez-vous.';
   const rawMessage = getRawErrorMessage(error).toLowerCase();
 
   if (/invalid login|invalid credentials|invalid email or password/.test(rawMessage)) {

@@ -2,7 +2,6 @@ import { getSupabaseClient, isSupabaseConfigured } from './supabase-client.js';
 
 const IMAGE_BUCKET = 'article-images';
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
-const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
 
 export function generateSlug(value) {
   return String(value || '')
@@ -81,16 +80,7 @@ async function unsetOtherFeaturedArticles(client, currentArticleId = null) {
 
 
 function getCleanImageExtension(file) {
-  const extension = String(file?.name || '')
-    .split('.')
-    .pop()
-    ?.toLowerCase()
-    .replace(/[^a-z0-9]/g, '') || '';
-
-  if (ALLOWED_IMAGE_EXTENSIONS.has(extension)) return extension;
-
-  const mimeExtension = String(file?.type || '').split('/').pop()?.toLowerCase() || 'jpg';
-  return ALLOWED_IMAGE_EXTENSIONS.has(mimeExtension) ? mimeExtension : 'jpg';
+  return file.name.split('.').pop().toLowerCase();
 }
 
 function sanitizeStorageFileName(fileName) {
@@ -107,10 +97,22 @@ function sanitizeStorageFileName(fileName) {
   return baseName || 'image';
 }
 
-function validateArticleImageFile(file) {
-  if (!file || file.size === 0) throw new Error('Veuillez sélectionner un fichier image valide.');
-  if (!file.type?.startsWith('image/')) throw new Error('Veuillez sélectionner un fichier image valide.');
-  if (file.size > MAX_IMAGE_SIZE_BYTES) throw new Error('L’image est trop lourde. Utilisez une image de 4 Mo maximum.');
+export async function validateArticleImageFile(file) {
+  const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
+  if (!file || !file.size) fail('IMAGE_FORMAT', 'Veuillez sélectionner une image valide.');
+  if (file.size > MAX_IMAGE_SIZE_BYTES) fail('IMAGE_SIZE', 'L’image dépasse 4 Mio.');
+  const extensions = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'], 'image/gif': ['gif'] };
+  const ext = String(file.name || '').split('.').pop().toLowerCase();
+  if (!extensions[file.type]?.includes(ext)) fail('IMAGE_FORMAT', 'Formats acceptés : JPEG, PNG, WebP et GIF. SVG refusé.');
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const ascii = (a, b) => String.fromCharCode(...bytes.slice(a, b));
+  const valid = {
+    'image/jpeg': bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255,
+    'image/png': [137,80,78,71,13,10,26,10].every((v, i) => bytes[i] === v),
+    'image/webp': ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP',
+    'image/gif': ['GIF87a', 'GIF89a'].includes(ascii(0, 6))
+  };
+  if (!valid[file.type]) fail('IMAGE_FORMAT', 'Le contenu du fichier ne correspond pas à son format.');
 }
 
 async function uploadImageFileToBucket(file, path) {
@@ -123,7 +125,8 @@ async function uploadImageFileToBucket(file, path) {
 
   if (error) throw error;
   const { data } = client.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-  return data?.publicUrl || '';
+  if (!data?.publicUrl) throw new Error('URL Storage indisponible après upload.');
+  return data.publicUrl;
 }
 
 async function getClientOrThrow() {
@@ -182,21 +185,19 @@ export function getFeaturedArticle(articles) {
 export async function createArticle(article) {
   const client = await getClientOrThrow();
   const payload = toDatabasePayload(article);
-  if (payload.featured) await unsetOtherFeaturedArticles(client);
 
   const { data, error } = await client.from('articles').insert(payload).select('*').single();
   if (error) throw error;
-  return normalizeArticle(data);
+  return finishFeaturedWrite(client, data, payload.featured);
 }
 
 export async function updateArticle(id, article) {
   const client = await getClientOrThrow();
   const payload = toDatabasePayload(article);
-  if (payload.featured) await unsetOtherFeaturedArticles(client, id);
 
   const { data, error } = await client.from('articles').update(payload).eq('id', id).select('*').single();
   if (error) throw error;
-  return normalizeArticle(data);
+  return finishFeaturedWrite(client, data, payload.featured);
 }
 
 export async function publishArticle(id) {
@@ -234,28 +235,40 @@ export async function deleteArticle(id) {
 
 export async function setFeaturedArticle(id) {
   const client = await getClientOrThrow();
-  await unsetOtherFeaturedArticles(client, id);
   const { data, error } = await client.from('articles').update({ featured: true }).eq('id', id).select('*').single();
   if (error) throw error;
-  return normalizeArticle(data);
+  return finishFeaturedWrite(client, data, true);
 }
 
 export async function uploadArticleImage(file, slug) {
   if (!file) return '';
-  validateArticleImageFile(file);
+  await validateArticleImageFile(file);
 
   const extension = getCleanImageExtension(file);
   const cleanSlug = generateSlug(slug) || 'article';
-  const path = `${Date.now()}-${cleanSlug}.${extension}`;
+  const path = `${crypto.randomUUID()}-${cleanSlug}.${extension}`;
   return uploadImageFileToBucket(file, path);
 }
 
 export async function uploadArticleContentImage(file, articleKey = '') {
-  validateArticleImageFile(file);
+  await validateArticleImageFile(file);
 
   const extension = getCleanImageExtension(file);
   const cleanArticleKey = generateSlug(articleKey) || `draft-${Date.now()}`;
   const cleanFileName = sanitizeStorageFileName(file.name);
-  const path = `articles/${cleanArticleKey}/content/${Date.now()}-${cleanFileName}.${extension}`;
+  const path = `articles/${cleanArticleKey}/content/${crypto.randomUUID()}-${cleanFileName}.${extension}`;
   return uploadImageFileToBucket(file, path);
+}
+
+async function finishFeaturedWrite(client, data, featured) {
+  const saved = normalizeArticle(data);
+  if (featured) {
+    try { await unsetOtherFeaturedArticles(client, saved.id); }
+    catch (error) {
+      throw Object.assign(new Error('Article enregistré, mais mise à la une partiellement effectuée.'), {
+        code: 'ARTICLE_PARTIAL', savedArticle: saved, cause: error
+      });
+    }
+  }
+  return saved;
 }
