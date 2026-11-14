@@ -4,6 +4,8 @@ import { escapeHtml } from '../utils/sanitize.js';
 import { hasEmbeddedBase64Image, hasReadableArticleContent, sanitizeArticleHtml } from '../utils/article-html.js';
 import {
   getArticleEditorContent,
+  prepareArticleEditorForSave,
+  lockArticleEditor,
   initArticleEditor,
   setArticleEditorContent,
   syncArticleEditor
@@ -15,6 +17,7 @@ import {
   generateSlug,
   getAllArticlesForAdmin,
   publishArticle,
+  setFeaturedArticle,
   updateArticle,
   uploadArticleContentImage,
   uploadArticleImage
@@ -72,6 +75,25 @@ const elements = {
   previewArticleButton: document.querySelector('#previewArticleButton'),
   articlePreviewPanel: document.querySelector('#articlePreviewPanel')
 };
+
+let operationPending = false;
+let uncertainCreate = false;
+
+function lockForm(locked) {
+  const controls = [...elements.articleForm.querySelectorAll('input, select, textarea, button')];
+  if (locked) {
+    controls.forEach((control) => { control.dataset.wasDisabled = String(control.disabled); control.disabled = true; });
+  } else {
+    controls.forEach((control) => { control.disabled = control.dataset.wasDisabled === 'true'; });
+  }
+  elements.articleForm.setAttribute('aria-busy', String(locked));
+  [elements.saveDraftButton, elements.publishButton, elements.updateButton].forEach((button) => {
+    if (!button) return;
+    if (locked) { button.dataset.idleLabel = button.textContent; button.textContent = 'Enregistrement…'; }
+    else button.textContent = button.dataset.idleLabel;
+  });
+  lockArticleEditor(locked);
+}
 
 let supabase = null;
 let currentSession = null;
@@ -273,6 +295,8 @@ function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
 }
 
 function resetForm() {
+  if (operationPending) return;
+  uncertainCreate = false;
   elements.articleForm.reset();
   elements.articleId.value = '';
   elements.articleAuthor.value = 'Agri-tech';
@@ -286,6 +310,9 @@ function resetForm() {
 }
 
 function openForm(article = null) {
+  if (operationPending) return;
+  uncertainCreate = false;
+  elements.articleImage.value = '';
   elements.articleFormPanel.hidden = false;
   switchAdminSection('editor');
   if (!article) {
@@ -322,24 +349,17 @@ function getArticleStorageKey() {
   return elements.articleId?.value || elements.articleSlug?.value || editorDraftStorageKey;
 }
 
-function getEditorUploadMessage(error) {
-  const message = String(error?.message || '');
-  if (/4 Mo|trop lourde|size/i.test(message)) return 'L’image est trop lourde. Utilisez une image de 4 Mo maximum.';
-  if (/image valide|image\./i.test(message)) return 'Veuillez sélectionner un fichier image valide.';
-  if (/Supabase client|storage|network|fetch|connexion/i.test(message)) return 'Connexion au stockage impossible. Vérifiez votre connexion.';
-  return 'L’image n’a pas pu être envoyée. Réessayez.';
-}
-
-async function uploadEditorImageToSupabase(file) {
+async function uploadEditorImageToSupabase(blob, filename) {
+  const file = new File([blob], filename || blob.name || 'image', { type: blob.type });
   try {
     const publicUrl = await uploadArticleContentImage(file, getArticleStorageKey());
     setMessage(elements.dashboardMessage, 'Image insérée dans l’article.', 'success');
     return publicUrl;
   } catch (error) {
     logClientError('admin upload image TinyMCE', error);
-    const message = getEditorUploadMessage(error);
+    const message = getFriendlyError(error, 'upload');
     setMessage(elements.dashboardMessage, message, 'error');
-    throw new Error(message);
+    throw error;
   }
 }
 
@@ -389,44 +409,69 @@ function collectFormPayload(forcedStatus = null) {
 }
 
 async function saveArticle(forcedStatus = null) {
-  const rawContent = getCurrentArticleContent();
-  if (hasEmbeddedBase64Image(rawContent)) {
-    setMessage(elements.dashboardMessage, 'Certaines images n’ont pas été envoyées correctement. Veuillez les réinsérer avant d’enregistrer.', 'error');
+  if (operationPending) return;
+  if (uncertainCreate) {
+    setMessage(elements.dashboardMessage, 'Résultat de création incertain. Rechargez la liste et vérifiez le slug avant toute nouvelle création. Le contenu reste dans le formulaire.', 'error');
     return;
   }
-
-  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim()) {
-    setMessage(elements.dashboardMessage, 'Titre, slug et catégorie sont obligatoires.', 'error');
-    return;
-  }
-
-  if (!hasReadableArticleContent(rawContent)) {
-    setMessage(elements.dashboardMessage, 'Veuillez ajouter un contenu à l’article.', 'error');
-    return;
-  }
-
-  setMessage(elements.dashboardMessage, 'Enregistrement en cours…', 'info');
-  const file = elements.articleImage.files?.[0];
+  operationPending = true;
+  lockForm(true);
+  let stage = 'save-article';
+  let databaseStarted = false;
+  let saved = null;
   try {
-    let payload = collectFormPayload(forcedStatus);
+    setMessage(elements.dashboardMessage, 'Vérification des images et enregistrement en cours…', 'info');
+    const rawContent = await prepareArticleEditorForSave();
+    if (hasEmbeddedBase64Image(rawContent)) throw Object.assign(new Error('Images temporaires.'), { code: 'EDITOR_UPLOAD' });
+    if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim()) {
+      setMessage(elements.dashboardMessage, 'Titre, slug et catégorie sont obligatoires.', 'error');
+      return;
+    }
+    if (!hasReadableArticleContent(rawContent)) {
+      setMessage(elements.dashboardMessage, 'Veuillez ajouter un contenu à l’article.', 'error');
+      return;
+    }
+    const payload = collectFormPayload(forcedStatus);
+    const file = elements.articleImage.files?.[0];
     if (file) {
+      stage = 'upload';
+      // Retain a successful upload across Database failures; never delete a URL
+      // whose references cannot be established safely from the browser.
       payload.cover_image_url = await uploadArticleImage(file, payload.slug);
       elements.articleCoverUrl.value = payload.cover_image_url;
+      elements.articleImage.value = '';
       clearPreviewObjectUrl();
       updateCoverPreview(payload.cover_image_url);
     }
-
-    const savedArticle = elements.articleId.value
+    stage = 'save-article';
+    databaseStarted = true;
+    saved = elements.articleId.value
       ? await updateArticle(elements.articleId.value, payload)
       : await createArticle(payload);
-
-    editorDraftStorageKey = `draft-${Date.now()}`;
-    setMessage(elements.dashboardMessage, `Article ${statusLabel(savedArticle.status)} enregistré avec succès.`, 'success');
-    elements.articleId.value = savedArticle.id;
-    await loadArticles();
+    elements.articleId.value = saved.id;
+    elements.articleStatus.value = saved.status;
+    elements.articleFormTitle.textContent = 'Modifier l’article';
+    stage = 'refresh';
+    articles = await getAllArticlesForAdmin();
+    renderArticles();
+    setMessage(elements.dashboardMessage, `Article ${statusLabel(saved.status)} enregistré avec succès.`, 'success');
   } catch (error) {
+    saved = saved || error.savedArticle;
+    if (saved?.id) {
+      elements.articleId.value = saved.id;
+      elements.articleStatus.value = saved.status;
+      elements.articleFeatured.checked = saved.featured;
+    }
+    // A lost response may hide a committed INSERT. Do not automatically retry it.
+    if (databaseStarted && !elements.articleId.value && (!error.code || /fetch|network|timeout|connection/i.test(error.message || ''))) uncertainCreate = true;
     logClientError('admin sauvegarde article', error);
-    setMessage(elements.dashboardMessage, getFriendlyError(error, file ? 'upload' : 'save-article'), 'error');
+    const message = saved
+      ? 'Article enregistré. Une étape secondaire (mise à la une ou actualisation) a échoué. Vérifiez la liste avant de poursuivre.'
+      : getFriendlyError(error, stage);
+    setMessage(elements.dashboardMessage, message + (uncertainCreate ? ' Résultat incertain : vérifiez la liste et le slug avant toute nouvelle création.' : ''), saved ? 'warning' : 'error');
+  } finally {
+    lockForm(false);
+    operationPending = false;
   }
 }
 
@@ -565,7 +610,7 @@ function bindEvents() {
 
   elements.articlesList?.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-action]');
-    if (!button) return;
+    if (!button || operationPending) return;
     const article = articles.find((item) => item.id === button.dataset.id);
     if (!article) return;
 
@@ -574,31 +619,23 @@ function bindEvents() {
       return;
     }
 
+    operationPending = true;
+    button.disabled = true;
+    let actionCommitted = false;
+    let actionArticle = null;
     try {
       if (button.dataset.action === 'publish') {
         if (!window.confirm('Publier cet article ?')) return;
-        await publishArticle(article.id);
+        actionArticle = await publishArticle(article.id);
         setMessage(elements.dashboardMessage, 'Article publié avec succès.', 'success');
       }
       if (button.dataset.action === 'feature') {
-        const payload = {
-          title: article.title,
-          slug: article.slug,
-          category: article.category,
-          excerpt: article.excerpt,
-          cover_image_url: article.coverImage,
-          author: article.author,
-          content: article.content,
-          status: article.status,
-          featured: true,
-          published_at: article.publishedAt || null
-        };
-        await updateArticle(article.id, payload);
+        actionArticle = await setFeaturedArticle(article.id);
         setMessage(elements.dashboardMessage, 'Article mis à la une avec succès.', 'success');
       }
       if (button.dataset.action === 'archive') {
         if (!window.confirm('Archiver cet article ?')) return;
-        await archiveArticle(article.id);
+        actionArticle = await archiveArticle(article.id);
         setMessage(elements.dashboardMessage, 'Article archivé avec succès.', 'success');
       }
       if (button.dataset.action === 'delete') {
@@ -606,10 +643,21 @@ function bindEvents() {
         await deleteArticle(article.id);
         setMessage(elements.dashboardMessage, 'Article supprimé avec succès.', 'success');
       }
-      await loadArticles();
+      actionCommitted = true;
+      if (actionArticle && elements.articleId.value === actionArticle.id) {
+        elements.articleStatus.value = actionArticle.status;
+        elements.articleFeatured.checked = actionArticle.featured;
+        elements.articlePublishedAt.value = actionArticle.publishedAt?.slice(0, 16) || '';
+      }
+      articles = await getAllArticlesForAdmin();
+      renderArticles();
     } catch (error) {
       logClientError('admin action article', error);
-      setMessage(elements.dashboardMessage, getFriendlyError(error, `${button.dataset.action || 'default'}-article`), 'error');
+      setMessage(elements.dashboardMessage, actionCommitted ? 'Action effectuée, mais actualisation de la liste impossible. Rechargez la liste.' : getFriendlyError(error, `${button.dataset.action || 'default'}-article`), 'error');
+    } finally {
+      operationPending = false;
+      button.disabled = false;
+      if (actionCommitted && button.dataset.action === 'delete' && elements.articleId.value === article.id) resetForm();
     }
   });
 }
