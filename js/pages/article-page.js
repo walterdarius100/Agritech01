@@ -323,16 +323,16 @@ function renderRelatedSection(articles, currentSlug) {
   `;
 }
 
-function renderNotFound() {
+function renderNotFound({ unavailable = false } = {}) {
   if (!articleContainer) return;
-  document.title = 'Article introuvable | Agri-tech';
+  if (!unavailable) document.title = 'Article introuvable | Agri-tech';
   articleContainer.innerHTML = `
     <section class="section-pad legal-layout">
       <div class="legal-card reveal is-visible">
         <section class="legal-section">
           <span class="eyebrow">Actualités</span>
-          <h1>Article introuvable</h1>
-          <p>Article introuvable ou indisponible.</p>
+          <h1>${unavailable ? 'Chargement impossible' : 'Article introuvable'}</h1>
+          <p>${unavailable ? 'Impossible de charger l’article pour le moment. Réessayez plus tard.' : 'Cet article est introuvable ou n’est plus publié.'}</p>
           <a href="actualites.html" class="article-back-link">← Retour aux actualités</a>
         </section>
       </div>
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (error) {
     logClientError('article', error);
-    renderNotFound();
+    renderNotFound({ unavailable: true });
   }
 
   initScrollReveal();

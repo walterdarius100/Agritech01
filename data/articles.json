@@ -111,19 +111,5 @@
       "Le producteur doit aussi prévoir du matériel adapté, une protection correcte et un calendrier de visites. Une ruche mal suivie peut rapidement perdre en performance ou devenir difficile à gérer.",
       "Un démarrage encadré aide à comprendre le comportement des colonies, à limiter les erreurs et à construire progressivement une activité durable."
     ]
-  },
-  {
-    "id": 5,
-    "title": "Note interne : calendrier éditorial Academy",
-    "slug": "calendrier-editorial-academy",
-    "category": "Interne",
-    "excerpt": "Article de préparation non publié.",
-    "coverImage": "assets/images/logo-agritech.png",
-    "author": "Agri-tech",
-    "publishedAt": "2026-06-12",
-    "status": "draft",
-    "content": [
-      "Contenu non publié."
-    ]
   }
 ]
