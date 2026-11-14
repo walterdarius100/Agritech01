@@ -1,6 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from './supabase-client.js';
 
-const ARTICLE_DATA_URL = 'data/articles.json';
 const IMAGE_BUCKET = 'article-images';
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif']);
@@ -64,11 +63,13 @@ function sortByPublicationDate(articles) {
   return [...articles].sort((a, b) => new Date(b.publishedAt || b.createdAt || 0) - new Date(a.publishedAt || a.createdAt || 0));
 }
 
-async function fetchLocalArticles() {
-  const response = await fetch(ARTICLE_DATA_URL);
-  if (!response.ok) throw new Error('Impossible de charger les actualités locales.');
-  const articles = await response.json();
-  return articles.map(normalizeArticle);
+async function getPublicReadClient() {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Configuration du service des articles indisponible.');
+  }
+  const client = await getSupabaseClient();
+  if (!client) throw new Error('Connexion au service des articles impossible.');
+  return client;
 }
 
 async function unsetOtherFeaturedArticles(client, currentArticleId = null) {
@@ -131,23 +132,19 @@ async function getClientOrThrow() {
   return client;
 }
 
-export async function getPublishedArticles({ useFallback = true } = {}) {
-  const client = await getSupabaseClient();
+// Supabase is authoritative. A static copy cannot confirm a publication's
+// current status, even during an outage. Never fall back to local articles.
+export async function getPublishedArticles() {
+  const client = await getPublicReadClient();
+  const { data, error } = await client
+    .from('articles')
+    .select('*')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false, nullsFirst: false });
 
-  if (client && isSupabaseConfigured()) {
-    const { data, error } = await client
-      .from('articles')
-      .select('*')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false, nullsFirst: false });
-
-    if (!error && Array.isArray(data)) return sortByPublicationDate(data.map(normalizeArticle));
-    console.warn('Fallback local articles after Supabase read error', error?.message || error);
-  }
-
-  if (!useFallback) return [];
-  const articles = await fetchLocalArticles();
-  return sortByPublicationDate(articles.filter((article) => article.status === 'published'));
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error('Réponse du service des articles invalide.');
+  return sortByPublicationDate(data.map(normalizeArticle).filter((article) => article.status === 'published'));
 }
 
 export async function getAllArticlesForAdmin() {
@@ -161,21 +158,19 @@ export async function getAllArticlesForAdmin() {
   return (data || []).map(normalizeArticle);
 }
 
-export async function getArticleBySlug(slug, { publishedOnly = true, useFallback = true } = {}) {
+export async function getArticleBySlug(slug, { publishedOnly = true } = {}) {
   if (!slug) return null;
-  const client = await getSupabaseClient();
-
-  if (client && isSupabaseConfigured()) {
-    let query = client.from('articles').select('*').eq('slug', slug).limit(1).maybeSingle();
-    if (publishedOnly) query = client.from('articles').select('*').eq('slug', slug).eq('status', 'published').limit(1).maybeSingle();
-    const { data, error } = await query;
-    if (!error && data) return normalizeArticle(data);
-    if (error) console.warn('Fallback local article after Supabase read error', error.message || error);
+  const client = await getPublicReadClient();
+  let query = client.from('articles').select('*').eq('slug', slug);
+  if (publishedOnly) query = query.eq('status', 'published');
+  const { data, error } = await query.limit(1).maybeSingle();
+  if (error) throw error;
+  if (data === null) return null;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Réponse du service des articles invalide.');
   }
-
-  if (!useFallback) return null;
-  const articles = await fetchLocalArticles();
-  return articles.find((article) => article.slug === slug && (!publishedOnly || article.status === 'published')) || null;
+  const article = normalizeArticle(data);
+  return publishedOnly && article.status !== 'published' ? null : article;
 }
 
 export function getFeaturedArticle(articles) {
