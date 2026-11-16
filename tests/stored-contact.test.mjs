@@ -6,9 +6,9 @@ import { readFile } from 'node:fs/promises';
 const payload={from_name:'Test',from_email:'test@example.invalid',phone:'123',need:'Consultation',message:'Test',consent:'Oui'};
 const config={enabled:true,endpoint:'https://mock.supabase.co/functions/v1/contact-request'};
 function mockStorage(){const values=new Map();return {getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),values};}
-test('activation frontend fausse par défaut, aucun secret dans les nouveaux modules publics',async()=>{
-  assert.equal(CONTACT_STORAGE_CONFIG.enabled,false);assert.equal(CONTACT_STORAGE_CONFIG.endpoint,'');
-  await assert.rejects(()=>createStoredContactService(CONTACT_STORAGE_CONFIG,{fetcher(){assert.fail('network');}})(payload));
+test('raccordement au projet choisi, aucun secret public, désactivation explicite possible',async()=>{
+  assert.equal(CONTACT_STORAGE_CONFIG.enabled,true);assert.equal(CONTACT_STORAGE_CONFIG.endpoint,'https://lxvegipzhkkujibexnkl.supabase.co/functions/v1/contact-request');
+  await assert.rejects(()=>createStoredContactService({...CONTACT_STORAGE_CONFIG,enabled:false},{fetcher(){assert.fail('network');}})(payload));
   for(const file of ['js/components/stored-contact.js','js/config.js'])assert.doesNotMatch(await readFile(new URL('../'+file,import.meta.url),'utf8'),/service_role|sb_secret_|EMAILJS_PRIVATE_KEY|CONTACT_HMAC_SECRET/);
 });
 test('panne puis réessai, concurrence et rechargement : reçu stable, champs bruts absents du stockage',async()=>{

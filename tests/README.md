@@ -55,13 +55,15 @@ simulés. `node tests/forms-browser.mjs` contrôle les formulaires réels avec
 Playwright/Chromium, bloque tous les services externes et simule EmailJS.
 Voir [audit, actions externes et limites](../docs/emails-newsletter.md).
 
-## Stockage contact préparé, inactif
+## Stockage contact Supabase
 
 `node --test tests/*.test.mjs` inclut `contact-edge.test.mjs` et
 `stored-contact.test.mjs`, sans serveur, email ou base distant. Le handler utilise
 les mêmes modules web standards qu’en Edge, avec adaptateurs simulés.
-`node tests/forms-browser.mjs` vérifie aussi le chemin nouveau en interceptant
-UNIQUEMENT la configuration du test ; le flag du dépôt reste faux.
+`node tests/forms-browser.mjs` vérifie le chemin de livraison avec le flag vrai
+et l’URL réelle du dépôt, en simulant UNIQUEMENT la réponse Edge (aucun POST
+réel). Il vérifie aussi l’ancien chemin par une désactivation locale au test.
+Voir [la livraison](../docs/contact-release.md).
 
 Pour les droits SQL et la concurrence réels, avec Docker disponible :
 

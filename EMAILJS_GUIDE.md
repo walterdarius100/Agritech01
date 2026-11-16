@@ -60,12 +60,14 @@ L’échec de réponse ne transforme pas une notification acceptée en échec gl
 Le stockage est ensuite tenté indépendamment, avec limite de quinze secondes.
 Les erreurs ne journalisent ni coordonnées ni corps de message.
 
-## Nouveau parcours contact préparé mais inactif
+## Parcours contact Supabase raccordé pour publication
 
-La notification prioritaire décrite plus haut est le parcours actuel avec le
-flag Supabase faux. Le futur parcours préparé enregistre d’abord la demande,
-puis orchestre EmailJS depuis Edge ; il reste désactivé. Aucun réglage réel ni
-identifiant de production n’a été modifié.
+Le frontend de la PR active maintenant Supabase : la demande est enregistrée
+avant toute notification et EmailJS est appelé côté Edge selon ses réglages
+vérifiés. Le chemin navigateur décrit plus haut concerne le fonctionnement
+historique avec le flag faux et la newsletter. Aucun réglage EmailJS réel ni
+identifiant de production n’a été modifié. La [courte checklist finale](docs/contact-release.md)
+remplace les étapes de préparation déjà effectuées par le propriétaire.
 
 **Le fournisseur connecté à `service_z856n3l` est inconnu.** EmailJS peut utiliser
 Zoho ou un autre transport : ne pas revendiquer d’indépendance vis-à-vis de Zoho.

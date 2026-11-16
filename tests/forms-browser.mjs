@@ -1,5 +1,6 @@
 // Isolated browser checks: every external request is blocked, articles simulated.
 import assert from 'node:assert/strict';
+import { CONTACT_STORAGE_CONFIG } from '../js/config.js';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
@@ -23,10 +24,15 @@ try {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   let mode = 'published';
+  let legacyMode = true;
   const article = { slug: 'ancien-slug', title: 'Sol <vivant> & eau', excerpt: 'Comprendre le sol & l’eau.', author: 'Agri-tech', status: 'published', content: '<h2>Le sol</h2><p>Conseils.</p>', coverImage: 'assets/images/irrigation.jpg', publishedAt: '2026-01-01' };
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.origin !== origin) return route.abort();
+    if (url.pathname === '/js/config.js') {
+      const config = await readFile(resolve(root,'js/config.js'),'utf8');
+      return route.fulfill({contentType:'text/javascript',body:legacyMode ? config.replace('enabled: true','enabled: false') : config});
+    }
     if (url.pathname === '/js/services/articles-service.js') {
       return route.fulfill({ contentType: 'text/javascript', body: `
         const article = ${JSON.stringify(article)};
@@ -112,15 +118,12 @@ try {
   await page.waitForFunction(() => !document.querySelector('#newsletterSubmit').disabled);
   assert.equal(await page.evaluate(() => mockCalls.length), 0);
   assert.equal(await page.evaluate(() => Object.values(sessionStorage).some(v => v.includes('example.invalid'))), false);
-  // Activate only the intercepted test config, never the repository/production config.
+  // Release config is used unchanged here. Only the actual Edge response is mocked.
+  // Every other external request remains blocked by the catch-all route above.
+  legacyMode = false;
   const storedBodies = [];
   let storageMode = 'unknown';
-  await page.route('**/js/config.js', async route => {
-    const response = await route.fetch();
-    const text = await response.text();
-    await route.fulfill({response, body:text.replace('enabled: false', 'enabled: true').replace("endpoint: ''", "endpoint: 'https://mock.supabase.co/functions/v1/contact-request'")});
-  });
-  await page.route('https://mock.supabase.co/functions/v1/contact-request', async route => {
+  await page.route(CONTACT_STORAGE_CONFIG.endpoint, async route => {
     const body = route.request().postDataJSON(); storedBodies.push(body);
     await new Promise(r => setTimeout(r,50));
     await route.fulfill({status:storageMode === 'unknown' ? 503 : 200, contentType:'application/json', body:JSON.stringify(storageMode === 'unknown' ? {stored:null,code:'storage_unknown'} : {stored:true,id:body.id,notification:'failed',reply:'disabled'})});

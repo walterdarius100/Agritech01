@@ -1,33 +1,26 @@
-# Contact Supabase — préparation inactive pour revue
+# Contact Supabase — architecture et protections
 
-L’accord conditionnel du propriétaire autorise le code, une migration non
-appliquée en production et les tests isolés. Il n’autorise ni déploiement,
-ni modification externe, ni mise en service. Branche conservée :
-`fix/emails-newsletter-fiabilite`, Draft PR 166, issue de `main` après PR 165.
+Le raccordement final, les contrôles distants sans écriture et la courte checklist
+de publication sont dans [contact-release.md](contact-release.md).
+Le propriétaire indique avoir exécuté la migration et déployé/configuré la
+fonction. Cette finalisation ne modifie pas la base ni la fonction distante.
+Branche conservée : `fix/emails-newsletter-fiabilite`, PR 166.
 
 ## État présent et séparation des parcours
 
-Le nouveau parcours est **désactivé par défaut** :
+Le frontend de la PR utilise désormais `CONTACT_STORAGE_CONFIG.enabled: true`
+et l’URL de `contact-request` du projet `lxvegipzhkkujibexnkl`. Il ne sera publié
+qu’après fusion/publication confirmées par le propriétaire. Le backend garde ses
+flags d’activation explicites et ses protections ; aucun secret n’est exposé.
+La configuration de cette seule fonction indique `verify_jwt=false`, alignée
+sur l’accès public déjà constaté sans JWT (POST vide refusé par le handler).
+RLS, privilèges privés des RPC, validation, reçus et limitations restent requis.
 
-- `CONTACT_STORAGE_CONFIG.enabled: false`, endpoint vide dans `js/config.js` ;
-- Edge : `CONTACT_ENABLED` absent/faux → 503 avant tout accès base/email ;
-- `verify_jwt = true` conservé dans la configuration préparée : une éventuelle
-  ouverture anonyme future nécessite une validation explicite et ne concerne
-  que cette fonction ; aucune fonction n’a été déployée ;
-- `CONTACT_EMAIL_ENABLED` et toutes les vérifications EmailJS sont faux par
-  défaut, budget contact nul ; aucune autoréponse activée.
-
-Avec le drapeau frontend faux, le contact existant de la PR reste inchangé :
-EmailJS d’abord, Apps Script `no-cors` ensuite, sans confirmation de persistance.
-La newsletter conserve toujours ce circuit indépendant et son consentement.
-Il n’y a aucune écriture Supabase contact, ni appel Edge, depuis le parcours
-actuel. Activer un jour le nouveau chemin supprimera uniquement pour le contact
-les appels navigateur EmailJS et Apps Script ; pas de double circuit, pas de
-repli automatique email-first si Supabase ne répond pas.
-
-Les articles et leurs politiques, les identifiants EmailJS de production et le
-service Apps Script sont inchangés. Aucun nouveau fournisseur, SMTP/API Zoho,
-serveur Node.js, framework, CRM ou table d’abonnés.
+Le contact passe par Supabase puis EmailJS côté Edge, sans repli vers le chemin
+EmailJS/Apps Script navigateur en cas de panne. Le flag peut être remis à faux
+uniquement dans une modification revue si un retour à l’ancien parcours est
+explicitement décidé. La newsletter conserve son circuit indépendant.
+Les identifiants EmailJS existants, les articles et leurs politiques sont inchangés.
 
 ## Audit EmailJS : fournisseur connecté NON identifié
 
@@ -124,7 +117,8 @@ UUID pour un mécanisme de reprise après une panne incertaine.
 
 ## Schéma et permissions
 
-Fichier de migration à relire, **non appliqué en production** :
+Fichier de migration appliqué par le propriétaire selon sa confirmation ;
+aucune nouvelle exécution ou modification de production par Codex :
 `supabase/migrations/202611160001_contact_requests.sql`.
 
 Champs métier : UUID, nom 1–150 caractères, email 3–254, téléphone 1–40,
@@ -242,18 +236,12 @@ Ne pas coller un secret dans le chat, le frontend, Git ou un corps de test réel
 Un booléen « vérifié » ne remplace pas l’audit du compte. Les flags sont des
 verrous opérationnels, pas un mécanisme d’authentification du visiteur.
 
-Ordre après revue : confirmer fournisseur/compatibilité REST et protections
-EmailJS ; valider rétention, quotas, propriétaires des données et sauvegardes ;
-relire/approuver séparément le SQL de production ; appliquer après autorisation ;
-approuver/configurer les secrets et le déploiement Edge ; vérifier le comportement
-sur coordonnées du propriétaire seulement après autorisation ; autoriser ensuite
-l’activation frontend et la publication. Les vérifications de RLS effectif,
-passerelle/CORS/JWT et templates/réception réels restent à faire à ces étapes.
-
-Aucune commande de migration/déploiement automatique ni activation dans CI.
-Ne pas déployer tant que `verify_jwt=true` et un frontend anonyme sont incohérents :
-la future ouverture de cette seule fonction doit être explicitement autorisée
-avec ses protections applicatives, jamais utilisée pour contourner une erreur.
+La migration et le déploiement sont déclarés effectués par le propriétaire.
+Aucune commande automatique de migration/déploiement ni activation dans CI.
+Il reste à confirmer fusion/publication et, si nécessaire, configuration email :
+voir la checklist de livraison, sans réappliquer SQL ni multiplier les scripts.
+La fonction est déjà accessible publiquement sans JWT pour l’origine du site ;
+aucun changement distant de cette option n’a été effectué ici.
 Rollback : désactiver le point d’entrée et afficher une voie de contact manuelle ;
 conserver les demandes déjà enregistrées, ne pas réactiver un double circuit.
 
@@ -274,14 +262,14 @@ Exécutés en environnement isolé :
   avec ces vraies transactions SQL et EmailJS simulé : panne après stockage,
   concurrence et rejeu sans renvoi. Conteneur supprimé après contrôle.
 - Chromium formulaires : ancien parcours avec drapeau faux, puis activation
-  UNIQUEMENT par interception de configuration dans le navigateur de test.
+  de livraison inchangée, avec seulement la réponse Edge simulée.
   Double clic, panne/réessai avec même reçu, champs conservés, boutons remis,
   rechargement et newsletter indépendante, tous services externes bloqués/simulés.
 - Contrôles Deno sans réseau et sans serveur public ; contrôles Chromium SEO et
   administration simulée ; syntaxe et diff contrôlés. Voir résultat chiffré du
   rapport de livraison associé à la PR.
 
-Non exécutés : SQL sur Supabase distant, déploiement/fonction publique,
+Non exécutés par Codex : SQL sur Supabase distant, déploiement/activation distante,
 vérification des privilèges réels de production, connexion réelle EmailJS/Zoho,
 emails réels et stockage Apps Script réel. Les tests PostgreSQL standard ne
 simulent pas toute la passerelle Supabase/PostgREST ni les droits hérités réels

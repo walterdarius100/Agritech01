@@ -1,6 +1,6 @@
-# Inactive preparation. Do not deploy or change production auth without approval.
+# Public contact endpoint: no visitor account or JWT is required.
+# This matches the deployed endpoint; changing this file does not reconfigure production.
+# Only contact-request is public. RLS, private RPC privileges, server validation,
+# receipt checks and atomic limits remain required and unchanged.
 [functions.contact-request]
-verify_jwt = true
-# A future approved public activation requires verify_jwt=false ONLY here,
-# CONTACT_ENABLED=true and all application controls. No user JWT is required
-# by the proposed public form; never disable JWT checks for other functions.
+verify_jwt = false
