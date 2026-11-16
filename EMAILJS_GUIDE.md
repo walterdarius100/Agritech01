@@ -1,61 +1,61 @@
-# Guide EmailJS — formulaire Agri-tech V1
+# Guide EmailJS — Agri-tech V1.2
 
-Le formulaire principal est sur `index.html` et son id existant est :
+Le formulaire principal `index.html#leadForm` conserve le service
+`service_z856n3l`, la clé publique existante et la notification
+`template_pzsnmea`. La documentation historique indique le destinataire
+`contact@agritech509ht.com` ; sa configuration effective est dans EmailJS et
+n’a pas été vérifiée depuis le dépôt. Aucun identifiant de production changé.
 
-```text
-leadForm
-```
+## Notification principale
 
-Les liens directs vers le formulaire doivent utiliser :
+Conserver les variables `from_name`, `from_email`, `phone`, `need`, `message`,
+`consent`, `source`, `date`, ainsi que les alias `SOURCE`, `TYPE_CONTACT`.
+Destinataire professionnel fixe à vérifier dans le tableau de bord ; Reply-To
+`{{from_email}}`. Une réponse API acceptée indique une prise en charge, pas une
+livraison dans la boîte de réception. Les demandes ne constituent pas un
+consentement newsletter.
 
-```text
-index.html#leadForm
-```
+## Autoréponse : action manuelle avant activation
 
-ou :
+`autoReplyTemplateId` reste vide et `autoReplyVerified` reste `false`.
+Le propriétaire doit créer et vérifier un template distinct :
 
-```text
-https://agritech509ht.com/index.html#leadForm
-```
+- To Email : `{{from_email}}` (adresse validée du visiteur).
+- To Name : `{{from_name}}`.
+- From : identité Agri-tech et expéditeur authentifié du service EmailJS.
+- Reply-To : `contact@agritech509ht.com`, après vérification de cette boîte.
+- Objet : « Agri-tech — réception de votre demande ».
+- Variables de contenu : `{{from_name}}`, `{{need}}` ; les variables principales
+  restent disponibles, mais ne pas recopier inutilement les coordonnées/message.
 
-## Réception des messages
+Exemple de corps en français :
 
-Les messages sont envoyés via EmailJS vers l’adresse professionnelle actuelle :
+> Bonjour {{from_name}},
+>
+> Nous accusons réception de votre demande concernant « {{need}} ».
+> Agri-tech prendra contact avec vous pour échanger sur votre demande.
+> Cet accusé de réception ne vaut ni acceptation de la demande, ni confirmation
+> de service ou de réservation.
+>
+> L’équipe Agri-tech
+> https://agritech509ht.com
 
-```text
-contact@agritech509ht.com
-```
+Vérifier l’échappement des variables dans le rendu du template (aucun HTML brut
+issu des champs). Vérifier les quotas, la protection anti-abus et les domaines
+origin autorisés : domaine de production réellement utilisé, variante www
+uniquement si utilisée ; environnement de test uniquement si approuvé.
+Ne mettre aucune clé privée dans le frontend.
 
-Le destinataire est géré dans le template EmailJS. Ne pas modifier le template ou les identifiants si le formulaire fonctionne.
+Vérifier également que la notification principale n’a pas déjà une autoréponse
+EmailJS liée : il faut un seul mécanisme de réponse pour éviter deux emails.
+Après vérification des destinations et d’un test contrôlé sur une adresse du
+propriétaire, renseigner l’identifiant réel et passer `autoReplyVerified` à
+`true` dans une modification revue et autorisée. Aucune activation dans ce
+chantier. Les tests automatisés simulent tous les appels.
 
-## Variables utilisées dans le template EmailJS
-
-Conserver les noms de variables existants sauf vérification complète du template EmailJS :
-
-```text
-{{from_name}}
-{{from_email}}
-{{phone}}
-{{need}}
-{{message}}
-{{consent}}
-{{source}}
-{{date}}
-```
-
-## Règles importantes
-
-- Le Reply-To doit rester l’email du visiteur (`from_email`).
-- Les noms des champs envoyés à EmailJS ne doivent pas être changés sans vérifier le template.
-- La clé EmailJS visible côté frontend est une clé publique, mais les domaines autorisés doivent être restreints dans EmailJS.
-- Ne pas modifier EmailJS inutilement si l’envoi fonctionne.
-- Après toute modification liée au contact, tester une soumission réelle et vérifier la réception sur `contact@agritech509ht.com`.
-
-## Test obligatoire après modification du formulaire
-
-1. Ouvrir `index.html#leadForm`.
-2. Remplir le formulaire avec un email de test.
-3. Envoyer la demande.
-4. Vérifier le message de succès côté navigateur.
-5. Vérifier que l’email est reçu sur `contact@agritech509ht.com`.
-6. Vérifier que le Reply-To correspond à l’email du visiteur.
+La notification est prioritaire ; son échec bloque les opérations secondaires.
+L’autoréponse utilise un compartiment de limitation distinct pour ne pas être
+bloquée par le throttle global de dix secondes ; `blockHeadless` reste actif.
+L’échec de réponse ne transforme pas une notification acceptée en échec global.
+Le stockage est ensuite tenté indépendamment, avec limite de quinze secondes.
+Les erreurs ne journalisent ni coordonnées ni corps de message.

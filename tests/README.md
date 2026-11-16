@@ -47,3 +47,10 @@ accessibles par les liens du site, sans garantie d'indexation. La publication
 via l'administration ne demande aucune intervention dans le code, le sitemap
 ou GitHub. Node.js sert aux contrôles de développement, sans être nécessaire
 au fonctionnement éditorial. Le sitemap des articles est reporté à V2.
+
+## Emails et newsletter (chantier 04)
+
+`node --test tests/*.test.mjs` inclut `forms.test.mjs` avec EmailJS et fetch
+simulés. `node tests/forms-browser.mjs` contrôle les formulaires réels avec
+Playwright/Chromium, bloque tous les services externes et simule EmailJS.
+Voir [audit, actions externes et limites](../docs/emails-newsletter.md).
