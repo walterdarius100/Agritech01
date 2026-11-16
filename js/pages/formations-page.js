@@ -13,7 +13,7 @@ function courseNeed(course) {
 function renderCourseCard(course, index, mode) {
   const isUpcoming = mode === 'upcoming';
   return `
-    <article class="detail-card course-detail-card reveal ${getDelayClass(index)}">
+    <article${course.anchor ? ` id="${escapeHtml(course.anchor)}"` : ''} class="detail-card course-detail-card reveal ${getDelayClass(index)}">
       <img src="${escapeHtml(course.image)}" alt="${escapeHtml(course.title)}" width="1200" height="800" loading="lazy" decoding="async" />
       <div class="detail-card-body">
         <span class="tag">${escapeHtml(course.status)}</span>
@@ -50,5 +50,8 @@ function renderCourses() {
 document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   renderCourses();
+  // Cards are inserted after the browser's initial fragment navigation.
+  const target = document.getElementById(window.location.hash.slice(1));
+  target?.scrollIntoView();
   initScrollReveal();
 });

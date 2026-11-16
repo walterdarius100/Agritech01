@@ -32,3 +32,18 @@ ou de caches externes. Supabase RLS reste responsable des autorisations serveur.
 `node --test tests/*.test.mjs` inclut les tests du chantier 02 sans dépendance
 supplémentaire. Le protocole, les échecs partiels et le contrôle Chromium
 facultatif sont décrits dans [admin-uploads-save.md](../docs/admin-uploads-save.md).
+
+## SEO (chantier 03)
+
+`node --test tests/*.test.mjs` inclut les contrôles SEO et utilise aussi Python 3
+standard pour analyser réellement le XML (disponible sur ubuntu-latest).
+`node tests/seo-browser.mjs` est un contrôle Chromium facultatif avec Playwright,
+comme le test navigateur admin ; `CHROMIUM_PATH` peut adapter son exécutable.
+Toutes les requêtes externes y sont bloquées et les lectures d'articles simulées.
+Voir [le rapport et les limites](../docs/seo-indexation.md).
+
+Le sitemap répertorie uniquement les six pages fixes. Les articles publiés restent
+accessibles par les liens du site, sans garantie d'indexation. La publication
+via l'administration ne demande aucune intervention dans le code, le sitemap
+ou GitHub. Node.js sert aux contrôles de développement, sans être nécessaire
+au fonctionnement éditorial. Le sitemap des articles est reporté à V2.

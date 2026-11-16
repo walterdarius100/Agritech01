@@ -1,5 +1,6 @@
 export const courses = [
   {
+    anchor: 'cuniculture',
     title: 'Cuniculture rentable (de 0 à 50 000 HT)',
     image: 'assets/images/formation-cuniculture.jpg',
     level: 'Débutant',
@@ -12,6 +13,7 @@ export const courses = [
     outcomes: ['Installer un clapier simple', 'Planifier reproduction et engraissement', 'Calculer les premiers coûts']
   },
   {
+    anchor: 'aviculture',
     title: 'Poulet de chair : produire et vendre efficacement',
     image: 'assets/images/formation-poulet.jpg',
     level: 'Intermédiaire',
@@ -24,6 +26,7 @@ export const courses = [
     outcomes: ['Organiser un cycle de production', 'Réduire les pertes', 'Préparer la vente']
   },
   {
+    anchor: 'apiculture',
     title: 'Apiculture moderne simplifiée',
     image: 'assets/images/formation-apiculture.jpg',
     level: 'Débutant',
