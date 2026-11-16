@@ -59,3 +59,18 @@ bloquée par le throttle global de dix secondes ; `blockHeadless` reste actif.
 L’échec de réponse ne transforme pas une notification acceptée en échec global.
 Le stockage est ensuite tenté indépendamment, avec limite de quinze secondes.
 Les erreurs ne journalisent ni coordonnées ni corps de message.
+
+## Nouveau parcours contact préparé mais inactif
+
+La notification prioritaire décrite plus haut est le parcours actuel avec le
+flag Supabase faux. Le futur parcours préparé enregistre d’abord la demande,
+puis orchestre EmailJS depuis Edge ; il reste désactivé. Aucun réglage réel ni
+identifiant de production n’a été modifié.
+
+**Le fournisseur connecté à `service_z856n3l` est inconnu.** EmailJS peut utiliser
+Zoho ou un autre transport : ne pas revendiquer d’indépendance vis-à-vis de Zoho.
+La checklist Dashboard, les verrous fournisseur/templates, les secrets Edge,
+les quotas partagés avec la newsletter et les validations de mise en service
+figurent dans [l’architecture préparée](docs/contact-requests-architecture.md).
+Contact et newsletter partagent actuellement `template_pzsnmea` : vérifier ses
+réponses liées avant tout futur changement ; n’en activer aucune ici.

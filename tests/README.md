@@ -54,3 +54,38 @@ au fonctionnement éditorial. Le sitemap des articles est reporté à V2.
 simulés. `node tests/forms-browser.mjs` contrôle les formulaires réels avec
 Playwright/Chromium, bloque tous les services externes et simule EmailJS.
 Voir [audit, actions externes et limites](../docs/emails-newsletter.md).
+
+## Stockage contact préparé, inactif
+
+`node --test tests/*.test.mjs` inclut `contact-edge.test.mjs` et
+`stored-contact.test.mjs`, sans serveur, email ou base distant. Le handler utilise
+les mêmes modules web standards qu’en Edge, avec adaptateurs simulés.
+`node tests/forms-browser.mjs` vérifie aussi le chemin nouveau en interceptant
+UNIQUEMENT la configuration du test ; le flag du dépôt reste faux.
+
+Pour les droits SQL et la concurrence réels, avec Docker disponible :
+
+```sh
+docker pull postgres:17-alpine
+node tests/contact-db.mjs
+```
+
+Le runner refuse de télécharger l’image lui-même. Il crée uniquement un
+PostgreSQL jetable `--network none`, sans port publié, applique la migration dans
+ce conteneur, crée des rôles témoins locaux et simule EmailJS. Il ne prend ni URL
+Supabase, ni connexion distante, ni fichier `.env` en argument. Le conteneur et
+son stockage temporaire sont supprimés en fin de test.
+
+Pour la vérification de l’entrée Deno, sans démarrer de fonction :
+
+```sh
+docker pull denoland/deno:alpine
+node tests/contact-deno.mjs
+```
+
+Le conteneur Deno ne dispose d’aucun réseau ; il reçoit seulement les trois
+fichiers de fonction et exécute `deno check --no-remote`. Aucun serveur public
+n’est lancé et aucun secret n’est copié. Docker/Deno ne sont pas des dépendances
+du site statique ni un serveur Node en production.
+
+Voir [préparation, limites et checklist manuelle](../docs/contact-requests-architecture.md).

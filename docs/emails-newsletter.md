@@ -136,5 +136,7 @@ et commit consignés dans le rapport de livraison du chat. Configuration externe
 Le stockage prioritaire des demandes dans Supabase et la conservation d’EmailJS
 font l’objet d’un [audit et d’une proposition à valider](contact-requests-architecture.md).
 Le comportement décrit ci-dessus reste celui du code actuel. Le futur parcours
-Supabase n’est ni implémenté ni activé ; SQL de production, déploiement Edge et
-basculement frontend attendent des validations distinctes.
+Supabase est désormais préparé dans le dépôt après accord conditionnel, mais
+reste inactif. SQL de production, déploiement Edge et basculement frontend
+attendent des validations distinctes. Le document d’architecture décrit les
+simplifications retenues et les nouveaux tests isolés.

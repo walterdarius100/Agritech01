@@ -1,4 +1,4 @@
-import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, PARTNERSHIP_NEED } from './config.js';
+import { EMAILJS_CONFIG, CONTACT_STORAGE_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, PARTNERSHIP_NEED } from './config.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
@@ -8,6 +8,7 @@ import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
 import { createSubmissionService, contactResultMessage } from './components/contact-form.js';
+import { createStoredContactService, storedContactMessage } from './components/stored-contact.js';
 import { initNewsletterForm } from './components/newsletter-form.js';
 import { initFloatingActions } from './components/floating-actions.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
@@ -71,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let resizeFrame = null;
   let formBusy = false;
   const submitRequest = createSubmissionService(EMAILJS_CONFIG, { emailjs: window.emailjs });
+  const submitStoredContact = createStoredContactService(CONTACT_STORAGE_CONFIG);
   let formStatusTimer = null;
   const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;
 
@@ -610,7 +612,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           return;
         }
 
-        if (!window.emailjs || !isEmailJsConfigured()) {
+        if (CONTACT_STORAGE_CONFIG.enabled !== true && (!window.emailjs || !isEmailJsConfigured())) {
           setFormStatus('error', FORM_ERROR_MESSAGE);
           return;
         }
@@ -633,8 +635,13 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         elements.form.setAttribute('aria-busy', 'true');
         try {
           setFormStatus('success', 'Transmission de votre demande en cours...');
-          const result = await submitRequest(payload);
-          setFormStatus(result.notification === 'accepted' ? 'success' : 'error', contactResultMessage(result), true);
+          if (CONTACT_STORAGE_CONFIG.enabled === true) {
+            const result = await submitStoredContact(payload);
+            setFormStatus(result.stored === true ? 'success' : 'error', storedContactMessage(result), true);
+          } else {
+            const result = await submitRequest(payload);
+            setFormStatus(result.notification === 'accepted' ? 'success' : 'error', contactResultMessage(result), true);
+          }
           // Preserve fields and the completed-operation record for safe same-page retries.
         } catch {
           setFormStatus('error', 'Le résultat de l’envoi est incertain. Contactez Agri-tech avant de réessayer.', true);
