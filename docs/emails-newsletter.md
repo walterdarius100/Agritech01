@@ -130,3 +130,11 @@ Branche indépendante : `fix/emails-newsletter-fiabilite`, issue du dernier `mai
 contenant la fusion de la PR 165. Livraison en PR Draft vers `main` ; identifiant
 et commit consignés dans le rapport de livraison du chat. Configuration externe
 à vérifier avant activation ; aucune fusion ni aucun déploiement demandé.
+
+## Ajustement d’architecture demandé après cette livraison
+
+Le stockage prioritaire des demandes dans Supabase et la conservation d’EmailJS
+font l’objet d’un [audit et d’une proposition à valider](contact-requests-architecture.md).
+Le comportement décrit ci-dessus reste celui du code actuel. Le futur parcours
+Supabase n’est ni implémenté ni activé ; SQL de production, déploiement Edge et
+basculement frontend attendent des validations distinctes.
