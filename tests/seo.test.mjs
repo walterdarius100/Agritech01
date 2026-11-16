@@ -13,9 +13,14 @@ root=E.parse(sys.argv[1]).getroot()
 assert root.tag=='{http://www.sitemaps.org/schemas/sitemap/0.9}urlset'
 assert all(len(u)==1 for u in root)
 print(json.dumps([u.find('{http://www.sitemaps.org/schemas/sitemap/0.9}loc').text for u in root]))`, new URL('../sitemap.xml', import.meta.url).pathname], { encoding: 'utf8' }));
-  assert.deepEqual(urls, pages.map(p => origin + (p === 'index.html' ? '' : p)));
+  assert.deepEqual(urls.slice(0, 6), pages.map(p => origin + (p === 'index.html' ? '' : p)));
+  for (const url of urls.slice(6)) {
+    assert.ok(url.startsWith(origin + 'article.html?slug='));
+    assert.equal([...new URL(url).searchParams.keys()].join(), 'slug');
+    assert.ok(new URL(url).searchParams.get('slug'));
+  }
   assert.equal(new Set(urls).size, urls.length);
-  assert.ok(urls.every(u => !/admin|article\.html|preview|test/.test(u)));
+  assert.ok(urls.every(u => !/admin|preview|test/.test(new URL(u).pathname)));
 });
 test('métadonnées fixes uniques, canonical, langue, titres et images', () => {
   const titles = new Set(), descriptions = new Set();

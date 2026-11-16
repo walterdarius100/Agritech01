@@ -30,7 +30,7 @@ Constats confirmés :
 - `article.html` : retrait de la canonical générique ; aucune directive noindex
   globale initiale, qui risquerait d'empêcher le rendu des publications.
 - `js/pages/article-page.js` : canonical créée après lecture publiée réussie,
-  noindex et retrait de canonical/schema dans les erreurs et sans slug ; titre
+  noindex pour les absences confirmées et sans slug ; index/follow lors des pannes ; retrait de canonical/schema dans les deux états ; titre
   et description d'erreur explicites ; JSON-LD Article uniquement pour une
   publication chargée. Le code social existant est conservé à l'identique.
 - `js/data/formations.js`, `js/pages/formations-page.js` : identifiants stables
@@ -53,9 +53,9 @@ Toutes les pages HTML du dépôt sont couvertes ci-dessous.
 | Actualités avec page/category | Oui, variantes | Non | Non | Liste principale, existante | Non |
 | `/mentions-legales.html` | Oui | Oui | Non | Elle-même | Non |
 | `/politique-confidentialite.html` | Oui | Oui | Non | Elle-même | Non |
-| `/article.html?slug=…`, publié | Oui après rendu | En attente de décision | Non | Slug publié, sans tracking | Non |
+| `/article.html?slug=…`, publié | Oui après rendu | Oui après génération manuelle | Non | Slug publié, sans tracking | Non |
 | Article absent, brouillon, archivé ou sans slug | Non après rendu | Non | Oui | Aucune | Lectures privées : RLS/auth |
-| Article indisponible (panne) | Non pendant l'erreur rendue | Non ajouté | Oui | Aucune | Non |
+| Erreur technique de lecture | Pas de demande de désindexation | Liste précédente conservée | Non | Aucune non vérifiée | Non |
 | `/admin.html` | Non | Non | Oui, existant | Non nécessaire | Oui, Auth + RLS existants |
 | Test/prévisualisation | Aucune page dédiée trouvée | Non | À imposer si ajout | Non | Oui si contenu privé |
 
@@ -65,40 +65,74 @@ Les données privées doivent être protégées côté Supabase ; robots et noin
 ne sont jamais une protection. Les scripts de test dans `tests/` ne sont pas
 des pages de prévisualisation ni des données de production.
 
-## D. Sitemap : livraison partielle et décision requise
+## D. Sitemap : stratégie manuelle validée le 16 novembre 2026
 
-Aucun générateur ni workflow de synchronisation n'est ajouté. Le sitemap actuel
-reste un inventaire de pages fixes ; il n'est pas présenté comme une solution
-complète à la découverte des articles. Aucun article n'est ajouté depuis le JSON
-local ni depuis une liste dont le statut actuel n'aurait pas été vérifié.
+L'option 1 est implémentée dans `scripts/generate-sitemap.mjs`, sans dépendance,
+serveur ou workflow supplémentaire. Node.js 24 est utilisé ponctuellement.
+Le script importe la configuration publique existante ; seules les clés
+publishable et les JWT de rôle anon sont acceptés, avant toute requête.
+Les JWT sont ensuite vérifiés par Supabase ; leur décodage local n'est pas
+une validation cryptographique. Aucun utilisateur n'est connecté. Les seuls
+appels sont des GET REST, soumis aux politiques RLS publiques existantes.
+Aucune clé privilégiée, aucune écriture et aucun fallback JSON.
 
-Options à valider avant implémentation :
+Lecture des champs id/slug/status, filtre published, tri stable par id, pages de
+500 et `Prefer: count=exact`. Les plafonds serveur plus petits sont acceptés
+en avançant selon la plage effectivement reçue. Chaque plage, longueur, total,
+statut et identifiant est contrôlé. Une deuxième lecture complète doit renvoyer
+exactement les mêmes id/slugs ; les incohérences interrompent la génération.
+Les slugs sont encodés sans transformation, les URL XML échappées et dédupliquées.
+Aucune date lastmod n'est ajoutée. Les six URL fixes restent en tête.
+Les limites XML (50 000 URL et 50 Mio) sont vérifiées.
 
-1. **Génération manuelle avant publication du site** : outil ponctuel lisant
-   uniquement Supabase avec le rôle public et les RLS existantes, sélection de
-   `status=published`, pagination complète, puis remplacement atomique du sitemap.
-   Aucun secret privilégié ; chaque publication, dépublication et suppression
-   impose une nouvelle génération puis une mise à jour du fichier hébergé.
-   Coût minimal mais risque d'oubli humain.
-2. **GitHub Actions planifiée et déclenchable manuellement** : même lecture,
-   validation puis PR contenant le sitemap régénéré. Requiert choix de fréquence,
-   permissions GitHub et procédure de fusion/publication. Retraits retardés par
-   la fréquence et le délai de revue. Aucun couplage automatique avec l'admin.
+Le fichier temporaire est écrit dans le même répertoire puis renommé atomiquement
+seulement après toutes les validations. Une panne, réponse invalide ou lecture
+incomplète détectée conserve le fichier existant. Le script refuse les
+redirections et impose un délai de 30 secondes par requête.
 
-Dans les deux options, régénérer l'ensemble retire naturellement les anciennes
-URL dépubliées/supprimées ; dédupliquer les slugs, conserver les URL historiques,
-encoder les paramètres puis échapper XML (`&` → `&amp;`, etc.). Une réponse
-incomplète ou une panne doit interrompre la génération sans écraser le fichier
-précédent. Ne pas inventer lastmod ni traiter une panne comme une liste vide.
-Une ancienne copie du sitemap peut rester périmée pendant une panne ; les RLS
-et le service public demeurent responsables du contrôle de publication.
-**Validation du propriétaire nécessaire avant de choisir et implémenter l'option.**
+### Procédure après publication, dépublication ou suppression
+
+1. Terminer les changements éditoriaux dans l'administration habituelle ; éviter
+   les modifications simultanées pendant la génération.
+2. Depuis la racine du dépôt, sur une branche de travail, exécuter explicitement :
+
+   ```sh
+   node scripts/generate-sitemap.mjs --generate
+   git diff -- sitemap.xml
+   node --test tests/*.test.mjs
+   ```
+
+   `--generate` effectue de vraies lectures publiques du Supabase configuré.
+   Sans cet argument, aucune requête n'est effectuée. Le sitemap est écrit à la
+   racine du dépôt, quel que soit le répertoire courant du terminal.
+3. Vérifier les ajouts et retraits dans le diff : chaque génération reconstruit
+   toute la liste ; les articles dépubliés, archivés ou supprimés disparaissent.
+   En cas d'échec, garder l'ancien fichier et relancer après résolution ; ne pas
+   remplacer manuellement par une liste partielle. Une liste publiée vide avec
+   total exact zéro est valide et ne conserve que les six pages fixes.
+4. Enregistrer le sitemap dans une PR, faire valider le diff, puis appliquer le
+   processus de fusion/déploiement autorisé du site. La commande ne pousse,
+   fusionne ni déploie rien. En l'absence de changement de liste, aucun commit
+   sitemap n'est nécessaire. Après mise en ligne, contrôler Search Console.
+
+Le générateur n'a PAS été exécuté contre la production dans ce chantier.
+Les tests injectent des réponses simulées et écrivent dans des dossiers temporaires.
+
+Limites : REST paginé n'offre pas de snapshot transactionnel entre requêtes.
+Deux lectures identiques détectent de nombreux changements concurrents sans
+pouvoir garantir l'absence de toute course (y compris après la dernière lecture).
+Une RLS mal configurée qui masque des articles peut fournir un total cohérent
+mais incomplet ; aucun accès public ne peut détecter les lignes invisibles.
+Ne pas changer RLS pour contourner cela : vérifier humainement le diff, notamment
+un retrait massif inattendu. Le fichier reste périmé jusqu'à la prochaine
+exécution et mise en ligne ; cette discipline manuelle est nécessaire.
 
 ## E. Articles : gains et limites
 
 Les métadonnées SEO spécifiques existantes sont maintenues. La canonical ne
-pointe plus tous les articles vers le même shell HTML avant lecture. Les erreurs
-rendent noindex sans proposer une URL canonique d'article absent. Les brouillons
+pointe plus tous les articles vers le même shell HTML avant lecture. Les absences confirmées
+rendent noindex sans proposer une URL canonique d'article absent. Les erreurs
+techniques conservent index/follow sans canonical ni schema non vérifiés. Les brouillons
 et archives restent refusés par le service existant, sans fallback JSON.
 
 Le JSON-LD utilise titre, description, auteur disponible, URL et image fournie
@@ -112,23 +146,30 @@ résultat enrichi. Sans exécution JS, le HTML générique conserve index/follow
 n'a pas de canonical spécifique, de H1 d'article ni de données structurées.
 Une erreur de chargement du module empêche aussi l'application de noindex.
 L'hébergement statique renvoie généralement HTTP 200 même pour un slug absent
-(soft 404) ; noindex n'est pas un vrai statut HTTP 404/503. Une panne prolongée
-peut entraîner une désindexation temporaire ; le prochain rendu réussi rétablit
-index/follow. Les images et titres du corps demandent toujours une revue
+(soft 404) ; noindex n'est pas un vrai statut HTTP 404/503. Une panne prolongée peut toujours conduire Google à classer l'écran HTTP 200
+en soft 404 ou à retirer l'URL de l'index, même sans noindex. Index/follow n'est
+pas une garantie de conservation. Le compromis évite uniquement d'ajouter un
+signal explicite de désindexation sur la base d'une erreur technique.
+Une vraie réponse HTTP 503 serait préférable pour une panne, et 404/410 pour
+une absence durable, mais ce shell GitHub Pages ne peut pas les choisir selon
+le résultat Supabase. Aucun faux statut n'est simulé dans le navigateur.
+Un noindex initial global empêcherait potentiellement le rendu des articles
+publiés ; il n'est pas ajouté. Aucun contenu périmé n'est servi en secours. Les images et titres du corps demandent toujours une revue
 éditoriale : le sanitizeur autorise h2/h3/h4 mais n'impose pas leur ordre.
 La pagination ne remplace pas un sitemap complet des articles.
 
 ## F. Validation
 
-- `node --test tests/*.test.mjs` : 43 tests réussis, dont les régressions 163/164.
+- `node --test tests/*.test.mjs` : 60 tests réussis, dont les régressions 163/164.
 - `node tests/seo-browser.mjs` : Chromium réel, requêtes externes bloquées ;
   publication, absence, brouillon/archives simulés comme absences du service,
   panne, slug manquant, canonical historique sans tracking, JSON-LD parsable,
   liens associés et trois ancres. Aucun appel Supabase réel.
 - Sitemap analysé avec le parseur XML Python standard, namespace, liste exacte,
   doublons et exclusion des pages privées/publications non vérifiées contrôlés.
-  Aucun générateur d'URL d'articles n'étant ajouté, l'échappement des futures
-  entrées dynamiques devra être testé avec son implémentation validée.
+  Générateur testé avec slugs spéciaux, XML réellement parsé, pagination au-delà
+  de 1 000 lignes, déduplication, retraits, réponse vide, erreurs et conservation
+  exacte du fichier précédent. Clés privilégiées refusées avant tout réseau.
 - Métadonnées fixes, H1, alt, langue, robots et canonical contrôlés.
 - Syntaxe de tous les JS/MJS et `git diff --check` contrôlés.
 
@@ -151,5 +192,7 @@ et retraits d'URL. Ces actions ne sont pas exécutées ici.
 Dépendance inchangée au SDK/réseau/Supabase et au rendu JavaScript. Les ancres
 dépendent de l'insertion des cartes, maintenant suivie d'un scroll explicite.
 Les champs éditoriaux incomplets ne sont pas complétés artificiellement.
-Le sitemap d'articles reste le point ouvert principal, soumis à validation.
+Le fonctionnement public réel du générateur reste à valider lors de sa première
+exécution explicitement autorisée. Aucune décision architecturale n’est ouverte ;
+le compromis SEO des pannes reste soumis à la validation de cette révision.
 Aucune migration, fusion, modification sociale ni déploiement dans ce chantier.

@@ -41,3 +41,9 @@ standard pour analyser réellement le XML (disponible sur ubuntu-latest).
 comme le test navigateur admin ; `CHROMIUM_PATH` peut adapter son exécutable.
 Toutes les requêtes externes y sont bloquées et les lectures d'articles simulées.
 Voir [le rapport et les limites](../docs/seo-indexation.md).
+
+Le générateur manuel est testé par `sitemap-generator.test.mjs` avec fetch simulé,
+sans lecture Supabase réelle. La commande opérationnelle est
+`node scripts/generate-sitemap.mjs --generate` après chaque publication,
+dépublication ou suppression ; elle n'est jamais appelée par les tests.
+La procédure complète et ses limites figurent dans le rapport SEO.

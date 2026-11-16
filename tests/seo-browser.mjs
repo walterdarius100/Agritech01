@@ -53,7 +53,7 @@ try {
       assert.equal(schema.url, 'https://agritech509ht.com/article.html?slug=ancien-slug');
       assert.ok(await page.locator('a[href="article.html?slug=autre-article"]').count());
     } else {
-      assert.equal(robots, 'noindex, follow');
+      assert.equal(robots, state === 'outage' ? 'index, follow' : 'noindex, follow');
       assert.equal(await page.locator('link[rel="canonical"], #articleSchema').count(), 0);
     }
   }

@@ -356,7 +356,8 @@ function renderRelatedSection(articles, currentSlug) {
 function renderNotFound({ unavailable = false } = {}) {
   if (!articleContainer) return;
   document.title = `${unavailable ? 'Article indisponible' : 'Article introuvable'} | Agri-tech`;
-  setMeta('meta[name="robots"]', 'noindex, follow');
+  // A failed read cannot establish that the article was withdrawn.
+  setMeta('meta[name="robots"]', unavailable ? 'index, follow' : 'noindex, follow');
   setMeta('meta[name="description"]', unavailable ? 'Cet article est temporairement indisponible.' : 'Cet article est introuvable ou n’est plus publié.');
   setCanonical(null);
   document.querySelector('#articleSchema')?.remove();
