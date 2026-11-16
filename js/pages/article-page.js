@@ -92,7 +92,11 @@ function getOfficialArticleUrl(articleSlug = slug) {
 
 function setCanonical(url) {
   const tag = document.querySelector('link[rel="canonical"]');
-  if (tag && url) tag.setAttribute('href', url);
+  if (!url) { tag?.remove(); return; }
+  const canonical = tag || document.createElement('link');
+  canonical.setAttribute('rel', 'canonical');
+  canonical.setAttribute('href', url);
+  if (!tag) document.head.appendChild(canonical);
 }
 
 function setMeta(selector, value) {
@@ -116,6 +120,32 @@ function updateArticleMeta(article) {
   setMeta('meta[name="twitter:description"]', description);
   setMeta('meta[name="twitter:image"]', image);
   setCanonical(url);
+  setMeta('meta[name="robots"]', 'index, follow');
+  updateArticleSchema(article, title, description, url);
+}
+
+// Dates deliberately omitted: normalizeArticle can substitute created_at for
+// published_at, and updated_at has no confirmed editorial meaning.
+function updateArticleSchema(article, title, description, url) {
+  document.querySelector('#articleSchema')?.remove();
+  const data = {
+    '@context': 'https://schema.org', '@type': 'Article',
+    headline: title, description, url, mainEntityOfPage: url
+  };
+  if (article.author) data.author = { '@type': 'Person', name: article.author };
+  if (article.author === 'Agri-tech') data.author['@type'] = 'Organization';
+  const image = article.coverImage || article.cover_image_url;
+  if (image) {
+    try {
+      const absolute = new URL(image, OFFICIAL_SITE_ORIGIN);
+      if (['https:', 'http:'].includes(absolute.protocol)) data.image = absolute.href;
+    } catch { /* Omit invalid image URLs. */ }
+  }
+  const script = document.createElement('script');
+  script.id = 'articleSchema';
+  script.type = 'application/ld+json';
+  script.textContent = JSON.stringify(data).replace(/</g, '\\u003c');
+  document.head.appendChild(script);
 }
 
 function getShareData(article) {
@@ -325,7 +355,11 @@ function renderRelatedSection(articles, currentSlug) {
 
 function renderNotFound({ unavailable = false } = {}) {
   if (!articleContainer) return;
-  if (!unavailable) document.title = 'Article introuvable | Agri-tech';
+  document.title = `${unavailable ? 'Article indisponible' : 'Article introuvable'} | Agri-tech`;
+  setMeta('meta[name="robots"]', 'noindex, follow');
+  setMeta('meta[name="description"]', unavailable ? 'Cet article est temporairement indisponible.' : 'Cet article est introuvable ou n’est plus publié.');
+  setCanonical(null);
+  document.querySelector('#articleSchema')?.remove();
   articleContainer.innerHTML = `
     <section class="section-pad legal-layout">
       <div class="legal-card reveal is-visible">
