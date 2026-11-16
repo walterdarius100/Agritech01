@@ -53,9 +53,9 @@ Toutes les pages HTML du dépôt sont couvertes ci-dessous.
 | Actualités avec page/category | Oui, variantes | Non | Non | Liste principale, existante | Non |
 | `/mentions-legales.html` | Oui | Oui | Non | Elle-même | Non |
 | `/politique-confidentialite.html` | Oui | Oui | Non | Elle-même | Non |
-| `/article.html?slug=…`, publié | Oui après rendu | Oui après génération manuelle | Non | Slug publié, sans tracking | Non |
+| `/article.html?slug=…`, publié | Oui après rendu | Non (report V2) | Non | Slug publié, sans tracking | Non |
 | Article absent, brouillon, archivé ou sans slug | Non après rendu | Non | Oui | Aucune | Lectures privées : RLS/auth |
-| Erreur technique de lecture | Pas de demande de désindexation | Liste précédente conservée | Non | Aucune non vérifiée | Non |
+| Erreur technique de lecture | Pas de demande de désindexation | Non | Non | Aucune non vérifiée | Non |
 | `/admin.html` | Non | Non | Oui, existant | Non nécessaire | Oui, Auth + RLS existants |
 | Test/prévisualisation | Aucune page dédiée trouvée | Non | À imposer si ajout | Non | Oui si contenu privé |
 
@@ -65,67 +65,25 @@ Les données privées doivent être protégées côté Supabase ; robots et noin
 ne sont jamais une protection. Les scripts de test dans `tests/` ne sont pas
 des pages de prévisualisation ni des données de production.
 
-## D. Sitemap : stratégie manuelle validée le 16 novembre 2026
+## D. Sitemap : uniquement les six pages fixes
 
-L'option 1 est implémentée dans `scripts/generate-sitemap.mjs`, sans dépendance,
-serveur ou workflow supplémentaire. Node.js 24 est utilisé ponctuellement.
-Le script importe la configuration publique existante ; seules les clés
-publishable et les JWT de rôle anon sont acceptés, avant toute requête.
-Les JWT sont ensuite vérifiés par Supabase ; leur décodage local n'est pas
-une validation cryptographique. Aucun utilisateur n'est connecté. Les seuls
-appels sont des GET REST, soumis aux politiques RLS publiques existantes.
-Aucune clé privilégiée, aucune écriture et aucun fallback JSON.
+`sitemap.xml` répertorie exclusivement l'accueil, les services, les formations,
+les actualités, les mentions légales et la politique de confidentialité.
+Les valeurs lastmod, changefreq et priority non justifiées sont supprimées.
+Les articles ne figurent pas dans ce sitemap.
 
-Lecture des champs id/slug/status, filtre published, tri stable par id, pages de
-500 et `Prefer: count=exact`. Les plafonds serveur plus petits sont acceptés
-en avançant selon la plage effectivement reçue. Chaque plage, longueur, total,
-statut et identifiant est contrôlé. Une deuxième lecture complète doit renvoyer
-exactement les mêmes id/slugs ; les incohérences interrompent la génération.
-Les slugs sont encodés sans transformation, les URL XML échappées et dédupliquées.
-Aucune date lastmod n'est ajoutée. Les six URL fixes restent en tête.
-Les limites XML (50 000 URL et 50 Mio) sont vérifiées.
+Les articles publiés restent accessibles par les liens du site : actualités,
+accueil et articles associés. Leur publication et leur consultation continuent
+via l'administration et Supabase exactement comme avant. Une publication,
+dépublication ou suppression ne demande aucune intervention supplémentaire dans
+le code, le sitemap ou GitHub. Aucune exécution locale de Node.js n'est requise
+pour maintenir les URL d'articles. Node.js reste un outil de tests uniquement.
 
-Le fichier temporaire est écrit dans le même répertoire puis renommé atomiquement
-seulement après toutes les validations. Une panne, réponse invalide ou lecture
-incomplète détectée conserve le fichier existant. Le script refuse les
-redirections et impose un délai de 30 secondes par requête.
-
-### Procédure après publication, dépublication ou suppression
-
-1. Terminer les changements éditoriaux dans l'administration habituelle ; éviter
-   les modifications simultanées pendant la génération.
-2. Depuis la racine du dépôt, sur une branche de travail, exécuter explicitement :
-
-   ```sh
-   node scripts/generate-sitemap.mjs --generate
-   git diff -- sitemap.xml
-   node --test tests/*.test.mjs
-   ```
-
-   `--generate` effectue de vraies lectures publiques du Supabase configuré.
-   Sans cet argument, aucune requête n'est effectuée. Le sitemap est écrit à la
-   racine du dépôt, quel que soit le répertoire courant du terminal.
-3. Vérifier les ajouts et retraits dans le diff : chaque génération reconstruit
-   toute la liste ; les articles dépubliés, archivés ou supprimés disparaissent.
-   En cas d'échec, garder l'ancien fichier et relancer après résolution ; ne pas
-   remplacer manuellement par une liste partielle. Une liste publiée vide avec
-   total exact zéro est valide et ne conserve que les six pages fixes.
-4. Enregistrer le sitemap dans une PR, faire valider le diff, puis appliquer le
-   processus de fusion/déploiement autorisé du site. La commande ne pousse,
-   fusionne ni déploie rien. En l'absence de changement de liste, aucun commit
-   sitemap n'est nécessaire. Après mise en ligne, contrôler Search Console.
-
-Le générateur n'a PAS été exécuté contre la production dans ce chantier.
-Les tests injectent des réponses simulées et écrivent dans des dossiers temporaires.
-
-Limites : REST paginé n'offre pas de snapshot transactionnel entre requêtes.
-Deux lectures identiques détectent de nombreux changements concurrents sans
-pouvoir garantir l'absence de toute course (y compris après la dernière lecture).
-Une RLS mal configurée qui masque des articles peut fournir un total cohérent
-mais incomplet ; aucun accès public ne peut détecter les lignes invisibles.
-Ne pas changer RLS pour contourner cela : vérifier humainement le diff, notamment
-un retrait massif inattendu. Le fichier reste périmé jusqu'à la prochaine
-exécution et mise en ligne ; cette discipline manuelle est nécessaire.
+La génération et l'actualisation automatiques du sitemap des articles sont
+reportées à Agri-tech V2. Aucun outil manuel ni mécanisme d'automatisation du
+sitemap des articles n'est livré pour V1.2. L'absence d'articles dans le sitemap
+n'empêche pas leur consultation, mais les liens et le rendu JavaScript ne
+garantissent ni leur découverte complète ni leur indexation par les moteurs.
 
 ## E. Articles : gains et limites
 
@@ -160,16 +118,13 @@ La pagination ne remplace pas un sitemap complet des articles.
 
 ## F. Validation
 
-- `node --test tests/*.test.mjs` : 60 tests réussis, dont les régressions 163/164.
+- `node --test tests/*.test.mjs` : 43 tests réussis, dont les régressions 163/164.
 - `node tests/seo-browser.mjs` : Chromium réel, requêtes externes bloquées ;
   publication, absence, brouillon/archives simulés comme absences du service,
   panne, slug manquant, canonical historique sans tracking, JSON-LD parsable,
   liens associés et trois ancres. Aucun appel Supabase réel.
 - Sitemap analysé avec le parseur XML Python standard, namespace, liste exacte,
   doublons et exclusion des pages privées/publications non vérifiées contrôlés.
-  Générateur testé avec slugs spéciaux, XML réellement parsé, pagination au-delà
-  de 1 000 lignes, déduplication, retraits, réponse vide, erreurs et conservation
-  exacte du fichier précédent. Clés privilégiées refusées avant tout réseau.
 - Métadonnées fixes, H1, alt, langue, robots et canonical contrôlés.
 - Syntaxe de tous les JS/MJS et `git diff --check` contrôlés.
 
@@ -184,15 +139,25 @@ page fixe et plusieurs articles publiés (URL historique avec slug), vérifier l
 HTML rendu, la canonical retenue et l'accès aux JS/CSS. Inspecter un slug absent
 et confirmer noindex dans le rendu. Vérifier le JSON-LD dans Rich Results Test
 sans attendre un affichage enrichi garanti. Surveiller soft 404, exclusions et
-pages explorées non indexées ; après automatisation validée, contrôler ajouts
-et retraits d'URL. Ces actions ne sont pas exécutées ici.
+pages explorées non indexées. Le sitemap soumis reste limité aux six pages fixes. Ces actions ne sont pas exécutées ici.
 
 ## H. Risques et dépendances
 
 Dépendance inchangée au SDK/réseau/Supabase et au rendu JavaScript. Les ancres
 dépendent de l'insertion des cartes, maintenant suivie d'un scroll explicite.
 Les champs éditoriaux incomplets ne sont pas complétés artificiellement.
-Le fonctionnement public réel du générateur reste à valider lors de sa première
-exécution explicitement autorisée. Aucune décision architecturale n’est ouverte ;
-le compromis SEO des pannes reste soumis à la validation de cette révision.
-Aucune migration, fusion, modification sociale ni déploiement dans ce chantier.
+Les articles restent dépendants de leur découverte par les liens et du rendu JS,
+sans garantie d'indexation. Aucune maintenance éditoriale dans GitHub n'est
+nécessaire après publication depuis l'administration.
+
+## I. Report explicite à Agri-tech V2
+
+- Métadonnées de partage personnalisées Facebook, WhatsApp et autres réseaux.
+- Génération ou actualisation automatique du sitemap des articles.
+- Éventuel pré-rendu HTML des articles.
+- Toute évolution majeure de l'architecture SEO.
+
+Les métadonnées sociales existantes sont conservées. HTML, CSS, JavaScript natif,
+Supabase et l'hébergement actuel restent en place. Aucun serveur, framework ou
+service externe n'est ajouté. Administration, RLS, données Supabase et URL
+historiques ne sont pas modifiées. Aucune fusion ni aucun déploiement.

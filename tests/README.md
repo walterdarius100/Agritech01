@@ -42,8 +42,8 @@ comme le test navigateur admin ; `CHROMIUM_PATH` peut adapter son exécutable.
 Toutes les requêtes externes y sont bloquées et les lectures d'articles simulées.
 Voir [le rapport et les limites](../docs/seo-indexation.md).
 
-Le générateur manuel est testé par `sitemap-generator.test.mjs` avec fetch simulé,
-sans lecture Supabase réelle. La commande opérationnelle est
-`node scripts/generate-sitemap.mjs --generate` après chaque publication,
-dépublication ou suppression ; elle n'est jamais appelée par les tests.
-La procédure complète et ses limites figurent dans le rapport SEO.
+Le sitemap répertorie uniquement les six pages fixes. Les articles publiés restent
+accessibles par les liens du site, sans garantie d'indexation. La publication
+via l'administration ne demande aucune intervention dans le code, le sitemap
+ou GitHub. Node.js sert aux contrôles de développement, sans être nécessaire
+au fonctionnement éditorial. Le sitemap des articles est reporté à V2.
