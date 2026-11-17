@@ -1,4 +1,4 @@
-import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
+import { CONTACT_STORAGE_CONFIG, EMAILJS_CONFIG, FORM_STATUS_DURATION, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
@@ -7,6 +7,7 @@ import { renderFilters, renderServices } from './components/render-services.js';
 import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
+import { createStoredContactService, storedContactMessage } from './components/stored-contact.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
 import { initFloatingActions } from './components/floating-actions.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
@@ -69,6 +70,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let courseIndex = 0;
   let resizeFrame = null;
   let formResetTimer = null;
+  let contactSubmitting = false;
+  const submitContact = createStoredContactService(CONTACT_STORAGE_CONFIG);
   let formStatusTimer = null;
   let newsletterStatusTimer = null;
   const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;
@@ -619,6 +622,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+        if (contactSubmitting) return;
+
         const name = elements.nameInput?.value.trim() || '';
         const email = elements.emailInput?.value.trim() || '';
         const phone = sanitizePhone(elements.phoneInput?.value || '');
@@ -649,11 +654,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           return;
         }
 
-        if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', FORM_ERROR_MESSAGE);
-          return;
-        }
-
         const payload = {
           from_name: name,
           from_email: email,
@@ -668,18 +668,13 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         };
 
         try {
+          contactSubmitting = true;
           setSubmitState(true);
           setFormStatus('success', 'Envoi de votre demande en cours...');
 
-          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
-
-          if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
-          }
-
-          await storeLead(payload);
-
-          setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
+          const result = await submitContact(payload);
+          setFormStatus(result.stored === true ? 'success' : 'error', storedContactMessage(result), true, true);
+          if (result.stored !== true) return;
 
           formResetTimer = window.setTimeout(() => {
             elements.form.reset();
@@ -687,9 +682,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
             formResetTimer = null;
           }, 500);
         } catch (error) {
-          logClientError('formulaire contact', error);
-          setFormStatus('error', getSafeErrorMessage('email', error), true, true);
+          setFormStatus('error', storedContactMessage({ stored: null }), true, true);
         } finally {
+          contactSubmitting = false;
           setSubmitState(false);
         }
       });

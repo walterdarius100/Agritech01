@@ -47,3 +47,12 @@ accessibles par les liens du site, sans garantie d'indexation. La publication
 via l'administration ne demande aucune intervention dans le code, le sitemap
 ou GitHub. Node.js sert aux contrôles de développement, sans être nécessaire
 au fonctionnement éditorial. Le sitemap des articles est reporté à V2.
+
+## Communication V1.2
+
+`node --test tests/*.test.mjs` inclut le protocole contact et le handler Edge avec
+des dépendances simulées. `node tests/contact-browser.mjs` contrôle le vrai formulaire
+et la séparation newsletter dans Chromium, sans requête externe.
+`node tests/contact-db.mjs` vérifie la migration et les RPC dans un PostgreSQL 17
+Docker jetable sans réseau (image postgres:17-alpine à télécharger auparavant).
+Voir [configuration et test unique](../docs/communication-v12.md).

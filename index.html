@@ -247,15 +247,15 @@
 
       <form class="contact-form reveal reveal-delay-1" id="leadForm" novalidate>
         <label for="name">Nom complet
-          <input type="text" id="name" name="name" placeholder="Votre nom" autocomplete="name" required />
+          <input type="text" id="name" name="name" maxlength="150" placeholder="Votre nom" autocomplete="name" required />
         </label>
 
         <label for="email">Email
-          <input type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email" required />
+          <input type="email" id="email" name="email" maxlength="254" placeholder="votre@email.com" autocomplete="email" required />
         </label>
 
         <label for="phone">Téléphone
-          <input type="tel" id="phone" name="phone" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
+          <input type="tel" id="phone" name="phone" maxlength="40" placeholder="Ex: +509 0000 0000" autocomplete="tel" required />
         </label>
 
         <label for="need">Type de projet ou formation

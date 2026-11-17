@@ -13,3 +13,9 @@ export const FORM_SUCCESS_MESSAGE = 'Votre message a bien été envoyé. Agri-te
 export const FORM_ERROR_MESSAGE = 'Le message n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes.';
 export const NEWSLETTER_SUCCESS_MESSAGE = 'Merci, votre inscription à la newsletter est confirmée.';
 export const NEWSLETTER_ERROR_MESSAGE = 'Le message n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes.';
+
+// Contact only. Newsletter keeps its existing EmailJS path.
+export const CONTACT_STORAGE_CONFIG = {
+  enabled: true,
+  endpoint: 'https://lxvegipzhkkujibexnkl.supabase.co/functions/v1/contact-request'
+};

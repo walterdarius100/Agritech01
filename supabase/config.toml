@@ -1,0 +1,6 @@
+# Public contact endpoint: no visitor account or JWT is required.
+# This matches the deployed endpoint; changing this file does not reconfigure production.
+# Only contact-request is public. RLS, private RPC privileges, server validation,
+# receipt checks and atomic limits remain required and unchanged.
+[functions.contact-request]
+verify_jwt = false
