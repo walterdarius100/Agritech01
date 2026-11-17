@@ -142,9 +142,15 @@ peut encore provoquer un rejet fournisseur ; la demande reste conservée.
 
 ## Prévisualisation et test manuel unique
 
-Aucune URL de déploiement de branche n'est configurée dans les workflows du dépôt.
-Ne pas utiliser le site officiel pour tester du code de branche. Servir cette branche
-avec l'hébergement de prévisualisation habituel, ou localement :
+Vercel a généré la prévisualisation de cette branche :
+https://agritech01-git-feat-communication-v12-walterdarius100s-projects.vercel.app/index.html#leadForm
+
+Ajouter exactement `https://agritech01-git-feat-communication-v12-walterdarius100s-projects.vercel.app`
+à CONTACT_ALLOWED_ORIGINS avec accord avant le test réel. Cette page utilise le
+vrai endpoint Supabase ; ne rien soumettre avant vérification de la configuration
+serveur et autorisation du test. Le statut Vercel Ready ne valide pas les emails.
+Si Vercel affiche une protection d'accès, utiliser le compte propriétaire autorisé.
+Ne pas utiliser le site officiel pour tester du code de branche. Alternative locale :
 
 ```sh
 python3 -m http.server 8000 --bind 127.0.0.1
