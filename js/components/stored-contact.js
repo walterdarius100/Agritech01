@@ -1,6 +1,7 @@
+import { sendReservedContactEmails } from './browser-contact-email.js';
 // Inactive unless CONTACT_STORAGE_CONFIG.enabled is explicitly true in the reviewed config.
 const states = ['pending','attempting','accepted','failed','unknown','disabled'];
-export function createStoredContactService(config, { fetcher = globalThis.fetch, now = Date.now } = {}) {
+export function createStoredContactService(config, { fetcher = globalThis.fetch, now = Date.now, sendEmail, pause } = {}) {
   const receipts = new Map();
   const inFlight = new Map();
   let salt;
@@ -48,7 +49,14 @@ export function createStoredContactService(config, { fetcher = globalThis.fetch,
           body:JSON.stringify({id:receipt.id,receipt:receipt.receipt,...fields}), signal:AbortSignal.timeout(30000) });
         const result = await reply.json();
         if (reply.ok && result.stored === true && result.id === receipt.id && states.includes(result.notification) && states.includes(result.reply)) {
-          const safe = { stored:true, id:receipt.id, notification:result.notification, reply:result.reply };
+          const call = async (action,state) => {
+            const response = await fetcher(config.endpoint, { method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({id:receipt.id,receipt:receipt.receipt,...fields,action,...(state ? {state} : {})}),signal:AbortSignal.timeout(15000) });
+            if (!response.ok) throw Error('reservation_unconfirmed');
+            return response.json();
+          };
+          const sent = await sendReservedContactEmails(result, payload, call, sendEmail, pause);
+          const safe = { stored:true, id:receipt.id, notification:sent.notification, reply:sent.reply };
           if (terminal(safe)) {
             receipt.result = safe;
             try { session()?.setItem(receipt.storageKey,JSON.stringify(receipt)); } catch { /* Memory only. */ }

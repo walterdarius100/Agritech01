@@ -7,6 +7,7 @@ import { renderFilters, renderServices } from './components/render-services.js';
 import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
+import { createBrowserContactSender } from './components/browser-contact-email.js';
 import { createStoredContactService, storedContactMessage } from './components/stored-contact.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
 import { initFloatingActions } from './components/floating-actions.js';
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let resizeFrame = null;
   let formResetTimer = null;
   let contactSubmitting = false;
-  const submitContact = createStoredContactService(CONTACT_STORAGE_CONFIG);
+  const submitContact = createStoredContactService(CONTACT_STORAGE_CONFIG, { sendEmail:createBrowserContactSender(EMAILJS_CONFIG) });
   let formStatusTimer = null;
   let newsletterStatusTimer = null;
   const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;

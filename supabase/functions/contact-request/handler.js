@@ -63,8 +63,16 @@ export function createContactHandler({ config, db, sendEmail, pause = ms => new 
     }
     if (request.method !== 'POST') return respond(405, { stored:false, code:'method' });
     if (!config.hmacSecret || config.hmacSecret.length < 32) return respond(503, { stored:false, code:'configuration' });
-    let body, fields;
-    try { body = await readLimitedJson(request); fields = validateContact(body); }
+    const browser = config.transport === 'browser';
+    let body, fields, action, state;
+    try {
+      body = await readLimitedJson(request);
+      action = body.action; state = body.state;
+      if (action !== undefined && (!browser || !['claim_notification','claim_reply','finish_notification','finish_reply'].includes(action))) throw Error('invalid');
+      if (action?.startsWith('finish_') ? !['accepted','failed','unknown'].includes(state) : state !== undefined) throw Error('invalid');
+      const { action:_action, state:_state, ...contact } = body;
+      fields = validateContact(contact);
+    }
     catch (error) { return respond(error.message === 'too_large' ? 413 : 400, { stored:false, code:'invalid' }); }
     const receiptHash = await sha256(body.receipt);
     const payloadHash = await hmac(config.hmacSecret, JSON.stringify(fields));
@@ -79,7 +87,7 @@ export function createContactHandler({ config, db, sendEmail, pause = ms => new 
     let result;
     try {
       result = await db.submit({ p_id:body.id, p_receipt_hash:receiptHash, p_payload_hash:payloadHash,
-        p_email_hash:emailHash, p_fields:fields, p_reply_enabled:replyReady });
+        p_email_hash:emailHash, p_fields:fields, p_reply_enabled:browser ? config.browserReplyEnabled === true : replyReady });
     } catch { return respond(503, { stored:null, code:'storage_unknown' }); }
     if (result?.error) {
       const code = ['conflict','rate_limited','invalid'].includes(result.error) ? result.error : 'storage_unknown';
@@ -91,6 +99,24 @@ export function createContactHandler({ config, db, sendEmail, pause = ms => new 
     }
     // Expose only state, never fields or a raw database error.
     const response = { stored:true, id:body.id, notification:result.notification, reply:result.reply };
+    if (browser) {
+      response.transport = 'browser';
+      // Reuse the existing private RPCs. Never call EmailJS in browser mode.
+      if (action) {
+        const [operation, kind] = action.split('_');
+        try {
+          if (operation === 'claim') {
+            const claim = await db.claim({ p_id:body.id, p_receipt_hash:receiptHash, p_kind:kind, p_monthly_budget:config.monthlyBudget });
+            response.claimed = claim?.claimed === true;
+            if (response.claimed) response[kind] = 'attempting';
+          } else {
+            response.confirmed = await db.finish({ p_id:body.id, p_receipt_hash:receiptHash, p_kind:kind, p_state:state }) === true;
+            response[kind] = response.confirmed ? state : 'unknown';
+          }
+        } catch { response.claimed = false; response.confirmed = false; }
+      }
+      return respond(200, response);
+    }
     const payload = { from_name:fields.full_name, from_email:fields.email, phone:fields.phone,
       need:fields.request_type, message:fields.message, consent:'Oui', source:'Site Agri-Tech',
       SOURCE:'Formulaire de contact', TYPE_CONTACT:'Contact', date:new Date().toISOString(), request_id:body.id };

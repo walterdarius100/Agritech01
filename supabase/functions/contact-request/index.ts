@@ -1,8 +1,10 @@
-// PREPARED, NOT DEPLOYED. CONTACT_ENABLED and email flags are false unless explicitly configured.
+// Prepared only: CONTACT_ENABLED must be true. Browser transport needs no EmailJS server credentials.
 import { createContactHandler } from './handler.js';
 import { createRpcDatabase, createEmailSender } from './adapters.js';
 const env = (name: string) => (Deno.env.get(name) || '').trim();
 const config = {
+  transport:env('CONTACT_EMAIL_TRANSPORT') || 'browser',
+  browserReplyEnabled:env('CONTACT_BROWSER_REPLY_ENABLED') === 'true',
   enabled:env('CONTACT_ENABLED') === 'true',
   origins:env('CONTACT_ALLOWED_ORIGINS').split(',').map(s => s.trim()).filter(Boolean),
   hmacSecret:env('CONTACT_HMAC_SECRET'),
@@ -18,5 +20,6 @@ const config = {
 const url = env('SUPABASE_URL').replace(/\/$/, '');
 const secret = env('SUPABASE_SERVICE_ROLE_KEY');
 // Fail closed on missing server credentials, even when the public activation flag was set.
+if (!['browser','server'].includes(config.transport)) config.enabled = false;
 if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url) || !secret) config.enabled = false;
 Deno.serve(createContactHandler({ config, db:createRpcDatabase({url,secret}), sendEmail:createEmailSender(config) }));

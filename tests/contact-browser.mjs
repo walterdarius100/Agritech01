@@ -24,8 +24,9 @@ try {
   page.on('pageerror', e => errors.push(e.message));
   let mode = 'unknown';
   const submissions = [];
+  const rows = new Map();
   await page.addInitScript(() => {
-    window.emailjs = { init() {}, async send(...args) { window.newsletterCalls.push(args); } };
+    window.emailjs = { init() {}, async send(...args) { window.newsletterCalls.push(args); return {status:200}; } };
     window.newsletterCalls = [];
   });
   await page.route('**/*', async route => {
@@ -34,11 +35,25 @@ try {
       const body = route.request().postDataJSON();
       submissions.push(body);
       await new Promise(r => setTimeout(r, 80));
+      if (mode === 'browser') {
+        const row = rows.get(body.id) || {stored:true,id:body.id,transport:'browser',notification:'pending',reply:'pending'};
+        rows.set(body.id,row);
+        const result = {...row};
+        if (body.action) {
+          const [operation,kind] = body.action.split('_');
+          if (operation === 'claim') {
+            result.claimed = row[kind] === 'pending';
+            if (result.claimed) row[kind] = result[kind] = 'attempting';
+          } else { row[kind] = result[kind] = body.state; result.confirmed = true; }
+        }
+        return route.fulfill({contentType:'application/json',body:JSON.stringify(result)});
+      }
       return route.fulfill({contentType:'application/json',body:JSON.stringify(mode === 'unknown'
         ? {stored:null,code:'storage_unknown'}
         : {stored:true,id:body.id,notification:'accepted',reply:mode})});
     }
     if (url.origin !== origin) return route.abort();
+    if (url.pathname === '/js/config.js') return route.fulfill({contentType:'text/javascript',body:(await readFile(resolve(root,'js/config.js'),'utf8')).replace("autoReplyTemplateId: ''", "autoReplyTemplateId: 'reply-test'")});
     if (url.pathname === '/js/services/articles-service.js') return route.fulfill({contentType:'text/javascript',body:'export async function getPublishedArticles(){return []} export function getFeaturedArticle(){return null}'});
     return route.continue();
   });
@@ -74,6 +89,15 @@ try {
   const sent = await page.evaluate(() => window.newsletterCalls[0]);
   assert.equal(sent[1],'template_pzsnmea');
   assert.equal(sent[2].from_email,'newsletter@example.invalid');
+  mode='browser';
+  await page.locator('#message').fill('Nouvelle demande transport navigateur.');
+  const before = submissions.length;
+  await submit();
+  await page.waitForFunction(() => document.querySelector('#formStatus').textContent.includes('Les emails ont été pris en charge'));
+  assert.equal(submissions.length-before,5); // store, claim/finish admin, claim/finish reply
+  assert.deepEqual(await page.evaluate(() => window.newsletterCalls.map(call=>call[1])),['template_pzsnmea','template_pzsnmea','reply-test']);
+  await page.waitForFunction(() => document.querySelector('#name').value === '');
+  assert.equal(rows.size,1);
   assert.deepEqual(errors,[]);
   console.log('Contact navigateur : double clic, reprise stable, échec partiel, remise à zéro et newsletter indépendante OK. Services simulés, réseau externe bloqué.');
 } finally { await browser?.close(); await new Promise(r => server.close(r)); }

@@ -3,6 +3,7 @@ export const EMAILJS_CONFIG = {
   publicKey: 'FIM6Dgp1FXsfD9fJf',
   serviceId: 'service_z856n3l',
   templateId: 'template_pzsnmea',
+  // Distinct client template only; never attach a reply to the shared newsletter template.
   autoReplyTemplateId: '',
   sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw6LvUrYSGt7pyWOK9E4UY_bJpAP9FbhyvfSK5clxBfDSQUPuBVa750vS5y59ybFApJ/exec'
 };
