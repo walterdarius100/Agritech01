@@ -1,4 +1,4 @@
-import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
+import { EMAILJS_CONFIG, FORM_STATUS_DURATION, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
@@ -8,6 +8,7 @@ import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
+import { createContactRequest } from './components/contact-request.js';
 import { initFloatingActions } from './components/floating-actions.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
 import { isEmailValid } from './utils/validation.js';
@@ -66,6 +67,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let testimonialTimer = null;
   let partnershipIndex = 0;
   let partnershipTimer = null;
+  const submitContact = createContactRequest({ endpoint: 'https://lxvegipzhkkujibexnkl.supabase.co/functions/v1/contact-request', emailConfig: EMAILJS_CONFIG });
+  let contactSubmitting = false;
   let courseIndex = 0;
   let resizeFrame = null;
   let formResetTimer = null;
@@ -619,6 +622,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+        if (contactSubmitting) return;
         const name = elements.nameInput?.value.trim() || '';
         const email = elements.emailInput?.value.trim() || '';
         const phone = sanitizePhone(elements.phoneInput?.value || '');
@@ -649,11 +653,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           return;
         }
 
-        if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', FORM_ERROR_MESSAGE);
-          return;
-        }
-
         const payload = {
           from_name: name,
           from_email: email,
@@ -667,20 +666,21 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           date: new Date().toISOString()
         };
 
+        contactSubmitting = true;
         try {
           setSubmitState(true);
           setFormStatus('success', 'Envoi de votre demande en cours...');
-
-          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
-
-          if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
+          const result = await submitContact(payload);
+          if (!result.stored) {
+            setFormStatus('error', 'L’enregistrement n’a pas pu être confirmé. Vos champs sont conservés ; réessayez cette même demande.', true, true);
+            return;
           }
-
-          await storeLead(payload);
-
-          setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
-
+          const message = result.notification !== 'accepted'
+            ? 'Votre demande est enregistrée, mais la notification à Agri-tech n’est pas confirmée. Ne renvoyez pas votre demande.'
+            : result.reply !== 'accepted'
+              ? 'Votre demande est enregistrée et la notification a été prise en charge. L’accusé de réception n’est pas confirmé.'
+              : 'Votre demande est enregistrée et les emails ont été pris en charge par le service d’envoi.';
+          setFormStatus(result.notification === 'accepted' ? 'success' : 'error', message, true, true);
           formResetTimer = window.setTimeout(() => {
             elements.form.reset();
             updateMessageFieldVisibility();
@@ -688,8 +688,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           }, 500);
         } catch (error) {
           logClientError('formulaire contact', error);
-          setFormStatus('error', getSafeErrorMessage('email', error), true, true);
+          setFormStatus('error', 'L’enregistrement n’a pas pu être confirmé. Vos champs sont conservés.', true, true);
         } finally {
+          contactSubmitting = false;
           setSubmitState(false);
         }
       });
