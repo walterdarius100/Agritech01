@@ -24,9 +24,9 @@ test('panne puis réessai, concurrence et rechargement : reçu stable, champs br
     const submit=createStoredContactService(config,{fetcher});
     const first=await Promise.all([submit(payload),submit(payload)]);assert.equal(bodies.length,1);assert.equal(first[0].stored,null);
     fail=false;assert.equal((await submit(payload)).stored,true);assert.equal(bodies[0].id,bodies[1].id);assert.equal(bodies[0].receipt,bodies[1].receipt);
-    await createStoredContactService(config,{fetcher})(payload);assert.equal(bodies[2].id,bodies[0].id);
+    await createStoredContactService(config,{fetcher})(payload);assert.equal(bodies.length,2);
     assert.ok([...storage.values.values()].every(v=>!v.includes(payload.from_email)&&!v.includes(payload.message)));
-    await submit({...payload,message:'Changed'});assert.notEqual(bodies[3].id,bodies[0].id);
+    await submit({...payload,message:'Changed'});assert.notEqual(bodies[2].id,bodies[0].id);
   } finally {delete globalThis.sessionStorage;}
 });
 test('stockage navigateur refusé : même reçu en mémoire ; aucune solution de repli email-first',async()=>{
@@ -50,4 +50,15 @@ test('endpoint vide ou non Supabase : refus avant réseau, aucun fallback',async
     const submit=createStoredContactService({enabled:true,endpoint},{fetcher(){assert.fail('network');}});
     assert.deepEqual(await submit(payload),{stored:false,code:'configuration'});
   }
+});
+
+test('HTTP 429 : pause locale sans désactiver la limite serveur, reprise avec le même reçu',async()=>{
+  let clock=1000;const bodies=[];
+  const submit=createStoredContactService(config,{now:()=>clock,fetcher:async(url,options)=>{
+    bodies.push(JSON.parse(options.body));
+    return {ok:false,status:429,json:async()=>({stored:null,code:'rate_limited'})};
+  }});
+  await submit(payload);await submit(payload);assert.equal(bodies.length,1);
+  clock+=60001;await submit(payload);assert.equal(bodies.length,2);
+  assert.equal(bodies[0].id,bodies[1].id);
 });

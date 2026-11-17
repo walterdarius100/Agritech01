@@ -63,7 +63,10 @@ try {
   assert.equal(submissions.length,2);
   assert.equal(submissions[0].id,submissions[1].id);
   assert.equal(await page.evaluate(() => window.newsletterCalls.length),0);
-  await page.waitForFunction(() => document.querySelector('#name').value === '');
+  // Partial failures keep fields; identical retries reuse the confirmed result locally.
+  assert.equal(await page.locator('#name').inputValue(),'Client Test');
+  await submit();
+  assert.equal(submissions.length,2);
   await page.locator('#newsletterEmail').fill('newsletter@example.invalid');
   await page.locator('#newsletterForm').evaluate(form => form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   await page.waitForFunction(() => window.newsletterCalls.length === 1);

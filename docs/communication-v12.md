@@ -19,7 +19,10 @@ Le contact n'est plus envoyé à l'ancien endpoint Google Sheets.
 Les reçus opaques en session permettent de rejouer une demande identique après une
 coupure sans nouvelle ligne ni nouvel email. Aucun champ personnel n'est stocké dans
 sessionStorage. Le bouton bloque les soumissions concurrentes. Après stockage confirmé,
-le formulaire est vidé même si les emails échouent. `accepted` signifie accepté par
+le formulaire est vidé uniquement si la notification est acceptée et l’accusé accepté
+ou désactivé. Les échecs partiels conservent les champs. Les résultats terminaux
+confirmés sont mémorisés sans données personnelles pour éviter des appels identiques
+inutiles, y compris après rechargement dans la même session. `accepted` signifie accepté par
 EmailJS, jamais livré dans la boîte du destinataire. Un envoi incertain n'est pas
 réessayé automatiquement : vérifier manuellement le Dashboard et EmailJS avant toute
 intervention. Les états `pending` peuvent être repris en rejouant la même demande ;
@@ -184,3 +187,65 @@ simulés. Les tests DB utilisent un vrai PostgreSQL 17 jetable sans réseau, app
 la migration de référence, contrôlent privilèges/RLS/concurrence et intègrent le vrai
 handler avec EmailJS simulé. Aucun test automatisé ne prouve la configuration ni la
 livraison de Supabase/EmailJS en production.
+
+
+## Correctif après le test réel — diagnostic des rejets
+
+Constat établi par le code : `notification_state=failed` est enregistré uniquement
+quand l'appel EmailJS reçoit HTTP 4xx. L'ancien adaptateur jetait le corps d'erreur,
+ce qui empêchait d'identifier la cause. `reply_state=pending` reste bloqué tant que
+la notification n'est pas `accepted` (même condition dans le handler et la RPC).
+L'absence d'historique EmailJS ne permet pas d'exclure un rejet avant création d'un
+email. Aucun élément disponible ne prouve à lui seul une mauvaise clé ou une
+interdiction d'accès serveur. Le champ REST `accessToken` porte déjà la clé privée ;
+il ne faut pas le remplacer par un champ SDK `privateKey`, ni ajouter une fausse
+origine navigateur pour contourner les autorisations serveur.
+
+L'adaptateur lit désormais au plus 4096 octets de la réponse d'erreur pour produire
+un code fixe. Il ne journalise ni le texte fournisseur, ni la requête, ni les secrets,
+ni les coordonnées, ni l'identifiant ou le reçu de la demande. Exemple dans
+Dashboard Supabase > Edge Functions > contact-request > Logs après déploiement
+**manuel approuvé** du correctif :
+
+```json
+{"event":"contact_email","kind":"notification","status":403,"code":"server_access_disabled"}
+```
+
+| Code | Vérification à effectuer une fois |
+| --- | --- |
+| `server_access_disabled` | EmailJS Account > Security : autoriser les appels API serveur/non navigateur ; le simple ajout d'une origine CORS Supabase ne suffit pas |
+| `public_key` | EMAILJS_PUBLIC_KEY doit être la clé publique du compte propriétaire du service |
+| `private_key` | EMAILJS_PRIVATE_KEY doit être la clé privée du même compte, transmise dans accessToken côté serveur uniquement |
+| `authorization` | Rejet 401/403 non spécifique : vérifier clés, sécurité et autorisations du compte, sans conclure arbitrairement |
+| `service` | EMAILJS_SERVICE_ID doit référencer le service connecté du même compte |
+| `template` | Vérifier le template notification ou accusé selon kind, et son appartenance au compte |
+| `quota` | Quota/crédits EmailJS épuisés : attendre la remise à disposition ou corriger le quota du compte |
+| `rate_limit` | HTTP 429 EmailJS sans indication explicite de quota mensuel : fréquence fournisseur |
+| `provider_unavailable` / `network_unknown` | Résultat incertain ; aucun renvoi automatique |
+| `provider_rejected` | Autre rejet ; ne pas deviner sa cause à partir du statut seul |
+
+Ces catégories sont des indications tirées du message fournisseur, pas une preuve
+sur la configuration du compte. Elles restent dans les logs serveur, pas dans la
+réponse publique. Les espaces de début/fin des variables d'environnement sont
+supprimés au chargement, notamment pour les clés et identifiants collés depuis le
+Dashboard. Aucun envoi de diagnostic séparé ni endpoint public supplémentaire.
+
+Distinguer les deux limites : une réponse **HTTP 429 du formulaire** avec
+`code=rate_limited` vient de contact_submit, avant EmailJS. Un 429 EmailJS produit
+une demande déjà enregistrée et un log contact_email `rate_limit` ou `quota` ; la
+réponse du formulaire reste HTTP 200 avec notification failed. Les limites existantes
+restent : 3 nouvelles demandes/adresse/heure, 100/jour et 30 tentatives/minute.
+La RPC ne précise pas quelle fenêtre est épuisée. La pause locale de 60 secondes
+évite les rafales ; elle ne promet pas que la fenêtre horaire/journalière est libérée.
+Modifier le message crée une nouvelle demande et consomme la limite correspondante.
+
+Pour le propriétaire : ne pas multiplier les soumissions pour chercher la cause.
+Après déploiement approuvé, utiliser un seul essai et consulter le code fixe dans
+les logs pour corriger la configuration une fois. Si la limite horaire est déjà
+épuisée, attendre la prochaine heure UTC (les fenêtres SQL sont fixes) ; une limite
+journalière nécessite la prochaine journée UTC. Ne pas vider les compteurs ni
+modifier les tables pour tester. Une demande failed existante ne sera pas renvoyée
+après correction : ses réservations restent terminales pour éviter les doublons.
+Après correction et disponibilité du quota, un seul nouvel essai explicitement
+identifié suffit pour contrôler les deux emails. Aucun déploiement, migration,
+modification de table ou envoi réel n'a été effectué pour préparer ce correctif.

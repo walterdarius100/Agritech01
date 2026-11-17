@@ -1,7 +1,7 @@
 // PREPARED, NOT DEPLOYED. CONTACT_ENABLED and email flags are false unless explicitly configured.
 import { createContactHandler } from './handler.js';
 import { createRpcDatabase, createEmailSender } from './adapters.js';
-const env = (name: string) => Deno.env.get(name) || '';
+const env = (name: string) => (Deno.env.get(name) || '').trim();
 const config = {
   enabled:env('CONTACT_ENABLED') === 'true',
   origins:env('CONTACT_ALLOWED_ORIGINS').split(',').map(s => s.trim()).filter(Boolean),

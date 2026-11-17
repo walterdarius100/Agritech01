@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
           const result = await submitContact(payload);
           setFormStatus(result.stored === true ? 'success' : 'error', storedContactMessage(result), true, true);
-          if (result.stored !== true) return;
+          if (result.stored !== true || result.notification !== 'accepted' || !['accepted','disabled'].includes(result.reply)) return;
 
           formResetTimer = window.setTimeout(() => {
             elements.form.reset();
