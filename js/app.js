@@ -673,11 +673,22 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
           await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
 
-          if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
-          }
-
           await storeLead(payload);
+
+          if (EMAILJS_CONFIG.autoReplyTemplateId) {
+            try {
+              // EmailJS accepte une requête par seconde.
+              await new Promise((resolve) => window.setTimeout(resolve, 1100));
+              await window.emailjs.send(
+                EMAILJS_CONFIG.serviceId,
+                EMAILJS_CONFIG.autoReplyTemplateId,
+                { ...payload, to_email: email },
+                { limitRate: { id: 'agritech-service-auto-reply', throttle: 10000 } }
+              );
+            } catch (error) {
+              logClientError('accusé de réception du service', error);
+            }
+          }
 
           setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
 

@@ -3,7 +3,7 @@ export const EMAILJS_CONFIG = {
   publicKey: 'FIM6Dgp1FXsfD9fJf',
   serviceId: 'service_z856n3l',
   templateId: 'template_pzsnmea',
-  autoReplyTemplateId: '',
+  autoReplyTemplateId: 'template_exmi0m6',
   sheetEndpoint: 'https://script.google.com/macros/s/AKfycbw6LvUrYSGt7pyWOK9E4UY_bJpAP9FbhyvfSK5clxBfDSQUPuBVa750vS5y59ybFApJ/exec'
 };
 
