@@ -203,20 +203,37 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   async function storeContactRequest(request) {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(request),
-      signal: AbortSignal.timeout(15000)
-    });
-    if (!response.ok) return false;
+    let response;
+    try {
+      response = await fetch(`${SUPABASE_URL}/functions/v1/contact-request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(request),
+        signal: AbortSignal.timeout(15000)
+      });
+    } catch (error) {
+      const code = error?.name === 'TimeoutError' ? 'timeout' : 'network_or_cors';
+      console.warn('[Agri-tech contact-request] Stockage non confirmé', { code, origin: window.location.origin });
+      return false;
+    }
 
-    const result = await response.json();
-    return result?.stored === true && result.id === request.id && result.transport === 'storage-only-v1';
+    const result = await response.json().catch(() => null);
+    if (response.ok && result?.stored === true && result.id === request.id && result.transport === 'storage-only-v1') {
+      return true;
+    }
+
+    const knownCodes = ['disabled', 'origin', 'method', 'configuration', 'invalid', 'conflict', 'rate_limited', 'storage_unknown'];
+    const code = knownCodes.includes(result?.code) ? result.code : response.ok ? 'unexpected_response' : 'http_error';
+    console.warn('[Agri-tech contact-request] Stockage non confirmé', {
+      code,
+      status: response.status,
+      origin: window.location.origin
+    });
+    return false;
   }
 
   async function storeLead(payload) {
