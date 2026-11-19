@@ -1,4 +1,5 @@
 import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config/supabase-config.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
@@ -41,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     navLinks: document.querySelector('#navLinks'),
     brandHome: document.querySelector('[data-scroll-top]'),
     form: document.querySelector('#leadForm'),
-    messageField: document.querySelector('#messageField'),
     messageInput: document.querySelector('#message'),
     messageCounter: document.querySelector('#messageCounter'),
     submitBtn: document.querySelector('#submitBtn'),
@@ -68,7 +68,8 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let partnershipTimer = null;
   let courseIndex = 0;
   let resizeFrame = null;
-  let formResetTimer = null;
+  let leadInProgress = false;
+  let pendingLead = null;
   let formStatusTimer = null;
   let newsletterStatusTimer = null;
   const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;
@@ -201,20 +202,21 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     elements.messageCounter.classList.toggle('is-limit', isLimitReached);
   }
 
-  function updateMessageFieldVisibility() {
-    if (!elements.messageField || !elements.messageInput || !elements.needSelect) return;
+  async function storeContactRequest(request) {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(request),
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) return false;
 
-    const isFormation = isFormationNeed(elements.needSelect.value);
-    elements.messageField.classList.toggle('message-field-hidden', isFormation);
-    elements.messageInput.required = !isFormation;
-    elements.messageInput.disabled = isFormation;
-
-    if (isFormation) {
-      elements.messageInput.value = '';
-    }
-
-    updateMessageCounter();
-    updateSubmitButtonLabel();
+    const result = await response.json();
+    return result?.stored === true && result.id === request.id && result.transport === 'storage-only-v1';
   }
 
   async function storeLead(payload) {
@@ -270,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     const partnershipOption = `<option value="${partnershipNeed}">${partnershipNeed}</option>`;
 
     elements.needSelect.innerHTML = `<option value="" disabled selected>Sélectionnez un type de projet ou formation</option>${serviceOptions}${partnershipOption}${courseOptions}`;
-    updateMessageFieldVisibility();
+    updateSubmitButtonLabel();
   }
 
 
@@ -285,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     }
 
     elements.needSelect.value = requestedNeed;
-    updateMessageFieldVisibility();
+    updateSubmitButtonLabel();
   }
 
   function getVisibleCourseCount() {
@@ -556,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           elements.needSelect.add(new Option(link.dataset.need, link.dataset.need));
         }
         elements.needSelect.value = link.dataset.need;
-        updateMessageFieldVisibility();
+        updateSubmitButtonLabel();
       }
 
       if (link.dataset.contactCard === 'true') {
@@ -603,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     }
 
     if (elements.needSelect) {
-      elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
+      elements.needSelect.addEventListener('change', updateSubmitButtonLabel);
     }
 
     if (elements.messageInput) {
@@ -618,78 +620,104 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (elements.form) {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (leadInProgress) return;
 
         const name = elements.nameInput?.value.trim() || '';
         const email = elements.emailInput?.value.trim() || '';
         const phone = sanitizePhone(elements.phoneInput?.value || '');
         const need = elements.needSelect?.value || '';
-        const isFormationRequest = isFormationNeed(need);
-        const message = isFormationRequest
-          ? 'Demande liée à une formation sélectionnée.'
-          : elements.messageInput?.value.trim() || '';
+        const message = elements.messageInput?.value.trim() || '';
         const consent = elements.consentInput?.checked || false;
-        const website = elements.honeypotInput?.value.trim() || '';
-
-        if (formResetTimer) {
-          window.clearTimeout(formResetTimer);
-          formResetTimer = null;
-        }
-
-        clearFormStatusTimer();
+        const website = elements.honeypotInput?.value || '';
 
         if (website) return;
 
-        if (!name || !email || !phone || !need || (!isFormationRequest && !message) || !consent) {
+        if (!name || !email || !/[0-9]/.test(phone) || !need || !message || !consent) {
           setFormStatus('error', 'Veuillez compléter les champs obligatoires avant d’envoyer.');
           return;
         }
 
-        if (!isEmailValid(email)) {
+        if (!isEmailValid(email) || email.length > 254) {
           setFormStatus('error', 'Veuillez entrer une adresse email valide.');
           return;
         }
 
-        if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', FORM_ERROR_MESSAGE);
+        if ([...name].length > 150 || [...phone].length > 40 || [...need].length > 200 || [...message].length > messageMaxLength) {
+          setFormStatus('error', 'Veuillez raccourcir les champs trop longs avant d’envoyer.');
           return;
         }
 
+        const fields = { full_name: name, email, phone, request_type: need, message, consent, website };
+        const fingerprint = JSON.stringify(fields);
         const payload = {
           from_name: name,
           from_email: email,
           phone,
           need,
           message,
-          consent: consent ? 'Oui' : 'Non',
+          consent: 'Oui',
           source: 'Site Agri-Tech',
           SOURCE: 'Formulaire de contact',
           TYPE_CONTACT: 'Contact',
           date: new Date().toISOString()
         };
 
+        leadInProgress = true;
         try {
           setSubmitState(true);
           setFormStatus('success', 'Envoi de votre demande en cours...');
 
-          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
+          const storage = Promise.resolve().then(() => {
+            if (pendingLead?.fingerprint !== fingerprint) {
+              const bytes = crypto.getRandomValues(new Uint8Array(32));
+              pendingLead = {
+                fingerprint,
+                id: crypto.randomUUID(),
+                receipt: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+              };
+            }
+            const { id, receipt } = pendingLead;
+            return storeContactRequest({ mode: 'storage-only-v1', id, receipt, ...fields });
+          });
 
-          if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
+          let notificationStartedAt;
+          const notification = Promise.resolve().then(() => {
+            if (!window.emailjs || !isEmailJsConfigured()) throw new Error('emailjs_unavailable');
+            notificationStartedAt = performance.now();
+            return window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
+          });
+
+          const [storageResult, notificationResult] = await Promise.allSettled([storage, notification]);
+          const stored = storageResult.status === 'fulfilled' && storageResult.value === true;
+          if (!stored && notificationResult.status === 'rejected') {
+            setFormStatus('error', FORM_ERROR_MESSAGE, true);
+            return;
           }
 
-          await storeLead(payload);
+          let replySent = false;
+          try {
+            if (!window.emailjs || !isEmailJsConfigured()) throw new Error('emailjs_unavailable');
+            // EmailJS allows one request per second. The reply also needs its own SDK rate limit.
+            if (notificationStartedAt !== undefined) {
+              const delay = 1100 - (performance.now() - notificationStartedAt);
+              if (delay > 0) await new Promise(resolve => window.setTimeout(resolve, delay));
+            }
+            await window.emailjs.send(EMAILJS_CONFIG.serviceId, 'template_exmi0m6', payload, {
+              limitRate: { id: 'agritech-contact-reply', throttle: 10000 }
+            });
+            replySent = true;
+          } catch {
+            // Receipt of the request has already been confirmed by at least one channel.
+          }
 
-          setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
-
-          formResetTimer = window.setTimeout(() => {
-            elements.form.reset();
-            updateMessageFieldVisibility();
-            formResetTimer = null;
-          }, 500);
-        } catch (error) {
-          logClientError('formulaire contact', error);
-          setFormStatus('error', getSafeErrorMessage('email', error), true, true);
+          pendingLead = null;
+          elements.form.reset();
+          updateMessageCounter();
+          setFormStatus('success', replySent
+            ? FORM_SUCCESS_MESSAGE
+            : 'Votre demande a bien été reçue. L’accusé de réception par email n’a pas pu être confirmé.', true, true);
         } finally {
+          leadInProgress = false;
           setSubmitState(false);
         }
       });
@@ -779,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       elements.needSelect.value = services[0].title;
       console.assert(getSubmitButtonLabel() === 'Demander une consultation', 'Test échoué : libellé consultation attendu.');
       elements.needSelect.value = originalNeed;
-      updateMessageFieldVisibility();
+      updateSubmitButtonLabel();
     }
   }
 
