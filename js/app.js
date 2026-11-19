@@ -711,6 +711,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
             return;
           }
 
+          // Le parcours Sheets est indépendant de l’accusé et ne confirme pas l’insertion.
+          void storeLead(payload);
+
           let replySent = false;
           try {
             if (!window.emailjs || !isEmailJsConfigured()) throw new Error('emailjs_unavailable');
