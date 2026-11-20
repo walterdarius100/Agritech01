@@ -9,7 +9,7 @@ import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
 import { storeLead as storeLeadRequest } from './components/contact-form.js';
-import { initFloatingActions } from './components/floating-actions.js';
+import { initMobileMenu } from './pages/page-utils.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
 import { isEmailValid } from './utils/validation.js';
 import { getSafeErrorMessage, logClientError } from './utils/error-messages.js';
@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     nextBtn: document.querySelector('#nextBtn'),
     filters: document.querySelector('#filters'),
     needSelect: document.querySelector('#need'),
-    menuBtn: document.querySelector('#menuBtn'),
-    navLinks: document.querySelector('#navLinks'),
-    brandHome: document.querySelector('[data-scroll-top]'),
     form: document.querySelector('#leadForm'),
     messageField: document.querySelector('#messageField'),
     messageInput: document.querySelector('#message'),
@@ -567,44 +564,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
       }
     });
 
-    function setMobileMenuState(isOpen) {
-      if (!elements.navLinks || !elements.menuBtn) return;
-
-      elements.navLinks.classList.toggle('open', isOpen);
-      elements.menuBtn.setAttribute('aria-expanded', String(isOpen));
-      elements.menuBtn.setAttribute('aria-label', isOpen ? 'Fermer le menu' : 'Ouvrir le menu');
-    }
-
-    if (elements.brandHome) {
-      elements.brandHome.addEventListener('click', (event) => {
-        event.preventDefault();
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        window.scrollTo({
-          top: 0,
-          behavior: prefersReducedMotion ? 'auto' : 'smooth'
-        });
-
-        if (window.location.hash !== '#top') {
-          window.history.pushState(null, '', '#top');
-        }
-
-        setMobileMenuState(false);
-      });
-    }
-
-    if (elements.menuBtn && elements.navLinks) {
-      elements.menuBtn.addEventListener('click', () => {
-        const isOpen = !elements.navLinks.classList.contains('open');
-        setMobileMenuState(isOpen);
-      });
-
-      elements.navLinks.addEventListener('click', (event) => {
-        if (!event.target.closest('a')) return;
-        setMobileMenuState(false);
-      });
-    }
-
     if (elements.needSelect) {
       elements.needSelect.addEventListener('change', updateMessageFieldVisibility);
     }
@@ -771,7 +730,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(elements.testimonialDots === null || elements.testimonialDots.children.length === testimonials.length, 'Test échoué : indicateurs témoignages manquants.');
     console.assert(typeof updatePartnershipCarousel === 'function', 'Test échoué : carousel partenariats manquant.');
     console.assert(elements.partnershipTrack === null || getPartnershipSlideCount() === 3, 'Test échoué : 3 cartes partenariats attendues.');
-    console.assert(elements.brandHome === null || elements.brandHome.getAttribute('href') === '#top', 'Test échoué : le logo doit pointer vers le haut de page.');
     console.assert(elements.serviceGrid === null || elements.serviceGrid.children.length <= featuredServices.length, 'Test échoué : aperçu services attendu.');
     console.assert(elements.courseGrid === null || elements.courseGrid.children.length === featuredCourses.length, 'Test échoué : aperçu formations attendu.');
     console.assert(elements.needSelect === null || [...elements.needSelect.options].some((option) => option.value === partnershipNeed), 'Test échoué : option Partenariat manquante.');
@@ -795,7 +753,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   populateSelect();
   selectNeedFromExternalLink();
   setupEvents();
-  initFloatingActions();
+  initMobileMenu();
   setupCourseCarousel();
   setupTestimonialCarousel();
   setupPartnershipCarousel();
