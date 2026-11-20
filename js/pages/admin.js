@@ -1,3 +1,4 @@
+import { initProjectAdmin } from './admin-projects.js';
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 import { escapeHtml } from '../utils/sanitize.js';
@@ -147,7 +148,10 @@ function updateDiagnostics() {
   }
 }
 
+let projectAdmin;
+
 function switchAdminSection(sectionName = 'overview') {
+  if (sectionName === 'projects') void projectAdmin?.open();
   elements.adminSections.forEach((section) => {
     const isTarget = section.dataset.adminSection === sectionName;
     section.hidden = !isTarget;
@@ -161,6 +165,7 @@ function switchAdminSection(sectionName = 'overview') {
 }
 
 function showLogin(message = '') {
+  projectAdmin?.reset();
   elements.loginPanel.hidden = false;
   elements.dashboardPanel.hidden = true;
   elements.logoutButton.hidden = true;
@@ -489,6 +494,17 @@ async function initSession() {
     return;
   }
 
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const previousUser = currentSession?.user?.id;
+    currentSession = session;
+    updateDiagnostics();
+    if (!session) showLogin();
+    else if (previousUser && previousUser !== session.user?.id) {
+      projectAdmin?.reset();
+      switchAdminSection('overview');
+    }
+  });
+
   currentSession = data?.session || null;
   if (!currentSession) {
     showLogin();
@@ -497,12 +513,6 @@ async function initSession() {
 
   showDashboard();
   await loadArticles();
-
-  supabase.auth.onAuthStateChange((_event, session) => {
-    currentSession = session;
-    updateDiagnostics();
-    if (!session) showLogin();
-  });
 }
 
 function bindEvents() {
@@ -663,6 +673,7 @@ function bindEvents() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  projectAdmin = initProjectAdmin(() => currentSession ? supabase : null);
   bindEvents();
   updateDiagnostics();
   await initArticleEditor({

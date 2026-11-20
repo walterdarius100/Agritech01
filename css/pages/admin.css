@@ -193,3 +193,8 @@
     border-radius: 18px;
   }
 }
+
+#adminSectionProjects [hidden] { display: none; }
+#adminSectionProjects .form-block { min-width: 0; }
+.project-admin-photo img { object-fit: cover; border-radius: var(--radius-sm); }
+.project-admin-photo input[type="file"] { min-width: 0; }

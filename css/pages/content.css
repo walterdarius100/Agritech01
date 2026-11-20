@@ -344,3 +344,104 @@
     height: 40px;
   }
 }
+
+/* Réalisations publiques. */
+.projects-hero {
+  padding-bottom: clamp(28px, 5vw, 56px);
+}
+
+.projects-hero p,
+.project-detail-heading > p {
+  max-width: 65ch;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.projects-list-section {
+  padding-top: 0;
+}
+
+.public-project-grid,
+.public-project-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(16px, 3vw, 28px);
+}
+
+.public-project-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.public-project-card > div:not(.project-photo) {
+  padding: 20px;
+}
+
+.public-project-card h2 {
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  margin-bottom: 12px;
+}
+
+.public-project-card h2 a,
+.project-back {
+  color: var(--green-900);
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.project-detail {
+  max-width: 1040px;
+}
+
+.project-back {
+  margin-bottom: 24px;
+}
+
+.project-detail-heading {
+  margin-bottom: 25px;
+}
+
+.project-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.project-facts dt { font-weight: 800; color: var(--green-900); }
+.project-facts dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.project-facts:empty { display: none; }
+
+.public-project-card .project-photo,
+.public-project-gallery .project-photo {
+  aspect-ratio: 3 / 2;
+  background: var(--green-100);
+}
+
+.project-detail article > .project-photo {
+  aspect-ratio: 16 / 10;
+  background: var(--green-100);
+}
+
+.project-detail article > .project-photo,
+.public-project-gallery .project-photo {
+  overflow: hidden;
+  border-radius: var(--card-radius);
+}
+
+.project-detail-text {
+  max-width: 70ch;
+  margin-block: clamp(28px, 5vw, 52px);
+  overflow-wrap: anywhere;
+}
+
+.project-detail-text h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
+.project-detail-text p { white-space: pre-line; }
+.projects-pagination:not([hidden]) { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+
+.project-page-footer { background: var(--green-950); }
+.project-page-footer .section-pad { display: flex; flex-wrap: wrap; gap: 12px 28px; padding-block: 32px; }
+.project-page-footer a { color: #fff; text-decoration: underline; text-underline-offset: .2em; }

@@ -42,7 +42,7 @@ comme le test navigateur admin ; `CHROMIUM_PATH` peut adapter son exécutable.
 Toutes les requêtes externes y sont bloquées et les lectures d'articles simulées.
 Voir [le rapport et les limites](../docs/seo-indexation.md).
 
-Le sitemap répertorie uniquement les six pages fixes. Les articles publiés restent
+Le sitemap répertorie les sept pages fixes, dont le catalogue des projets. Les articles publiés restent
 accessibles par les liens du site, sans garantie d'indexation. La publication
 via l'administration ne demande aucune intervention dans le code, le sitemap
 ou GitHub. Node.js sert aux contrôles de développement, sans être nécessaire

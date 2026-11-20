@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f3d2e" />
+  <meta name="robots" content="index, follow" />
+  <meta name="description" content="Fiche d’une réalisation agricole d’Agri-tech en Haïti." />
+  <meta property="og:site_name" content="Agri-tech" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Projet | Agri-tech" />
+  <meta property="og:description" content="Fiche d’une réalisation agricole d’Agri-tech en Haïti." />
+  <meta property="og:image" content="https://agritech509ht.com/assets/images/irrigation.jpg" />
+  <meta property="og:image:alt" content="Agri-tech - Solutions agricoles en Haïti" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Projet | Agri-tech" />
+  <meta name="twitter:description" content="Fiche d’une réalisation agricole d’Agri-tech en Haïti." />
+  <meta name="twitter:image" content="https://agritech509ht.com/assets/images/irrigation.jpg" />
+  <title>Projet | Agri-tech</title>
+  <link rel="icon" type="image/png" href="assets/icons/favicon-agritech.png?v=7">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu principal</a>
+
+  <header class="site-header" id="top">
+    <nav class="navbar" aria-label="Navigation principale">
+      <a class="brand" href="index.html" aria-label="Retour à l’accueil Agri-Tech">
+        <span class="brand-mark"><img src="assets/images/logo-agritech.png" alt="" aria-hidden="true" width="127" height="96" decoding="async" /></span>
+        <span class="brand-text"><strong>Agri-tech</strong><small>Solutions agricoles</small></span>
+      </a>
+
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navLinks">
+        <span class="menu-icon" aria-hidden="true"><span class="menu-line"></span><span class="menu-line"></span><span class="menu-line"></span></span>
+      </button>
+
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Accueil</a>
+        <a href="services.html">Services</a>
+        <a href="formations.html">Formations</a>
+        <a href="projets.html" aria-current="page">Projets</a>
+        <a href="actualites.html">Actualités</a>
+        <a href="index.html#processus">Méthode</a>
+        <a href="index.html#leadForm">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="section-pad project-detail">
+      <a class="card-link project-back" href="projets.html">← Tous les projets</a>
+      <p role="status" id="projectsStatus">Chargement du projet…</p>
+      <article id="projectDetail"></article>
+    </div>
+  </main>
+
+  <footer class="project-page-footer">
+    <div class="section-pad">
+      <a href="index.html">Agri-tech</a>
+      <a href="index.html#leadForm">Contact</a>
+      <a href="politique-confidentialite.html">Politique de confidentialité</a>
+    </div>
+  </footer>
+
+  <script type="module" src="js/pages/projects-page.js"></script>
+</body>
+</html>
