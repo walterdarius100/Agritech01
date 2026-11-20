@@ -108,6 +108,11 @@
   color: #fff;
 }
 
+.home-service-grid.has-bento-layout .service-card:first-child .tag {
+  background: var(--green-100);
+  color: var(--green-900);
+}
+
 .home-service-grid.has-bento-layout .service-card:first-child h3 {
   color: #fff;
   font-size: clamp(1.5rem, 3vw, 2.25rem);

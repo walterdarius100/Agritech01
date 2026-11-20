@@ -1,7 +1,7 @@
 import { projects } from '../data/projects.js';
 import { escapeHtml } from '../utils/sanitize.js';
 
-export function renderProjects(grid) {
+export function renderProjects(grid, pendingMessage) {
   if (!grid) return;
 
   grid.innerHTML = projects.map(({ title, description, image, href }) => {
@@ -27,4 +27,5 @@ export function renderProjects(grid) {
       </li>
     `;
   }).join('');
+  if (pendingMessage) pendingMessage.hidden = !grid.querySelector('.home-project-placeholder');
 }

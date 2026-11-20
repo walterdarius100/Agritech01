@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     }
   }
 
-  renderProjects(document.querySelector('#homeProjectGrid'));
+  renderProjects(document.querySelector('#homeProjectGrid'), document.querySelector('#homeProjectsPending'));
   renderFilters({ filters: elements.filters, categories });
   renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, setupScrollReveal });
   renderCourses({ courseGrid: elements.courseGrid, courses: featuredCourses, setupScrollReveal, updateCourseCarousel });
