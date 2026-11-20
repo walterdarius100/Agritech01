@@ -18,7 +18,6 @@ const pages = {
   'actualites.html': 'actualites.html',
   'article.html': 'actualites.html',
   'projets.html': 'projets.html',
-  'projet.html': 'projets.html',
   'mentions-legales.html': null,
   'politique-confidentialite.html': null
 };

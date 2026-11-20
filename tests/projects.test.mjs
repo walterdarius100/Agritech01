@@ -33,7 +33,7 @@ const mock = 'data:text/javascript,' + encodeURIComponent('export const getSupab
 const hooks = registerHooks({ resolve(specifier, context, next) {
   return specifier.endsWith('supabase-client.js') ? { url: mock, shortCircuit: true } : next(specifier, context);
 } });
-const { getPublishedProject, listPublishedProjects, projectPhotoPath, selectHomeProjectPhotos, signProjectPhotos } = await import('../js/services/projects-service.js');
+const { listPublishedProjects, projectHref, projectPhotos, projectPhotoPath, selectHomeProjectPhotos, signProjectPhotos } = await import('../js/services/projects-service.js');
 hooks.deregister();
 
 const id = '12345678-1234-1234-1234-123456789abc';
@@ -57,12 +57,19 @@ test('la liste publique filtre et trie les publications avec une plage bornée',
   ]);
 });
 
-test('une fiche refuse un ID invalide et filtre les brouillons même avec une session', async () => {
+test('le portfolio charge les détails des seules publications et les liens pointent vers une ancre', async () => {
   calls.length = 0;
-  assert.equal(await getPublishedProject('xxx'), null);
-  assert.deepEqual(calls, []);
-  assert.equal(await getPublishedProject(id), null);
-  assert.deepEqual(calls.slice(2), [['not', 'published_at', 'is', null], ['eq', 'id', id]]);
+  await listPublishedProjects({ includeDetails: true });
+  assert.match(calls[1][1], /(?:^|,)details(?:,|$)/);
+  assert.deepEqual(calls[2], ['not', 'published_at', 'is', null]);
+  assert.equal(projectHref(id), `projets.html#projet-${id}`);
+});
+
+test('les photos sont ordonnées par emplacement et les anciennes galeries sont limitées à trois', () => {
+  const primary = { ...photo('cover'), slot: 0 };
+  const secondary = { ...photo('extra'), slot: 2 };
+  assert.deepEqual(projectPhotos({ photos: [secondary, primary] }), [primary, secondary]);
+  assert.deepEqual(projectPhotos(project('legacy', 'a', 'b', 'c', 'd')).map(image => image.key), ['a', 'b', 'c']);
 });
 
 test('une photo indisponible ne décale pas les autres URL signées', async () => {

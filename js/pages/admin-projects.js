@@ -1,9 +1,9 @@
-import { PROJECT_PHOTO_BUCKET, projectPhotoPath, signProjectPhotos } from '../services/projects-service.js';
+import { PROJECT_PHOTO_BUCKET, projectPhotoPath, projectPhotoSlot, signProjectPhotos } from '../services/projects-service.js';
 import { resizeProjectPhoto } from '../utils/project-image.js';
 import { escapeHtml } from '../utils/sanitize.js';
 
-const TEXT_FIELDS = ['title', 'summary', 'details', 'location', 'period', 'domain'];
-const PHOTO_LABELS = ['Photo principale', 'Photo complémentaire 1', 'Photo complémentaire 2', 'Photo complémentaire 3'];
+const TEXT_FIELDS = ['title', 'details', 'location', 'period', 'domain'];
+const PHOTO_LABELS = ['Photo principale', 'Photo secondaire 1', 'Photo secondaire 2'];
 
 export function initProjectAdmin(getClient) {
   const form = document.querySelector('#projectForm');
@@ -63,26 +63,29 @@ export function initProjectAdmin(getClient) {
 
   async function showForm(project = null) {
     closeForm();
-    const record = { project, id: project?.id || crypto.randomUUID(), uploaded: new Map() };
+    const photos = new Map((project?.photos || []).map((photo, index) => [projectPhotoSlot(photo, index), photo]));
+    const record = { project, photos, id: project?.id || crypto.randomUUID(), uploaded: new Map() };
     editing = record;
     document.querySelector('#projectFormTitle').textContent = project ? 'Modifier le projet' : 'Nouveau projet';
     for (const field of TEXT_FIELDS) form.elements[field].value = project?.[field] || '';
     form.elements.visibility.value = project?.published_at ? 'published' : 'draft';
     slots.forEach((slot, index) => {
-      const photo = project?.photos[index];
+      const photo = photos.get(index);
       slot.alt.value = photo?.alt || '';
       slot.current.hidden = !photo;
       slot.remove.parentElement.hidden = !photo;
     });
     form.hidden = false;
     form.elements.title.focus();
-    if (project?.photos.length) {
-      const urls = await signProjectPhotos(project.photos.map(photo => ({ id: project.id, photo })), 640, getClient()).catch(() => []);
+    if (photos.size) {
+      const previews = [...photos].filter(([slot]) => slots[slot]);
+      const urls = await signProjectPhotos(previews.map(([, photo]) => ({ id: record.id, photo })), 640, getClient()).catch(() => []);
       if (editing !== record) return;
       urls.forEach((url, index) => {
         if (!url) return;
-        slots[index].preview.src = url;
-        slots[index].preview.hidden = false;
+        const { preview } = slots[previews[index][0]];
+        preview.src = url;
+        preview.hidden = false;
       });
     }
   }
@@ -167,15 +170,20 @@ export function initProjectAdmin(getClient) {
     const token = generation;
     const payload = Object.fromEntries(TEXT_FIELDS.map(field => [field, form.elements[field].value.trim()]));
     const published = form.elements.visibility.value === 'published';
-    if (!payload.title || (published && (!payload.summary || !payload.details))) {
-      message('Renseignez le titre et, pour publier, les deux descriptions.', 'error');
+    if (!payload.title || (published && (!payload.domain || !payload.details))) {
+      message('Renseignez le titre et, pour publier, le domaine et la description détaillée.', 'error');
       return;
     }
     const photos = slots.flatMap((slot, index) => {
       const file = slot.file.files[0];
-      const current = slot.remove.checked ? null : record.project?.photos[index];
-      return file || current ? [{ file, current, alt: slot.alt.value.trim(), altInput: slot.alt }] : [];
+      const current = slot.remove.checked ? null : record.photos.get(index);
+      return file || current ? [{ index, file, current, alt: slot.alt.value.trim(), altInput: slot.alt }] : [];
     });
+    if (published && !photos.some(photo => photo.index === 0)) {
+      message('Ajoutez une photo principale pour publier le projet.', 'error');
+      slots[0].file.focus();
+      return;
+    }
     const missingAlt = photos.find(photo => !photo.alt);
     if (missingAlt) {
       message('Ajoutez un texte alternatif à chaque photo conservée.', 'error');
@@ -188,10 +196,10 @@ export function initProjectAdmin(getClient) {
     let saving = false;
     try {
       payload.photos = [];
-      for (const { file, current, alt } of photos) {
+      for (const { index, file, current, alt } of photos) {
         const key = file ? await uploadPhoto(client, record, file) : current.key;
         if (token !== generation) return;
-        payload.photos.push({ key, alt });
+        payload.photos.push({ key, alt, slot: index });
       }
       payload.published_at = published ? record.project?.published_at || new Date().toISOString() : null;
       saving = true;

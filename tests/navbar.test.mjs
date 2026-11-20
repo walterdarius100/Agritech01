@@ -11,7 +11,7 @@ test('les pages publiques utilisent la navigation générée', () => {
   execFileSync(process.execPath, [new URL('scripts/sync-navbar.mjs', root).pathname, '--check']);
   const home = navbar(read('index.html'));
   assert.match(home, /href="projets\.html">Projets<\/a>/);
-  for (const file of readdirSync(root).filter(file => file.endsWith('.html') && file !== 'admin.html')) {
+  for (const file of readdirSync(root).filter(file => file.endsWith('.html') && !['admin.html', 'projet.html'].includes(file))) {
     assert.ok(navbar(read(file)), `Navbar manquante dans ${file}`);
     const stripActive = markup => markup.replace(/ aria-current="[^"]+"/g, '');
     assert.equal(stripActive(navbar(read(file))), stripActive(home), file);

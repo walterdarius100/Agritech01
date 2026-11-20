@@ -16,8 +16,9 @@ img{max-width:100%;display:block}
 .brand-text{display:flex;flex-direction:column;justify-content:center;line-height:1.15}
 .brand small{display:block;color:var(--muted);margin-top:0}
 .nav-links{display:flex;align-items:center;gap:clamp(14px,1.9vw,24px);font-weight:700}
-.nav-links a:hover{color:var(--green-700)}
-.nav-links a[aria-current]{color:var(--green-900);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.35em}
+.nav-links a[aria-current]{color:var(--green-700)}
+.nav-links a:hover{color:var(--green-900)}
+@media(prefers-reduced-motion:no-preference){.nav-links a{transition:color .18s ease}}
 @media(max-width:1020px){
   .site-header .menu-btn{display:inline-flex}
   .nav-links{display:none;position:absolute;top:100%;left:20px;right:20px;background:#fff;border:1px solid var(--border);border-radius:22px;padding:12px;flex-direction:column;align-items:stretch;gap:0;box-shadow:var(--shadow);max-height:calc(100dvh - 84px);overflow-y:auto}

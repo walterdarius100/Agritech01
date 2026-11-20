@@ -232,10 +232,9 @@
             <legend id="projectFormTitle">Nouveau projet</legend>
             <label for="projectTitle">Titre</label>
             <input id="projectTitle" name="title" maxlength="140" required>
-            <label for="projectSummary">Courte description</label>
-            <textarea id="projectSummary" name="summary" maxlength="350" rows="2"></textarea>
-            <label for="projectDetails">Présentation détaillée</label>
-            <textarea id="projectDetails" name="details" maxlength="12000" rows="6"></textarea>
+            <label for="projectDetails">Description détaillée</label>
+            <textarea id="projectDetails" name="details" maxlength="12000" rows="9" aria-describedby="projectDetailsHelp"></textarea>
+            <small id="projectDetailsHelp">Présentez librement le contexte, les objectifs, les interventions et les résultats disponibles. Séparez les paragraphes par une ligne vide.</small>
             <div class="form-grid two">
               <div><label for="projectLocation">Localisation</label><input id="projectLocation" name="location" maxlength="140"></div>
               <div><label for="projectPeriod">Période</label><input id="projectPeriod" name="period" maxlength="140"></div>
@@ -246,12 +245,12 @@
                   <option value="draft">Brouillon</option>
                   <option value="published">Publié</option>
                 </select>
-                <small id="projectPublicationHelp">Pour publier, renseignez les deux descriptions. Sélectionnez « Brouillon » et enregistrez pour retirer une publication.</small>
+                <small id="projectPublicationHelp">Pour publier, renseignez le domaine, la description détaillée et la photo principale. Sélectionnez « Brouillon » et enregistrez pour retirer une publication.</small>
               </div>
             </div>
             <div>
               <h4>Photographies</h4>
-              <p id="projectPhotoHelp">JPEG, PNG ou WebP, 12 Mo maximum par fichier. La première photo disponible sert de couverture.</p>
+              <p id="projectPhotoHelp">JPEG, PNG ou WebP, 12 Mo maximum par fichier. La photo principale est obligatoire pour publier. Les deux photos secondaires sont facultatives.</p>
             </div>
             <div class="form-grid two" id="projectPhotoFields"></div>
             <div class="form-actions">

@@ -13,11 +13,28 @@ begin
   if not public.is_project_admin() then raise exception 'Admin access expected'; end if;
 end;
 $$;
-insert into public.projects (id, title, summary, details, photos, published_at) values
-  ('20000000-0000-0000-0000-000000000001', 'Test visible', 'Description', 'Détails',
+insert into public.projects (id, title, summary, details, domain, photos, published_at) values
+  ('20000000-0000-0000-0000-000000000001', 'Test visible', 'Description', 'Détails', 'Formation',
     '[{"key":"30000000-0000-0000-0000-000000000001","alt":"Photo test"}]', now()),
-  ('20000000-0000-0000-0000-000000000002', 'Test brouillon', '', '',
+  ('20000000-0000-0000-0000-000000000002', 'Test brouillon', '', '', '',
     '[{"key":"30000000-0000-0000-0000-000000000001","alt":"Photo brouillon"}]', null);
+do $$
+begin
+  begin
+    insert into public.projects (id, title, domain, details, published_at)
+    values (gen_random_uuid(), 'Sans photo', 'Formation', 'Détails', now());
+    raise exception 'Published project accepted without main photo';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.projects (id, title, domain, details, photos, published_at)
+    values (gen_random_uuid(), 'Photo secondaire uniquement', 'Formation', 'Détails',
+      '[{"key":"30000000-0000-0000-0000-000000000001","alt":"Photo test","slot":1}]', now());
+    raise exception 'Secondary photo accepted as main photo';
+  exception when check_violation then null;
+  end;
+end;
+$$;
 insert into storage.objects (bucket_id, name) values
   ('project-photos', '20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000001-640.webp'),
   ('project-photos', '20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000002-640.webp'),

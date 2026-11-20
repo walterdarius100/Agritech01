@@ -31,7 +31,7 @@ export function renderProjects(grid, status) {
       const src = urls[index];
       const tile = `<div class="home-project-media">${projectPhotoMarkup(src, entry?.photo.alt, 'home-project-image', 'eager')}</div>`;
       return `<li class="home-project-card">${src
-        ? `<a href="${projectHref(entry.id)}" aria-label="${escapeHtml(`Découvrir le projet ${entry.title}`)}">${tile}</a>`
+        ? `<a href="${projectHref(entry.id)}" aria-label="${escapeHtml(`Voir ${entry.title} dans Nos projets`)}">${tile}</a>`
         : tile}</li>`;
     }).join('');
   }
