@@ -5,9 +5,9 @@ import { execFileSync } from 'node:child_process';
 import { courses } from '../js/data/formations.js';
 
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
-const pages = ['index.html', 'services.html', 'formations.html', 'actualites.html', 'projets.html', 'mentions-legales.html', 'politique-confidentialite.html'];
+const pages = ['index.html', 'services.html', 'formations.html', 'actualites.html', 'projets.html', 'a-propos.html', 'mentions-legales.html', 'politique-confidentialite.html'];
 const origin = 'https://agritech509ht.com/';
-test('XML valide : exactement sept pages fixes uniques, aucun article ni administration', () => {
+test('XML valide : exactement huit pages fixes uniques, aucun article ni administration', () => {
   const urls = JSON.parse(execFileSync('python3', ['-c', `import xml.etree.ElementTree as E,json,sys
 root=E.parse(sys.argv[1]).getroot()
 assert root.tag=='{http://www.sitemaps.org/schemas/sitemap/0.9}urlset'
