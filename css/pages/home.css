@@ -149,7 +149,11 @@
   display: grid;
   align-items: center;
   gap: clamp(28px, 5vw, 64px);
-  padding-block: clamp(52px, 8vw, 112px);
+  padding-block: clamp(46px, 6vw, 80px) clamp(28px, 4vw, 52px);
+}
+
+.home-projects + .home-training-story {
+  margin-top: 0;
 }
 
 .home-project-intro {

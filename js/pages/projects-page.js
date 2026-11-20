@@ -40,9 +40,9 @@ async function loadList() {
   const urls = await signProjectPhotos(covers, 640).catch(() => []);
   const coverById = new Map(covers.map((cover, index) => [cover.id, urls[index]]));
   list.innerHTML = projects.map(project => `
-    <article class="public-project-card">
-      ${projectPhotoMarkup(coverById.get(project.id), project.photos[0]?.alt)}
-      <div>
+    <article class="article-card public-project-card">
+      <div class="article-card-image">${projectPhotoMarkup(coverById.get(project.id), project.photos[0]?.alt)}</div>
+      <div class="article-card-body">
         <h2><a href="${projectHref(project.id)}">${escapeHtml(project.title)}</a></h2>
         <p>${escapeHtml(project.summary)}</p>
         ${metadata(project)}
@@ -64,7 +64,7 @@ async function loadDetail() {
   const project = await getPublishedProject(params.get('id') || '');
   if (!project) {
     document.querySelector('meta[name="robots"]').content = 'noindex, follow';
-    detail.innerHTML = '<h1>Projet introuvable</h1>';
+    status.insertAdjacentHTML('beforebegin', '<h1>Projet introuvable</h1>');
     status.textContent = 'Cette réalisation est introuvable ou a été retirée.';
     return;
   }
@@ -78,26 +78,32 @@ async function loadDetail() {
   const entries = project.photos.map(photo => ({ id: project.id, photo }));
   const urls = await signProjectPhotos(entries, 1440).catch(() => []);
   detail.innerHTML = `
-    <header class="project-detail-heading">
-      <span class="eyebrow">Réalisation Agri-tech</span>
-      <h1>${escapeHtml(project.title)}</h1>
-      <p>${escapeHtml(project.summary)}</p>
-      ${metadata(project)}
+    <header class="article-detail-hero project-detail-heading">
+      <div class="article-detail-hero-inner">
+        <a class="card-link project-back-in-hero" href="projets.html">← Tous les projets</a>
+        <div class="article-detail-meta"><span class="article-detail-category">Réalisation Agri-tech</span></div>
+        <h1 class="article-detail-title">${escapeHtml(project.title)}</h1>
+        <p class="article-detail-excerpt">${escapeHtml(project.summary)}</p>
+        ${metadata(project)}
+      </div>
     </header>
-    ${project.photos.length ? projectPhotoMarkup(urls[0], project.photos[0].alt, '', 'eager') : ''}
-    <div class="project-detail-text">
-      <h2>Présentation du projet</h2>
-      <p>${escapeHtml(project.details)}</p>
-    </div>
-    ${project.photos.length > 1 ? `<div class="public-project-gallery">
-      ${project.photos.slice(1).map((photo, index) => projectPhotoMarkup(urls[index + 1], photo.alt)).join('')}
-    </div>` : ''}`;
+    <div class="section-pad article-layout">
+      ${project.photos.length ? `<div class="article-cover-wrap project-cover">
+        ${projectPhotoMarkup(urls[0], project.photos[0].alt, '', 'eager')}
+      </div>` : ''}
+      <div class="article-content project-detail-text">
+        <h2>Présentation du projet</h2>
+        <p>${escapeHtml(project.details)}</p>
+      </div>
+      ${project.photos.length > 1 ? `<div class="public-project-gallery">
+        ${project.photos.slice(1).map((photo, index) => projectPhotoMarkup(urls[index + 1], photo.alt)).join('')}
+      </div>` : ''}
+    </div>`;
   handleUnavailableProjectPhotos(detail);
-  status.textContent = '';
 }
 
 initMobileMenu();
 (list ? loadList() : loadDetail()).catch(() => {
   status.textContent = 'Les projets sont momentanément indisponibles. Réessayez dans quelques instants.';
-  if (detail) detail.innerHTML = '<h1>Projet indisponible</h1>';
+  if (detail) status.insertAdjacentHTML('beforebegin', '<h1>Projet indisponible</h1>');
 });
