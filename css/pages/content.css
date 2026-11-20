@@ -484,6 +484,25 @@
   height: auto;
 }
 
+.about-preview .about-photo {
+  position: relative;
+  isolation: isolate;
+  background: none;
+}
+
+.about-preview .about-photo::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 4%;
+  border-radius: inherit;
+  background: var(--green-900);
+}
+
+.about-preview .about-photo img {
+  transform: translateX(-2%);
+}
+
 .about-hero {
   min-height: auto;
 }
