@@ -472,9 +472,10 @@
 }
 
 .about-photo {
+  --portrait-top-space: clamp(20px, 4vw, 48px);
   width: min(100%, 500px);
   margin-inline: auto;
-  padding-top: clamp(20px, 4vw, 48px);
+  padding-top: var(--portrait-top-space);
   border-radius: 50% 50% 0 0 / 44% 44% 0 0;
   background: var(--green-900);
 }
@@ -494,7 +495,7 @@
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0 4%;
+  inset: calc(var(--portrait-top-space) + 7%) 4% 0;
   border-radius: inherit;
   background: var(--green-900);
 }
