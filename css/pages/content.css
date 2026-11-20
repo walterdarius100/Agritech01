@@ -490,23 +490,14 @@
 }
 
 .about-photo-frame {
-  display: grid;
   width: 100%;
   aspect-ratio: 5 / 4;
-  place-items: end start;
-  padding: 24px;
+  height: auto;
   border: 1px solid var(--border);
   border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / 44% 44% var(--radius-lg) var(--radius-lg);
   background: linear-gradient(145deg, #e8ecdf, #cbd8c2);
-  color: var(--green-900);
-  font-size: .875rem;
-  font-weight: 600;
-  object-fit: cover;
-}
-
-img.about-photo-frame {
-  display: block;
-  padding: 0;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .about-hero {
