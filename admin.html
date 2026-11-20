@@ -57,6 +57,7 @@
         <button class="admin-tab is-active" type="button" data-admin-tab="overview" aria-controls="adminSectionOverview">Tableau de bord</button>
         <button class="admin-tab" type="button" data-admin-tab="articles" aria-controls="adminSectionArticles">Articles</button>
         <button class="admin-tab" type="button" data-admin-tab="editor" aria-controls="articleFormPanel">Nouvel article</button>
+        <button class="admin-tab" type="button" data-admin-tab="projects" aria-controls="adminSectionProjects">Projets</button>
         <button class="admin-tab" type="button" data-admin-tab="media" aria-controls="adminSectionMedia">Médias</button>
         <button class="admin-tab" type="button" data-admin-tab="diagnostic" aria-controls="adminSectionDiagnostic">Diagnostic</button>
       </nav>
@@ -215,6 +216,50 @@
           </fieldset>
         </form>
         <aside class="article-preview-panel" id="articlePreviewPanel" aria-live="polite" aria-label="Aperçu sécurisé de l’article"></aside>
+      </section>
+
+      <section class="admin-section admin-card" id="adminSectionProjects" data-admin-section="projects" aria-labelledby="projectAdminTitle" hidden>
+        <div class="admin-section-heading inline-heading">
+          <div>
+            <h3 id="projectAdminTitle">Projets</h3>
+            <p>Gérez les réalisations affichées sur le site et leurs photographies.</p>
+          </div>
+          <button class="btn primary" id="newProject" type="button" hidden>Nouveau projet</button>
+        </div>
+        <p class="admin-message" id="projectAdminStatus" role="status"></p>
+        <form class="admin-form" id="projectForm" hidden>
+          <fieldset class="form-block" id="projectFields">
+            <legend id="projectFormTitle">Nouveau projet</legend>
+            <label for="projectTitle">Titre</label>
+            <input id="projectTitle" name="title" maxlength="140" required>
+            <label for="projectDetails">Description détaillée</label>
+            <textarea id="projectDetails" name="details" maxlength="12000" rows="9" aria-describedby="projectDetailsHelp"></textarea>
+            <small id="projectDetailsHelp">Présentez librement le contexte, les objectifs, les interventions et les résultats disponibles. Séparez les paragraphes par une ligne vide.</small>
+            <div class="form-grid two">
+              <div><label for="projectLocation">Localisation</label><input id="projectLocation" name="location" maxlength="140"></div>
+              <div><label for="projectPeriod">Période</label><input id="projectPeriod" name="period" maxlength="140"></div>
+              <div><label for="projectDomain">Domaine d’intervention</label><input id="projectDomain" name="domain" maxlength="140"></div>
+              <div>
+                <label for="projectPublication">Visibilité</label>
+                <select id="projectPublication" name="visibility" aria-describedby="projectPublicationHelp">
+                  <option value="draft">Brouillon</option>
+                  <option value="published">Publié</option>
+                </select>
+                <small id="projectPublicationHelp">Pour publier, renseignez le domaine, la description détaillée et la photo principale. Sélectionnez « Brouillon » et enregistrez pour retirer une publication.</small>
+              </div>
+            </div>
+            <div>
+              <h4>Photographies</h4>
+              <p id="projectPhotoHelp">JPEG, PNG ou WebP, 12 Mo maximum par fichier. La photo principale est obligatoire pour publier. Les deux photos secondaires sont facultatives.</p>
+            </div>
+            <div class="form-grid two" id="projectPhotoFields"></div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">Enregistrer</button>
+              <button class="btn secondary" id="cancelProject" type="button">Annuler</button>
+            </div>
+          </fieldset>
+        </form>
+        <div class="admin-article-list" id="adminProjectsList"></div>
       </section>
 
       <section class="admin-section" id="adminSectionMedia" data-admin-section="media" aria-labelledby="mediaTitle" hidden>

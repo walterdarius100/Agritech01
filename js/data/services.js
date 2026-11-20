@@ -3,6 +3,7 @@ export const services = [
     title: 'Poulet de chair',
     category: 'Élevage',
     image: 'assets/images/poulet-chair.jpg',
+    homeImage: 'assets/images/poulet-chair',
     text: 'Conception de poulailler, plan de production, équipements et accompagnement technique.',
     details: ['Dimensionnement du bâtiment', 'Calendrier de production', 'Suivi alimentation et santé'],
     idealFor: 'Entrepreneurs, fermes familiales et investisseurs souhaitant produire rapidement.'
@@ -11,6 +12,7 @@ export const services = [
     title: 'Poule pondeuse',
     category: 'Élevage',
     image: 'assets/images/poule-pondeuse.jpg',
+    homeImage: 'assets/images/poule-pondeuse',
     text: 'Mise en place d’unités de ponte, suivi sanitaire, alimentation et rentabilité.',
     details: ['Choix des souches', 'Organisation des cages ou bâtiments', 'Pilotage de la ponte'],
     idealFor: 'Producteurs qui veulent sécuriser une production régulière d’œufs.'
@@ -19,6 +21,7 @@ export const services = [
     title: 'Incubateur / Écloserie',
     category: 'Technologie',
     image: 'assets/images/incubateur.jpg',
+    homeImage: 'assets/images/incubateur',
     text: 'Fabrication et accompagnement autour des incubateurs pour production de poussins.',
     details: ['Choix de capacité', 'Procédures d’incubation', 'Contrôle température et humidité'],
     idealFor: 'Fermes qui veulent produire leurs poussins ou développer une petite écloserie.'

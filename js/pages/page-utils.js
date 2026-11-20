@@ -13,9 +13,29 @@ export function initMobileMenu() {
   }
 
   menuBtn.addEventListener('click', () => setMobileMenuState(!navLinks.classList.contains('open')));
-  navLinks.addEventListener('click', (event) => {
+  const navbar = menuBtn.closest('.navbar');
+  navbar.addEventListener('click', event => {
     if (event.target.closest('a')) setMobileMenuState(false);
   });
+  navbar.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !navLinks.classList.contains('open')) return;
+    setMobileMenuState(false);
+    menuBtn.focus();
+  });
+  const desktop = window.matchMedia('(min-width: 1021px)');
+  desktop.addEventListener('change', () => setMobileMenuState(false));
+
+  const home = navLinks.querySelector('[href="index.html"][aria-current="page"]');
+  if (home) {
+    const links = [...navLinks.querySelectorAll('a')];
+    function updateHomeActiveLink() {
+      const section = links.find(link => window.location.hash && link.hash === window.location.hash);
+      links.forEach(link => link.removeAttribute('aria-current'));
+      (section || home).setAttribute('aria-current', section ? 'location' : 'page');
+    }
+    updateHomeActiveLink();
+    window.addEventListener('hashchange', updateHomeActiveLink);
+  }
 }
 
 export function initScrollReveal(items = document.querySelectorAll('.reveal')) {
