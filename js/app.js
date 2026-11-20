@@ -1,3 +1,4 @@
+import { renderProjects } from './components/render-projects.js';
 import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, NEWSLETTER_ERROR_MESSAGE, NEWSLETTER_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
@@ -542,8 +543,10 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         const button = event.target.closest('.filter-btn');
         if (!button) return;
 
-        document.querySelectorAll('.filter-btn').forEach((item) => item.classList.remove('active'));
-        button.classList.add('active');
+        elements.filters.querySelectorAll('.filter-btn').forEach((item) => {
+          item.classList.toggle('active', item === button);
+          item.setAttribute('aria-pressed', String(item === button));
+        });
         renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, category: button.dataset.category, setupScrollReveal });
       });
     }
@@ -783,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     }
   }
 
+  renderProjects(document.querySelector('#homeProjectGrid'));
   renderFilters({ filters: elements.filters, categories });
   renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, setupScrollReveal });
   renderCourses({ courseGrid: elements.courseGrid, courses: featuredCourses, setupScrollReveal, updateCourseCarousel });

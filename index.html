@@ -77,16 +77,26 @@
       </div>
     </section>
 
-    <section class="section-pad" id="services">
+    <section class="section-pad" id="services" aria-labelledby="homeServicesTitle">
       <div class="section-head reveal">
         <span class="eyebrow">Nos domaines d’intervention</span>
-        <h2>Des solutions agricoles adaptées au terrain haïtien.</h2>
+        <h2 id="homeServicesTitle">Des solutions agricoles adaptées au terrain haïtien.</h2>
         <p>Aperçu de nos principaux domaines. Découvrez l’ensemble de nos interventions et accompagnements sur la page Services.</p>
       </div>
-      <div class="filters reveal reveal-delay-1" id="filters" aria-label="Filtres de services"></div>
-      <div class="service-grid" id="serviceGrid"></div>
+      <div class="filters reveal reveal-delay-1" id="filters" role="group" aria-label="Filtres de services"></div>
+      <div class="service-grid home-service-grid" id="serviceGrid"></div>
       <div class="section-cta reveal">
         <a href="services.html" class="btn primary">Voir tous nos services <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+
+    <section class="home-projects" id="realisations" aria-labelledby="homeProjectsTitle">
+      <div class="section-pad">
+        <div class="section-head">
+          <h2 id="homeProjectsTitle">Nos réalisations</h2>
+          <p>Les photos et les détails des projets seront ajoutés à cette galerie.</p>
+        </div>
+        <ul class="home-project-grid" id="homeProjectGrid"></ul>
       </div>
     </section>
 
