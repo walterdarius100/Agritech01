@@ -6,6 +6,7 @@ const links = [
   ['formations.html', 'Formations'],
   ['projets.html', 'Projets'],
   ['actualites.html', 'Actualités'],
+  ['a-propos.html', 'À propos'],
   ['index.html#processus', 'Méthode'],
   ['index.html#temoignages', 'Témoignages'],
   ['index.html#leadForm', 'Contact']
@@ -18,6 +19,7 @@ const pages = {
   'actualites.html': 'actualites.html',
   'article.html': 'actualites.html',
   'projets.html': 'projets.html',
+  'a-propos.html': 'a-propos.html',
   'mentions-legales.html': null,
   'politique-confidentialite.html': null
 };
