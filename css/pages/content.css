@@ -530,20 +530,11 @@
 }
 
 .about-hero {
-  max-width: 760px;
-  padding-block: clamp(48px, 8vw, 88px) 0;
+  min-height: auto;
 }
 
-.about-hero h1 {
-  margin: 8px 0 12px;
-  color: var(--green-900);
-  font-size: clamp(2.25rem, 5vw, 4rem);
-  line-height: 1.08;
-}
-
-.about-hero p {
-  margin-bottom: 0;
-  color: var(--muted);
+.about-hero::before {
+  background: none;
 }
 
 .about-story {
