@@ -562,19 +562,21 @@
   margin-top: 14px;
 }
 
+.about-story .btn {
+  margin-top: 20px;
+}
+
 @media (max-width: 760px) {
   .about-preview-panel {
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
     padding-inline: clamp(20px, 5vw, 36px);
   }
 
   .about-preview-copy {
-    padding-block: 26px 0;
+    padding-block: 26px;
   }
 
   .about-preview-photo {
-    width: min(100%, 290px);
-    margin: 0 auto;
+    display: none;
   }
 }
