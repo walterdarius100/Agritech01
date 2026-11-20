@@ -472,32 +472,16 @@
 }
 
 .about-photo {
-  --photo-offset: clamp(12px, 3vw, 28px);
-  position: relative;
-  isolation: isolate;
-  width: min(100%, 450px);
+  width: min(100%, 500px);
   margin-inline: auto;
-  padding: 0 var(--photo-offset) var(--photo-offset) 0;
-}
-
-.about-photo::before {
-  position: absolute;
-  z-index: -1;
-  inset: var(--photo-offset) 0 0 var(--photo-offset);
-  border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / 44% 44% var(--radius-lg) var(--radius-lg);
+  padding-top: clamp(20px, 4vw, 48px);
+  border-radius: 50% 50% 0 0 / 44% 44% 0 0;
   background: var(--green-900);
-  content: "";
 }
 
-.about-photo-frame {
+.about-photo img {
   width: 100%;
-  aspect-ratio: 5 / 4;
   height: auto;
-  border: 1px solid var(--border);
-  border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / 44% 44% var(--radius-lg) var(--radius-lg);
-  background: linear-gradient(145deg, #e8ecdf, #cbd8c2);
-  object-fit: contain;
-  object-position: center bottom;
 }
 
 .about-hero {
