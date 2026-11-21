@@ -4,7 +4,7 @@ export const NEWSLETTER_SUBSCRIBED_KEY = 'agritech:newsletter:subscribed';
 export const NEWSLETTER_SHOWN_KEY = 'agritech:newsletter:last-shown';
 export const NEWSLETTER_INTERVAL = 30 * 24 * 60 * 60 * 1000;
 
-export function bindNewsletterForm(form, status, source) {
+export function bindNewsletterForm(form, status, source, { preview = false } = {}) {
   const emailInput = form.elements.newsletter_email;
   const button = form.querySelector('button[type="submit"]');
   const label = button.textContent;
@@ -29,6 +29,11 @@ export function bindNewsletterForm(form, status, source) {
     }
 
     emailInput.removeAttribute('aria-invalid');
+    if (preview) {
+      show('info', 'Aperçu terminé. Aucune inscription n’a été envoyée.');
+      return;
+    }
+
     submitting = true;
     button.setAttribute('aria-disabled', 'true');
     button.textContent = 'Inscription en cours…';
@@ -69,5 +74,6 @@ export function bindNewsletterForm(form, status, source) {
       button.textContent = label;
     }
   });
+  if (preview) show('info', 'Mode aperçu · Envoi simulé.');
   button.disabled = false;
 }

@@ -3,7 +3,7 @@ import { sanitizeArticleHtml } from '../utils/article-html.js';
 import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
-import { initArticleNewsletter } from './article-newsletter.js';
+import { initArticleNewsletter, initArticleNewsletterPreview } from './article-newsletter.js';
 import { logClientError } from '../utils/error-messages.js';
 
 const articleContainer = document.querySelector('#articleContent');
@@ -428,11 +428,11 @@ function renderArticle(article, relatedArticles = []) {
   articleContainer.querySelector('.article-detail-share')?.addEventListener('click', handleArticleShare);
   articleContainer.querySelector('.article-share-copy')?.addEventListener('click', handleArticleCopyShare);
   initArticleReadingProgress();
-  initArticleNewsletter(articleContainer.querySelector('.article-content'));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   initMobileMenu();
+  const newsletterPreview = initArticleNewsletterPreview();
 
   if (!slug) {
     renderNotFound();
@@ -453,6 +453,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('[Agri-tech article] Actualités liées indisponibles:', relatedError?.message || relatedError);
       }
       renderArticle(article, relatedArticles);
+      if (!(await newsletterPreview)) initArticleNewsletter(articleContainer.querySelector('.article-content'));
     }
   } catch (error) {
     logClientError('article', error);

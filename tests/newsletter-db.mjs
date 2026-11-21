@@ -8,11 +8,11 @@ const handler = require('../api/newsletter.js');
 const db = new PGlite();
 const originalFetch = globalThis.fetch;
 
-async function request(body, headers = {}, method = 'POST') {
+async function request(body, headers = {}, method = 'POST', url = '/api/newsletter') {
   let status;
   let json;
   await handler({
-    method, body,
+    method, body, url,
     headers: {
       host: 'preview.example', origin: 'https://preview.example',
       'content-type': 'application/json', 'x-vercel-forwarded-for': '192.0.2.1',
@@ -23,7 +23,7 @@ async function request(body, headers = {}, method = 'POST') {
     status(value) { status = value; return this; },
     json(value) { json = value; }
   });
-  return [status, json.outcome];
+  return [status, json.outcome ?? json.preview];
 }
 
 try {
@@ -47,6 +47,16 @@ try {
   assert.deepEqual(await request({ email: 'a@example.org', source: 'contact' }), [400, 'invalid']);
   assert.deepEqual(await request({}, { origin: 'https://other.example' }), [403, 'forbidden']);
   assert.deepEqual(await request({}, {}, 'GET'), [405, 'method_not_allowed']);
+  const previewUrl = '/api/newsletter?previewNewsletter=1';
+  for (const environment of ['production', 'preview', 'development']) {
+    process.env.VERCEL_ENV = environment;
+    assert.deepEqual(await request({}, {}, 'GET', previewUrl),
+      environment === 'production' ? [404, 'not_found'] : [200, true]);
+    assert.deepEqual(await request({ email: 'fake@example.org', source: 'article' }, {}, 'POST', previewUrl),
+      [404, 'not_found']);
+  }
+  delete process.env.VERCEL_ENV;
+  assert.deepEqual(await request({}, {}, 'GET', previewUrl), [404, 'not_found']);
   assert.deepEqual(await request({ email: 'a@example.org', source: 'footer' }, {
     'x-vercel-forwarded-for': 'invalid'
   }), [503, 'unavailable']);

@@ -42,6 +42,18 @@ fonction Vercel. Valider séparément le raccordement et la provenance de
 l’adresse client avec cette architecture. Configurer les variables **Production**
 et exécuter la migration sur le projet de production après validation explicite.
 
+## Ouvrir la fenêtre à la demande
+
+Ajouter `previewNewsletter=1` à l’URL d’un article Vercel Preview, par exemple
+`/article.html?slug=preparer-projet-agricole-rentable&previewNewsletter=1`.
+Ce mode fonctionne aussi avec `vercel dev`. La fenêtre apparaît à chaque
+chargement, même après une inscription ou un affichage récent. Les envois
+depuis cette fenêtre sont simulés sans requête d’inscription ni changement
+du stockage local. Vercel autorise ce mode côté serveur uniquement avec
+`VERCEL_ENV=preview` ou `VERCEL_ENV=development`. Le footer suit son parcours
+habituel. Pour tester une inscription réelle, utiliser un projet Supabase dédié
+aux essais.
+
 ## Limitation des abus et désinscription
 
 Le serveur utilise l’IP fournie par Vercel via `x-vercel-forwarded-for` et

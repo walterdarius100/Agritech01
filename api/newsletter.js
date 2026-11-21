@@ -3,6 +3,13 @@ const { isIP } = require('node:net');
 
 module.exports = async function newsletter(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  const previewRequested = new URL(req.url || '/', 'http://localhost').searchParams.get('previewNewsletter') === '1';
+  if (previewRequested) {
+    const previewEnabled = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'development';
+    if (req.method === 'GET' && previewEnabled) return res.status(200).json({ preview: true });
+    return res.status(404).json({ outcome: 'not_found' });
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ outcome: 'method_not_allowed' });

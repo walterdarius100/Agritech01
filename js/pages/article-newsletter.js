@@ -12,15 +12,44 @@ function mayShowInvitation() {
   }
 }
 
+const PREVIEW_ENDPOINT = '/api/newsletter?previewNewsletter=1';
+
+export async function initArticleNewsletterPreview() {
+  if (new URLSearchParams(window.location.search).get('previewNewsletter') !== '1') return false;
+  const dialog = document.querySelector('#articleNewsletter');
+  if (typeof dialog?.showModal !== 'function') return false;
+
+  try {
+    const response = await fetch(PREVIEW_ENDPOINT, { signal: AbortSignal.timeout(3000) });
+    if (!response.ok || (await response.json()).preview !== true) return false;
+  } catch {
+    return false;
+  }
+
+  const form = dialog.querySelector('form');
+  form.action = PREVIEW_ENDPOINT;
+  bindNewsletterForm(form, dialog.querySelector('[role="status"]'), 'article', { preview: true });
+  prepareDialog(dialog)();
+  return true;
+}
+
+function prepareDialog(dialog) {
+  const closeButton = dialog.querySelector('.newsletter-dialog-close');
+  closeButton.addEventListener('click', () => dialog.close());
+  let previousFocus;
+  dialog.addEventListener('close', () => previousFocus?.focus({ preventScroll: true }));
+  return () => {
+    previousFocus = document.activeElement;
+    dialog.showModal();
+  };
+}
+
 export function initArticleNewsletter(content) {
   const dialog = document.querySelector('#articleNewsletter');
   if (!content || typeof dialog?.showModal !== 'function' || !mayShowInvitation()) return;
 
   bindNewsletterForm(dialog.querySelector('form'), dialog.querySelector('[role="status"]'), 'article');
-  const closeButton = dialog.querySelector('.newsletter-dialog-close');
-  closeButton.addEventListener('click', () => dialog.close());
-  let previousFocus;
-  dialog.addEventListener('close', () => previousFocus?.focus({ preventScroll: true }));
+  const openDialog = prepareDialog(dialog);
 
   let previousScroll = window.scrollY;
   let readerInteracted = false;
@@ -51,8 +80,7 @@ export function initArticleNewsletter(content) {
     }
 
     stopWatching();
-    previousFocus = document.activeElement;
-    dialog.showModal();
+    openDialog();
   }
 
   function onScroll() {

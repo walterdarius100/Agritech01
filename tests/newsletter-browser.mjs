@@ -25,7 +25,7 @@ const subscribed = 'agritech:newsletter:subscribed';
 const day = 24 * 60 * 60 * 1000;
 let browser;
 
-async function fixture(options) {
+async function fixture(options, preview = false) {
   const context = await browser.newContext(options);
   const page = await context.newPage();
   const errors = [];
@@ -56,6 +56,9 @@ async function fixture(options) {
       ` });
     }
     if (url.pathname === '/api/newsletter') {
+      if (route.request().method() === 'GET' && url.searchParams.get('previewNewsletter') === '1') {
+        return route.fulfill({ status: preview ? 200 : 404, json: { preview } });
+      }
       submissions.push(route.request().postDataJSON());
       if (networkFailure) return route.abort();
       const outcome = recorded ? 'already_subscribed' : 'subscribed';
@@ -188,6 +191,46 @@ try {
   assert.ok(mobileSubmit.y + mobileSubmit.height <= bounds.y + bounds.height);
   await mobile.dialog.getByRole('button', { name: 'Fermer l’invitation' }).click();
   await mobile.dialog.waitFor({ state: 'hidden' });
+
+  const production = await fixture();
+  await openArticle(production.page, 'sols&previewNewsletter=1');
+  await production.page.waitForFunction(() =>
+    !document.querySelector('#articleNewsletter button[type=submit]').disabled);
+  assert.equal(await production.dialog.isVisible(), false);
+  await readTo(production.page, 0.56);
+  await production.dialog.waitFor();
+
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 320, height: 568 }]) {
+    const preview = await fixture({ viewport, reducedMotion: 'reduce' }, true);
+    await preview.page.addInitScript(([shown, signedUp]) => {
+      localStorage.setItem(shown, '123');
+      localStorage.setItem(signedUp, 'true');
+    }, [lastShown, subscribed]);
+    await openArticle(preview.page, 'sols&previewNewsletter=1');
+    await preview.dialog.waitFor();
+    const visual = preview.dialog.locator('.newsletter-dialog-visual');
+    assert.equal(await visual.isVisible(), viewport.width > 620);
+    if (process.env.NEWSLETTER_SCREENSHOTS) {
+      await preview.page.evaluate(() => document.fonts.ready);
+      await preview.page.screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/newsletter-${viewport.width}.png` });
+    }
+    const bounds = await preview.dialog.boundingBox();
+    assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= viewport.width);
+    const previewSubmit = preview.dialog.locator('button[type=submit]');
+    const submitBounds = await previewSubmit.boundingBox();
+    assert.ok(submitBounds.y + submitBounds.height <= bounds.y + bounds.height);
+    await preview.dialog.locator('input').fill('visuel@example.org');
+    await previewSubmit.click();
+    await preview.dialog.getByText('Aperçu terminé. Aucune inscription n’a été envoyée.').waitFor();
+    assert.deepEqual(preview.submissions, []);
+    assert.deepEqual(await preview.page.evaluate(keys => keys.map(key => localStorage.getItem(key)),
+      [lastShown, subscribed]), ['123', 'true']);
+    await preview.page.keyboard.press('Escape');
+    await preview.dialog.waitFor({ state: 'hidden' });
+    await preview.page.reload();
+    await preview.dialog.waitFor();
+    assert.deepEqual(preview.errors, []);
+  }
 
   const denied = await fixture();
   await denied.page.addInitScript(() => {

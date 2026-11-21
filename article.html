@@ -124,18 +124,26 @@
   </footer>
 
   <dialog id="articleNewsletter" class="newsletter-dialog" aria-labelledby="articleNewsletterTitle" aria-describedby="articleNewsletterDescription">
-    <button class="newsletter-dialog-close" type="button" aria-label="Fermer l’invitation" autofocus>×</button>
-    <h2 id="articleNewsletterTitle">Recevez les actualités Agri-tech dans votre boîte mail.</h2>
-    <p id="articleNewsletterDescription">Conseils agricoles, nouveaux articles, formations et opportunités, directement par e-mail.</p>
-    <form class="newsletter-form" method="post" action="/api/newsletter" aria-describedby="articleNewsletterConsent" novalidate>
-      <label class="sr-only" for="articleNewsletterEmail">Votre adresse e-mail</label>
-      <div class="newsletter-row">
-        <input type="email" id="articleNewsletterEmail" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" maxlength="254" required />
-        <button class="btn primary" type="submit" disabled>S’inscrire</button>
+    <div class="newsletter-dialog-layout">
+      <div class="newsletter-dialog-visual" aria-hidden="true">
+        <div class="newsletter-dialog-brand">
+          <img src="assets/images/logo-agritech.png" width="127" height="96" loading="lazy" alt="" />
+          <strong>Agri-tech</strong>
+        </div>
       </div>
-      <small id="articleNewsletterConsent">Pas de spam. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription par e-mail</a>.</small>
-      <div class="newsletter-status" role="status" aria-live="polite" aria-atomic="true"></div>
-    </form>
+      <div class="newsletter-dialog-content">
+        <button class="newsletter-dialog-close" type="button" aria-label="Fermer l’invitation" autofocus>×</button>
+        <h2 id="articleNewsletterTitle">Recevez les actualités <span>Agri-tech</span> dans votre boîte mail.</h2>
+        <p id="articleNewsletterDescription">Conseils agricoles, nouveaux articles, formations et opportunités, directement par <span>e-mail.</span></p>
+        <form class="newsletter-form" method="post" action="/api/newsletter" aria-describedby="articleNewsletterConsent" novalidate>
+          <label for="articleNewsletterEmail">Votre adresse e-mail</label>
+          <input type="email" id="articleNewsletterEmail" name="newsletter_email" autocomplete="email" maxlength="254" required />
+          <button class="btn primary" type="submit" disabled>S’inscrire</button>
+          <small id="articleNewsletterConsent">Pas de spam. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription par e-mail</a>.</small>
+          <div class="newsletter-status" role="status" aria-live="polite" aria-atomic="true"></div>
+        </form>
+      </div>
+    </div>
   </dialog>
 
   <script src="js/analytics.js" defer></script>
