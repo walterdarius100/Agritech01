@@ -67,9 +67,6 @@ html:has(.newsletter-dialog[open]) {
 }
 
 .newsletter-dialog-visual {
-  display: flex;
-  align-items: flex-end;
-  padding: 24px;
   background: #0f3d2e;
 }
 
@@ -77,23 +74,6 @@ html:has(.newsletter-dialog[open]) {
   background:
     linear-gradient(180deg, transparent 42%, rgb(8 47 33 / 84%) 100%),
     #0f3d2e url('../../assets/images/newsletter-pepiniere.webp') 53% center / cover no-repeat;
-}
-
-.newsletter-dialog-brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 14px 8px 10px;
-  border: 1px solid rgb(255 255 255 / 36%);
-  border-radius: 10px;
-  background: #0f3d2e;
-  color: #fff;
-  font-size: 1rem;
-}
-
-.newsletter-dialog-brand img {
-  width: 30px;
-  height: auto;
 }
 
 .newsletter-dialog-content {
