@@ -96,7 +96,8 @@
         </section>
         <section class="legal-section">
           <h2>Newsletter</h2>
-          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. Vous pouvez demander l’arrêt de ces communications en contactant Agri-tech.</p>
+          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. Vous pouvez demander l’arrêt de ces communications à <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">contact@agritech509ht.com</a>.</p>
+          <p>Votre navigateur mémorise l’affichage de l’invitation pendant 30 jours et votre inscription pour éviter de vous solliciter à nouveau. Le service d’inscription utilise un identifiant temporaire dérivé de votre adresse IP pour limiter les abus.</p>
         </section>
         <section class="legal-section">
           <h2>Données liées aux demandes de consultation ou de services</h2>
@@ -122,7 +123,7 @@
         </section>
         <section class="legal-section">
           <h2>Avec qui les données peuvent être partagées</h2>
-          <p>Les données peuvent être traitées par des services techniques utilisés pour faire fonctionner le site et les formulaires, notamment EmailJS pour la transmission des messages, Supabase pour la gestion des actualités, images associées et accès administrateur, ainsi que Microsoft Clarity pour l’analyse comportementale. Agri-tech peut également utiliser d’autres outils validés si ceux-ci sont documentés avant activation.</p>
+          <p>Les données peuvent être traitées par des services techniques utilisés pour faire fonctionner le site et les formulaires, notamment EmailJS pour la transmission des messages, Supabase pour la liste d’abonnés, les actualités, les images associées et les accès administrateur, Vercel pour le traitement des inscriptions, ainsi que Microsoft Clarity pour l’analyse comportementale. Agri-tech peut également utiliser d’autres outils validés si ceux-ci sont documentés avant activation.</p>
         </section>
         <section class="legal-section">
           <h2>Durée de conservation des données</h2>
@@ -195,12 +196,14 @@
       <div class="footer-col footer-newsletter">
         <h4>Inscrivez-vous à notre newsletter</h4>
         <p>Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
-        <form class="newsletter-form" id="newsletterForm" novalidate>
-          <label class="sr-only" for="newsletterEmail">Votre email</label>
+        <form class="newsletter-form" id="newsletterForm" method="post" action="/api/newsletter" aria-describedby="newsletterConsent" novalidate>
+          <label class="sr-only" for="newsletterEmail">Votre adresse e-mail</label>
           <div class="newsletter-row">
-            <input type="email" id="newsletterEmail" name="newsletter_email" placeholder="Votre email" autocomplete="email" required />
-            <button class="btn primary" type="submit" id="newsletterSubmit">S’inscrire</button>
+            <input type="email" id="newsletterEmail" maxlength="254" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" required />
+            <button class="btn primary" type="submit" id="newsletterSubmit" disabled>S’inscrire</button>
           </div>
+          <small id="newsletterConsent">En vous inscrivant, vous recevrez la newsletter Agri-tech par e-mail. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription</a>.</small>
+          <noscript>Activez JavaScript pour vous inscrire à la newsletter.</noscript>
           <div class="newsletter-status" id="newsletterStatus" role="status" aria-live="polite" aria-atomic="true"></div>
         </form>
       </div>
@@ -209,7 +212,6 @@
   </footer>
 
   <script src="js/analytics.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
   <script type="module" src="js/pages/footer-newsletter.js"></script>
   <script type="module" src="js/pages/legal-page.js"></script>
 </body>

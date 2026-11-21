@@ -3,6 +3,7 @@ import { sanitizeArticleHtml } from '../utils/article-html.js';
 import { formatArticleDate } from '../components/render-articles.js';
 import { getArticleBySlug, getPublishedArticles } from '../services/articles-service.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
+import { initArticleNewsletter } from './article-newsletter.js';
 import { logClientError } from '../utils/error-messages.js';
 
 const articleContainer = document.querySelector('#articleContent');
@@ -427,6 +428,7 @@ function renderArticle(article, relatedArticles = []) {
   articleContainer.querySelector('.article-detail-share')?.addEventListener('click', handleArticleShare);
   articleContainer.querySelector('.article-share-copy')?.addEventListener('click', handleArticleCopyShare);
   initArticleReadingProgress();
+  initArticleNewsletter(articleContainer.querySelector('.article-content'));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -1,0 +1,124 @@
+.footer-newsletter small {
+  line-height: 1.5;
+}
+
+.footer-newsletter small a {
+  display: inline;
+  margin: 0;
+  text-decoration: underline;
+  color: inherit;
+  font-size: inherit;
+}
+
+.newsletter-form :is(input, button, a):focus-visible {
+  outline: 2px solid #ba831d;
+  outline-offset: 3px;
+}
+
+.newsletter-form button[aria-disabled="true"] {
+  cursor: wait;
+}
+
+.newsletter-status.loading,
+.newsletter-status.info {
+  background: #fff;
+  color: #0f3d2e;
+}
+
+.newsletter-status:not(.show) {
+  /* Keep the empty live region available to assistive technology. */
+  display: block;
+  padding: 0;
+  margin-top: -10px;
+}
+
+html:has(.newsletter-dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+.newsletter-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(100% - 32px, 540px);
+  max-height: calc(100dvh - 32px);
+  padding: clamp(20px, 5vw, 36px);
+  padding-top: clamp(54px, 8vw, 60px);
+  margin: auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #e2d9c6;
+  border-top: 3px solid #ba831d;
+  border-radius: 20px;
+  background: #fcf8ee;
+  color: #0f3d2e;
+  box-shadow: 0 20px 60px rgb(15 61 46 / 20%);
+}
+
+.newsletter-dialog[open] {
+  animation: newsletter-enter 200ms ease-out both;
+}
+
+.newsletter-dialog::backdrop {
+  background: rgb(15 38 30 / 33%);
+}
+
+.newsletter-dialog-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d8dfd8;
+  border-radius: 50%;
+  background: #fff;
+  color: #0f3d2e;
+  line-height: 1;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.newsletter-dialog-close:focus-visible {
+  outline: 2px solid #0f3d2e;
+  outline-offset: 2px;
+}
+
+.newsletter-dialog h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+  letter-spacing: -.035em;
+  line-height: 1.13;
+}
+
+.newsletter-dialog p {
+  margin: 12px 0 20px;
+  line-height: 1.55;
+}
+
+.newsletter-dialog .newsletter-row {
+  max-width: none;
+}
+
+.newsletter-dialog input {
+  border: 1px solid #7d9084;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.newsletter-dialog input::placeholder {
+  color: #53665b;
+}
+
+.newsletter-dialog small a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+@keyframes newsletter-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .newsletter-dialog[open] { animation: none; }
+}
