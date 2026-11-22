@@ -219,7 +219,7 @@ export function renderNewsletterEmail(details: EmailDetails) {
 <p style="margin:0 0 6px">${escapeHtml(footer)}</p>
 <a class="welcome-unsubscribe" href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline;text-underline-offset:2px">Se désinscrire</a>
 </td></tr>`,
-      '<style>.welcome-unsubscribe:focus{outline:none;text-decoration-thickness:3px}</style>')
+      '<style>.welcome-unsubscribe:focus{outline:none;text-decoration-thickness:3px!important}</style>')
   };
 }
 
