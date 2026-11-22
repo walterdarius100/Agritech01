@@ -215,10 +215,12 @@ try {
   assert.equal(await page.evaluate(() => window.testContactPayload.TYPE_CONTACT), 'Contact');
   assert.equal(submissions.length, 2);
   await page.locator('#newsletterEmail').fill('lecteur@example.org');
-  await page.locator('#newsletterForm').getByRole('checkbox').check();
+  assert.equal(await page.locator('#newsletterForm').getByRole('checkbox').count(), 0);
+  assert.equal(await page.locator('#newsletterForm').getByRole('link', { name: 'Politique de confidentialité' })
+    .getAttribute('href'), 'politique-confidentialite.html');
   await page.locator('#newsletterSubmit').click();
   await page.locator('#newsletterStatus').getByText(receivedMessage).waitFor();
-  assert.deepEqual(submissions[2], { action: 'subscribe', email: 'lecteur@example.org', source: 'footer', consent: true });
+  assert.deepEqual(submissions[2], { action: 'subscribe', email: 'lecteur@example.org', source: 'footer' });
   await page.goto(`${origin}/newsletter/#unsubscribe=test-token`);
   const unsubscribe = page.getByRole('button', { name: 'Me désinscrire' });
   await unsubscribe.waitFor();
@@ -287,19 +289,25 @@ try {
 
   for (const width of [320, 1024]) {
     const mail = await browser.newPage({ viewport: { width, height: 800 } });
-    await mail.route('https://agritech509ht.com/assets/images/logo-agritech.png', route =>
-      route.fulfill({ path: resolve(root, 'assets/images/logo-agritech.png'), contentType: 'image/png' }));
+    await mail.route('**/*', route => route.abort());
     for (const details of [
       { kind: 'admin', email: 'a'.repeat(64) + '@example.org', source: 'footer', timestamp: '2026-11-22T15:30:00Z' },
       { kind: 'welcome', unsubscribe: '#apercu-desinscription' }
     ]) {
       const { html, text } = renderNewsletterEmail(details);
       await mail.setContent(html, { waitUntil: 'load' });
-      assert.equal(await mail.locator('img').evaluate(image => image.naturalWidth), 127);
+      assert.equal(await mail.locator('img').count(), 0);
       assert.equal(await mail.evaluate(() => document.documentElement.scrollWidth), width);
       assert.ok((await mail.getByRole('heading', { level: 1 }).boundingBox()).width <= 600);
-      assert.match(text, /https:\/\/agritech509ht.com\//);
-      if (details.kind === 'welcome') await mail.getByRole('link', { name: 'Me désinscrire' }).waitFor();
+      if (details.kind === 'welcome') {
+        assert.match(text, /Se désinscrire : #apercu-desinscription/);
+        await mail.getByRole('link', { name: 'Se désinscrire' }).waitFor();
+      } else {
+        assert.match(text, /22 novembre 2026 à 10:30/);
+        const label = await mail.getByRole('rowheader', { name: 'Adresse e-mail :' }).boundingBox();
+        const value = await mail.getByRole('cell', { name: details.email }).boundingBox();
+        assert.ok(label.x + label.width <= value.x + 1);
+      }
       if (process.env.NEWSLETTER_SCREENSHOTS) {
         await mail.screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/email-${details.kind}-${width}.png`, fullPage: true });
       }

@@ -7,10 +7,13 @@ conservent EmailJS et leur traitement existant.
 
 ## Comportement
 
-- La case volontaire et spécifique à la newsletter est obligatoire. Une
+- Le footer affiche la finalité de l’inscription et un lien vers la politique
+  de confidentialité. Le clic sur « S’inscrire » y constitue l’action de
+  consentement. Dans la fenêtre des articles, la case reste obligatoire. Une
   transaction enregistre l’abonnement `active` et programme la bienvenue et
   la notification administrative. La base conserve la source, la date et la
-  version du consentement (`newsletter-direct-v1`). Le module ne collecte
+  version du consentement (`newsletter-footer-submit-v1` pour le footer sans case,
+  `newsletter-direct-v1` pour le consentement avec case). Le module ne collecte
   ni nom, ni téléphone, ni adresse IP pour ce parcours.
 - Une demande répétée pour une adresse active ou désinscrite ne crée aucun
   envoi. La réponse publique est neutre. Les quotas globaux sont de 30
@@ -30,52 +33,41 @@ conservent EmailJS et leur traitement existant.
 
 ## Mise à jour du projet existant
 
-Les deux premières migrations et les six secrets Edge (`NEWSLETTER_SITE_URL`,
-`NEWSLETTER_LINK_SECRET`, `NEWSLETTER_WORKER_SECRET`, `RESEND_API_KEY`,
-`NEWSLETTER_FROM`, `NEWSLETTER_ADMIN`) sont déjà en place, d’après
-l’état communiqué. Utiliser la [troisième migration SQL](../supabase/migrations/202611220002_newsletter_direct_opt_in.sql)
-et le [fichier unique index.ts](https://github.com/walterdarius100/Agritech01/blob/feature/newsletter-article/supabase/functions/newsletter/index.ts).
-Prévoir une courte interruption des inscriptions entre la mise à jour SQL,
-celle de la fonction et la publication des formulaires correspondants.
+Les trois premières migrations sont déjà en place sur le projet Agri-tech.
+Prévoir une fenêtre de mise à jour. Appliquer uniquement la
+[quatrième migration SQL](../supabase/migrations/202611220003_newsletter_footer_and_templates.sql)
+et utiliser le [fichier unique index.ts](https://github.com/walterdarius100/Agritech01/blob/feature/newsletter-article/supabase/functions/newsletter/index.ts).
 
 1. Dans **Supabase → Cron**, suspendre le job existant `newsletter-mail`.
-   Laisser les appels actifs se terminer et attendre l’expiration des baux
-   en cours (deux minutes). Dans **Edge Functions → newsletter**, utiliser
-   **Download** pour sauvegarder la version déployée.
-2. Dans **SQL Editor**, appliquer uniquement
-   `202611220002_newsletter_direct_opt_in.sql`. La migration conserve les
-   abonnements et l’historique. Elle annule les tâches de confirmation
-   encore à traiter et les notifications administratives en attente pour
-   les anciennes demandes `pending`. Ces adresses restent inactives.
-   Une nouvelle soumission avec la case cochée est nécessaire pour les
-   activer. La nouvelle notification signale alors l’activation, et
-   l’éventuelle notification historique de demande en attente est conservée.
-3. Dans **Edge Functions → newsletter → Code**, ouvrir **Raw** sur GitHub
-   et remplacer le seul `index.ts` par son contenu entier. Cliquer sur
-   **Deploy updates** en gardant le nom et l’URL existants. Vérifier dans
-   **Details** que la vérification JWT héritée est désactivée. Les secrets
-   existants restent nécessaires, en particulier `NEWSLETTER_LINK_SECRET`
-   pour les liens de désinscription déjà envoyés.
-4. Dans **Test**, envoyer un POST à la route principale avec l’en-tête
-   `Origin` réglé sur l’origine exacte de `NEWSLETTER_SITE_URL` et
-   `Content-Type: application/json`. Le corps
-   `{"action":"subscribe","email":"invalide","source":"footer","consent":true}`
-   répond `400 invalid`. Un e-mail de forme valide sans `consent:true`
-   répond `400 consent_required`. Ces essais n’écrivent aucune inscription
-   et ne programment aucun message.
-5. Vérifier la file et **réactiver le même job Cron**. Garder l’URL
-   `/process`, le header `X-Newsletter-Worker-Token` et les secrets Vault
-   existants. Les tâches antérieures encore à reprendre gardent leur modèle
-   et leur clé Resend pour éviter qu’un même identifiant soit réutilisé
-   avec un contenu différent. Les tâches nouvelles utilisent le branding
-   actuel. Un appel autorisé à `/process` peut expédier les tâches en attente.
-6. Quand les pages statiques correspondantes sont publiées, essayer les
-   deux formulaires avec des boîtes contrôlées et la désinscription depuis
-   `/newsletter/`. En cas d’incident, suspendre Cron et diagnostiquer.
-   Restaurer seulement l’ancienne fonction ne suffit pas, car son ancienne
-   RPC d’inscription est retirée par la migration.
+   Laisser les appels se terminer et attendre l’expiration des baux actifs
+   (deux minutes). Dans **Edge Functions → newsletter**, télécharger la
+   version déployée.
+2. Dans **SQL Editor**, exécuter seulement
+   `202611220003_newsletter_footer_and_templates.sql`. Elle rend le champ
+   de consentement facultatif pour `footer` et maintient son contrôle
+   obligatoire pour `article`. Elle crée les futures tâches en version 3.
+   Les abonnements et les tâches existants gardent leur historique et
+   leur version d’e-mail.
+3. Dans **Edge Functions → newsletter → Code**, remplacer `index.ts` par
+   l’intégralité du fichier **Raw**, puis utiliser **Deploy updates**.
+   Conserver le nom, l’URL, la vérification JWT désactivée et les secrets
+   actuels. Un POST `article` avec adresse de forme valide sans
+   `consent:true` doit répondre `400 consent_required`. Un POST `footer`
+   avec adresse invalide doit répondre `400 invalid`. Utiliser
+   `Content-Type: application/json` et l’en-tête `Origin` exact défini
+   par `NEWSLETTER_SITE_URL`. Ces essais ne créent aucune tâche d’envoi.
+4. Publier les pages et scripts statiques correspondants lors de la mise
+   en service. Vérifier la file, puis **réactiver le même job Cron**.
+   L’URL `/process`, le header `X-Newsletter-Worker-Token` et les secrets
+   Vault restent identiques. Les reprises des tâches versions 1 et 2
+   gardent le même contenu et la même clé d’idempotence Resend.
+5. Tester ensuite avec des boîtes contrôlées. Vérifier le footer sans
+   case, le popup avec case, le statut `active`, les deux e-mails et
+   le lien de désinscription. En cas d’incident, suspendre Cron. La
+   restauration de l’ancienne fonction seule ne doit pas être suivie
+   d’une reprise du job, car elle ne connaît pas les tâches version 3.
 
-Pour un projet de test isolé, appliquer les trois migrations dans l’ordre,
+Pour un projet de test isolé, appliquer les quatre migrations dans l’ordre,
 configurer les six secrets Edge, puis publier le même `index.ts`. Utiliser
 un expéditeur Resend vérifié et des boîtes contrôlées. Régler
 `NEWSLETTER_SITE_URL` sur l’origine de la copie statique et adapter
@@ -115,7 +107,7 @@ NODE_PATH=/tmp/agritech-newsletter/node_modules node tests/newsletter-browser.mj
 deno check supabase/functions/newsletter/index.ts
 ```
 
-Les trois migrations sont exécutées dans PostgreSQL embarqué. Supabase
+Les quatre migrations sont exécutées dans PostgreSQL embarqué. Supabase
 hébergé et Resend sont simulés. Chromium vérifie les formulaires statiques
 et les modèles aux largeurs mobile et ordinateur. Les envois réels et
 le rendu dans les clients e-mail restent à vérifier par Agri-tech.

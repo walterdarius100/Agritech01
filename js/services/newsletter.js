@@ -41,9 +41,9 @@ export function bindNewsletterForm(form, status, source, { preview = false } = {
     }
 
     emailInput.removeAttribute('aria-invalid');
-    if (!consent.checked) {
+    if (source === 'article' && !consent?.checked) {
       show('error', 'Veuillez accepter de recevoir la newsletter Agri-tech.');
-      consent.focus();
+      consent?.focus();
       return;
     }
     if (preview) {
@@ -57,7 +57,7 @@ export function bindNewsletterForm(form, status, source, { preview = false } = {
     show('loading', 'Inscription en cours…');
 
     try {
-      const response = await requestNewsletter({ action: 'subscribe', email, source, consent: true });
+      const response = await requestNewsletter({ action: 'subscribe', email, source, ...(source === 'article' ? { consent: true } : {}) });
       const { outcome } = await response.json();
       if (response.status === 202 && outcome === 'received') {
         show('success', 'Merci ! Votre demande d’inscription à la newsletter Agri-tech a bien été reçue.');

@@ -19,7 +19,7 @@ type MailJob = {
   source: 'article' | 'footer';
   subscribed_at: string;
   kind: 'admin' | 'welcome' | 'confirm';
-  template_version?: 1 | 2;
+  template_version?: 1 | 2 | 3;
 };
 
 const encoder = new TextEncoder();
@@ -94,7 +94,7 @@ ${footer}
 </td></tr></table></body></html>`;
 }
 
-export function renderNewsletterEmail(details: EmailDetails) {
+function renderNewsletterEmailV2(details: EmailDetails) {
   if (details.kind === 'admin') {
     const subject = 'Nouvel abonné à la newsletter — Agri-tech';
     const date = new Intl.DateTimeFormat('fr', {
@@ -132,6 +132,66 @@ export function renderNewsletterEmail(details: EmailDetails) {
       `<p style="margin:10px 0 0">${footerText}<br>
 <a href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline">Me désinscrire</a> ·
 <a href="mailto:${contact}" style="color:#0f3d2e;text-decoration:underline">${contact}</a></p>`)
+  };
+}
+
+function simpleEmail(title: string, content: string, footer = '') {
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<body style="margin:0;background:#f6f7f5;color:#14211b;font-family:Arial,'Segoe UI',sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f5"><tr>
+<td align="center" style="padding:24px 10px">
+<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fff;text-align:left;border-radius:14px">
+<tr><td bgcolor="#0f3d2e" style="padding:23px 24px;border-radius:14px 14px 0 0">
+<h1 style="margin:0;color:#fff;font-size:26px;line-height:1.25">${escapeHtml(title)}</h1>
+</td></tr>
+<tr><td style="padding:24px;color:#14211b;font-size:16px;line-height:1.6">${content}</td></tr>
+${footer}
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>`;
+}
+
+export function renderNewsletterEmail(details: EmailDetails) {
+  if (details.kind === 'admin') {
+    const title = 'Nouvelle inscription à la newsletter';
+    const intro = 'Une nouvelle adresse e-mail vient de s’inscrire à la newsletter Agri-tech.';
+    const date = new Intl.DateTimeFormat('fr', {
+      dateStyle: 'long', timeStyle: 'short', timeZone: 'America/Port-au-Prince'
+    }).format(new Date(details.timestamp)) + ' (heure de Port-au-Prince)';
+    const rows = [
+      ['Adresse e-mail', details.email], ['Date', date],
+      ['Source', details.source === 'footer' ? 'Footer' : 'Article'], ['Statut', 'Actif']
+    ];
+    const table = rows.map(([label, value]) => `<tr>
+<th scope="row" width="34%" align="left" valign="top" style="width:34%;padding:10px 8px 10px 0;border-bottom:1px solid #e5ebe7;line-height:1.45">${escapeHtml(label)} :</th>
+<td valign="top" style="padding:10px 0;border-bottom:1px solid #e5ebe7;line-height:1.45;overflow-wrap:anywhere;word-break:break-word">${escapeHtml(value)}</td>
+</tr>`).join('');
+    return {
+      subject: 'Nouvel abonné à la newsletter — Agri-tech',
+      text: `${title}\n\n${intro}\n\n${rows.map(([label, value]) => `${label} : ${value}`).join('\n')}`,
+      html: simpleEmail(title, `<p style="margin:0 0 16px">${intro}</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font-size:15px">${table}</table>`)
+    };
+  }
+
+  const subject = 'Bienvenue dans la communauté Agri-tech !';
+  const paragraphs = [
+    'Bonjour,',
+    'Merci de vous être inscrit à la newsletter Agri-tech !',
+    'Nous avons bien reçu votre demande d’inscription. Vous recevrez nos nouveaux articles, conseils agricoles, informations sur nos formations et opportunités directement dans votre boîte e-mail.',
+    'Nous veillerons à vous transmettre des informations utiles à une fréquence raisonnable.',
+    'Bienvenue parmi nous !'
+  ];
+  return {
+    subject,
+    text: `${paragraphs.join('\n\n')}\n\nSe désinscrire : ${details.unsubscribe}`,
+    html: simpleEmail(subject,
+      paragraphs.map((paragraph, index) => `<p style="margin:0 0 ${index === paragraphs.length - 1 ? 0 : 14}px">${paragraph}</p>`).join(''),
+      `<tr><td style="padding:14px 24px;border-top:1px solid #e5ebe7;font-size:13px;line-height:1.5">
+<a href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline">Se désinscrire</a>
+</td></tr>`)
   };
 }
 
@@ -204,12 +264,12 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
     if (job.kind === 'confirm') return { p_result: 'failed', p_provider: null, p_error: 'legacy_opt_in_retired' };
 
     // Keep the old payload for legacy retries so the existing Resend key still matches.
-    const message = job.template_version !== 2
+    const message = !job.template_version || job.template_version === 1
       ? await legacyMail(job)
       : {
         from: config.from,
         to: [job.kind === 'admin' ? config.admin : job.email],
-        ...renderNewsletterEmail(job.kind === 'admin'
+        ...(job.template_version === 2 ? renderNewsletterEmailV2 : renderNewsletterEmail)(job.kind === 'admin'
           ? { kind: 'admin', email: job.email, source: job.source, timestamp: job.subscribed_at }
           : { kind: 'welcome', unsubscribe: await unsubscribeLink(job.subscriber_id, job.unsubscribe_nonce) })
       };
@@ -285,8 +345,10 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
         if (email.length > 254 || !emailPattern.test(email) || (body.source !== 'article' && body.source !== 'footer')) {
           return json(400, 'invalid');
         }
-        if (body.consent !== true) return json(400, 'consent_required');
-        const outcome = await rpc('request_newsletter', { p_email: email, p_source: body.source, p_consent: true });
+        if (body.source === 'article' && body.consent !== true) return json(400, 'consent_required');
+        const outcome = await rpc('request_newsletter', {
+          p_email: email, p_source: body.source, ...(body.consent === true ? { p_consent: true } : {})
+        });
         if (outcome === 'received') return json(202, 'received');
         if (outcome === 'limited') return json(429, 'limited');
         if (outcome === 'invalid') return json(400, 'invalid');
