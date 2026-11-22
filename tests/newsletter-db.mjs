@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { createNewsletterHandler } from '../supabase/functions/newsletter/handler.mjs';
+import { createNewsletterHandler } from '../supabase/functions/newsletter/index.ts';
 
 const require = createRequire(import.meta.url);
 const { PGlite } = require('@electric-sql/pglite');
