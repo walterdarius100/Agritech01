@@ -264,6 +264,17 @@ try {
     await preview.dialog.waitFor();
     const visual = preview.dialog.locator('.newsletter-dialog-visual');
     assert.equal(await visual.isVisible(), viewport.width > 620);
+    const consentLabel = preview.dialog.locator('.newsletter-consent');
+    assert.equal(await consentLabel.innerText(), 'J’accepte de recevoir la newsletter Agri-tech par e-mail.');
+    assert.equal(await consentLabel.evaluate(element => getComputedStyle(element).fontWeight), '400');
+    const lines = await consentLabel.locator('span').evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getClientRects().length;
+    });
+    assert.ok(lines <= (viewport.width > 620 ? 1 : 2));
+    assert.equal(await consentLabel.getByRole('checkbox').getAttribute('required'), '');
+
     if (process.env.NEWSLETTER_SCREENSHOTS) {
       await preview.page.evaluate(() => document.fonts.ready);
       await preview.page.screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/newsletter-${viewport.width}.png` });
@@ -285,6 +296,17 @@ try {
     await preview.dialog.waitFor({ state: 'hidden' });
     await preview.page.reload();
     await preview.dialog.waitFor();
+    await preview.page.goto(`${origin}/newsletter/#unsubscribe=test-token`);
+    await preview.page.getByRole('button', { name: 'Me désinscrire' }).waitFor();
+    const brand = preview.page.locator('.newsletter-account-brand');
+    assert.equal(await brand.innerText(), 'Agri-tech');
+    const logo = brand.locator('img');
+    await logo.waitFor();
+    await preview.page.waitForFunction(() => document.querySelector('.newsletter-account-brand img').naturalWidth === 127);
+    assert.deepEqual(preview.submissions, []);
+    if (process.env.NEWSLETTER_SCREENSHOTS) {
+      await preview.page.screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/desinscription-${viewport.width}.png` });
+    }
     assert.deepEqual(preview.errors, []);
   }
 
