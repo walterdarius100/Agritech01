@@ -135,9 +135,9 @@ function renderNewsletterEmailV2(details: EmailDetails) {
   };
 }
 
-function simpleEmail(title: string, content: string, footer = '') {
+function simpleEmail(title: string, content: string, footer = '', head = '') {
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title>${head}</head>
 <body style="margin:0;background:#f6f7f5;color:#14211b;font-family:Arial,'Segoe UI',sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f5"><tr>
 <td align="center" style="padding:24px 10px">
@@ -217,8 +217,9 @@ export function renderNewsletterEmail(details: EmailDetails) {
       `<p style="margin:0"><strong>${name}</strong><br>${escapeHtml(role)}</p>`,
       `<tr><td bgcolor="#f6f7f5" style="padding:16px 24px;border-radius:0 0 14px 14px;font-size:14px;line-height:1.5">
 <p style="margin:0 0 6px">${escapeHtml(footer)}</p>
-<a href="${escapeHtml(details.unsubscribe)}" style="display:inline-block;padding-block:3px;color:#0f3d2e;font-weight:700;text-decoration:none">Se désinscrire</a>
-</td></tr>`)
+<a class="welcome-unsubscribe" href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline;text-underline-offset:2px">Se désinscrire</a>
+</td></tr>`,
+      '<style>.welcome-unsubscribe:focus{outline:none;text-decoration-thickness:3px}</style>')
   };
 }
 

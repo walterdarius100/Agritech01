@@ -341,7 +341,11 @@ try {
         const link = mail.getByRole('link', { name: 'Se désinscrire' });
         await mail.keyboard.press('Tab');
         assert.equal(await link.evaluate(element => element === document.activeElement), true);
-        assert.equal(await link.evaluate(element => getComputedStyle(element).textDecorationLine), 'none');
+        assert.equal(await link.getAttribute('href'), details.unsubscribe);
+        assert.deepEqual(await link.evaluate(element => {
+          const style = getComputedStyle(element);
+          return [style.color, style.textDecorationLine, style.textDecorationThickness, style.outlineStyle];
+        }), ['rgb(15, 61, 46)', 'underline', '3px', 'none']);
       } else {
         assert.match(text, /22 novembre 2026 à 10:30/);
         const label = await mail.getByRole('rowheader', { name: 'Adresse e-mail :' }).boundingBox();
