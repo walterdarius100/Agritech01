@@ -19,7 +19,7 @@ type MailJob = {
   source: 'article' | 'footer';
   subscribed_at: string;
   kind: 'admin' | 'welcome' | 'confirm';
-  template_version?: 1 | 2 | 3;
+  template_version?: 1 | 2 | 3 | 4;
 };
 
 const encoder = new TextEncoder();
@@ -153,7 +153,7 @@ ${footer}
 </td></tr></table></body></html>`;
 }
 
-export function renderNewsletterEmail(details: EmailDetails) {
+function renderNewsletterEmailV3(details: EmailDetails) {
   if (details.kind === 'admin') {
     const title = 'Nouvelle inscription à la newsletter';
     const intro = 'Une nouvelle adresse e-mail vient de s’inscrire à la newsletter Agri-tech.';
@@ -191,6 +191,33 @@ export function renderNewsletterEmail(details: EmailDetails) {
       paragraphs.map((paragraph, index) => `<p style="margin:0 0 ${index === paragraphs.length - 1 ? 0 : 14}px">${paragraph}</p>`).join(''),
       `<tr><td style="padding:14px 24px;border-top:1px solid #e5ebe7;font-size:13px;line-height:1.5">
 <a href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline">Se désinscrire</a>
+</td></tr>`)
+  };
+}
+
+export function renderNewsletterEmail(details: EmailDetails) {
+  if (details.kind === 'admin') return renderNewsletterEmailV3(details);
+
+  const subject = 'Bienvenue chez Agri-tech !';
+  const paragraphs = [
+    'Bonjour,',
+    'Merci pour votre inscription à la newsletter Agri-tech.',
+    'Vous recevrez désormais nos articles, conseils pratiques, actualités agricoles et informations sur nos formations.',
+    'Notre objectif est de partager avec vous des informations utiles, accessibles et adaptées aux réalités agricoles en Haïti.',
+    'À bientôt,'
+  ];
+  const name = 'Walter Darius';
+  const role = "Directeur général d'Agri-tech";
+  const footer = "Vous n'êtes pas à l'origine de cette inscription ?";
+  return {
+    subject,
+    text: `${paragraphs.join('\n\n')}\n\n${name}\n${role}\n\n${footer}\n\nSe désinscrire : ${details.unsubscribe}`,
+    html: simpleEmail(subject,
+      paragraphs.map(paragraph => `<p style="margin:0 0 14px">${escapeHtml(paragraph)}</p>`).join('') +
+      `<p style="margin:0"><strong>${name}</strong><br>${escapeHtml(role)}</p>`,
+      `<tr><td bgcolor="#f6f7f5" style="padding:16px 24px;border-radius:0 0 14px 14px;font-size:14px;line-height:1.5">
+<p style="margin:0 0 6px">${escapeHtml(footer)}</p>
+<a href="${escapeHtml(details.unsubscribe)}" style="display:inline-block;padding-block:3px;color:#0f3d2e;font-weight:700;text-decoration:none">Se désinscrire</a>
 </td></tr>`)
   };
 }
@@ -264,12 +291,14 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
     if (job.kind === 'confirm') return { p_result: 'failed', p_provider: null, p_error: 'legacy_opt_in_retired' };
 
     // Keep the old payload for legacy retries so the existing Resend key still matches.
+    const render = job.template_version === 2 ? renderNewsletterEmailV2
+      : job.template_version === 3 ? renderNewsletterEmailV3 : renderNewsletterEmail;
     const message = !job.template_version || job.template_version === 1
       ? await legacyMail(job)
       : {
         from: config.from,
         to: [job.kind === 'admin' ? config.admin : job.email],
-        ...(job.template_version === 2 ? renderNewsletterEmailV2 : renderNewsletterEmail)(job.kind === 'admin'
+        ...render(job.kind === 'admin'
           ? { kind: 'admin', email: job.email, source: job.source, timestamp: job.subscribed_at }
           : { kind: 'welcome', unsubscribe: await unsubscribeLink(job.subscriber_id, job.unsubscribe_nonce) })
       };

@@ -99,6 +99,7 @@ try {
   await db.exec(await readFile(new URL('../supabase/migrations/202611220002_newsletter_direct_opt_in.sql', import.meta.url), 'utf8'));
   await db.exec("select public.request_newsletter('v2@example.org', 'footer', true);");
   await db.exec(await readFile(new URL('../supabase/migrations/202611220003_newsletter_footer_and_templates.sql', import.meta.url), 'utf8'));
+  await db.exec(await readFile(new URL('../supabase/migrations/202611220004_newsletter_welcome_signature.sql', import.meta.url), 'utf8'));
   await db.exec('set role service_role;');
 
   const cors = await handler(new Request(endpoint, { method: 'OPTIONS', headers: { Origin: origin } }));
@@ -150,7 +151,7 @@ try {
     [{ kind: 'admin', status: 'queued' }, { kind: 'welcome', status: 'queued' }]);
 
   // Keep the transition fixture separate while exercising the new signup retries.
-  await db.exec("update public.newsletter_mail set next_at = now() + interval '1 day' where subscriber_id = (select id from public.newsletter_subscribers where email = 'ancienne@example.org') and template_version = 3;");
+  await db.exec("update public.newsletter_mail set next_at = now() + interval '1 day' where subscriber_id = (select id from public.newsletter_subscribers where email = 'ancienne@example.org') and template_version = 4;");
   providerCalls.length = 0;
   failOnce.add('admin');
   loseWelcomeResponse = true;
@@ -172,9 +173,10 @@ try {
   assert.match(admin.text, /vient de s’inscrire/);
   assert.match(admin.text, /Statut : Actif/);
   const welcome = providerCalls.find(call => call.kind === 'welcome').payload;
-  assert.equal(welcome.subject, 'Bienvenue dans la communauté Agri-tech !');
+  assert.equal(welcome.subject, 'Bienvenue chez Agri-tech !');
   assert.doesNotMatch(welcome.html, /<img|Découvrir Agri-tech|mailto:/);
-  assert.match(welcome.text, /Se désinscrire : https:/);
+  assert.match(welcome.text, /Walter Darius\nDirecteur général d'Agri-tech\n\nVous n'êtes pas à l'origine de cette inscription \?\n\nSe désinscrire : https:/);
+  assert.match(welcome.html, /<strong>Walter Darius<\/strong><br>Directeur général d&#39;Agri-tech/);
   assert.doesNotMatch(welcome.html, /Confirmer mon inscription|#confirm=/);
   assert.equal((await select(`select id ${messages} and status = 'accepted' and provider_id is not null`)).length, 2);
   assert.equal(providerAccepted.size, 5); // Two new messages plus three historical sends.

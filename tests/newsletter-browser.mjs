@@ -216,7 +216,8 @@ try {
   assert.equal(submissions.length, 2);
   await page.locator('#newsletterEmail').fill('lecteur@example.org');
   assert.equal(await page.locator('#newsletterForm').getByRole('checkbox').count(), 0);
-  assert.equal(await page.locator('#newsletterForm').getByRole('link', { name: 'Politique de confidentialité' })
+  assert.equal(await page.locator('#newsletterForm').getByRole('link').count(), 0);
+  assert.equal(await page.locator('footer').getByRole('link', { name: 'Politique de confidentialité' })
     .getAttribute('href'), 'politique-confidentialite.html');
   await page.locator('#newsletterSubmit').click();
   await page.locator('#newsletterStatus').getByText(receivedMessage).waitFor();
@@ -287,6 +288,32 @@ try {
     assert.deepEqual(preview.errors, []);
   }
 
+  for (const width of [320, 1024, 1440]) {
+    const footerFixture = await fixture({ viewport: { width, height: 820 }, reducedMotion: 'reduce' });
+    await footerFixture.page.goto(`${origin}/index.html`);
+    const footer = footerFixture.page.locator('.site-footer');
+    const newsletter = footer.locator('.footer-newsletter');
+    await footer.scrollIntoViewIfNeeded();
+    assert.doesNotMatch(await newsletter.innerText(), /En vous inscrivant|Demander la désinscription|Politique de confidentialité/);
+    const column = await newsletter.boundingBox();
+    const form = await newsletter.locator('form').boundingBox();
+    assert.ok(column.x >= 0 && form.x + form.width <= width + 1);
+    if (width > 900) {
+      const heading = await newsletter.locator('h4').boundingBox();
+      for (const selector of ['.footer-links h4', '.footer-contact h4']) {
+        const neighbor = await footer.locator(selector).boundingBox();
+        assert.ok(Math.abs(heading.y - neighbor.y) < 1);
+        assert.equal(await newsletter.locator("h4").evaluate(element => getComputedStyle(element).lineHeight),
+          await footer.locator(selector).evaluate(element => getComputedStyle(element).lineHeight));
+      }
+    }
+    if (process.env.NEWSLETTER_SCREENSHOTS) {
+      await footerFixture.page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await (width === 320 ? newsletter : footer).screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/footer-${width}.png` });
+    }
+    await footerFixture.page.close();
+  }
+
   for (const width of [320, 1024]) {
     const mail = await browser.newPage({ viewport: { width, height: 800 } });
     await mail.route('**/*', route => route.abort());
@@ -301,7 +328,20 @@ try {
       assert.ok((await mail.getByRole('heading', { level: 1 }).boundingBox()).width <= 600);
       if (details.kind === 'welcome') {
         assert.match(text, /Se désinscrire : #apercu-desinscription/);
-        await mail.getByRole('link', { name: 'Se désinscrire' }).waitFor();
+        await mail.getByRole('heading', { name: 'Bienvenue chez Agri-tech !' }).waitFor();
+        assert.deepEqual(await mail.locator('p').allInnerTexts(), [
+          'Bonjour,',
+          'Merci pour votre inscription à la newsletter Agri-tech.',
+          'Vous recevrez désormais nos articles, conseils pratiques, actualités agricoles et informations sur nos formations.',
+          'Notre objectif est de partager avec vous des informations utiles, accessibles et adaptées aux réalités agricoles en Haïti.',
+          'À bientôt,',
+          "Walter Darius\nDirecteur général d'Agri-tech",
+          "Vous n'êtes pas à l'origine de cette inscription ?"
+        ]);
+        const link = mail.getByRole('link', { name: 'Se désinscrire' });
+        await mail.keyboard.press('Tab');
+        assert.equal(await link.evaluate(element => element === document.activeElement), true);
+        assert.equal(await link.evaluate(element => getComputedStyle(element).textDecorationLine), 'none');
       } else {
         assert.match(text, /22 novembre 2026 à 10:30/);
         const label = await mail.getByRole('rowheader', { name: 'Adresse e-mail :' }).boundingBox();

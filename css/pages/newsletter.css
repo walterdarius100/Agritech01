@@ -16,18 +16,6 @@ label.newsletter-consent {
   accent-color: #176b48;
 }
 
-.footer-newsletter small {
-  line-height: 1.5;
-}
-
-.footer-newsletter small a {
-  display: inline;
-  margin: 0;
-  text-decoration: underline;
-  color: inherit;
-  font-size: inherit;
-}
-
 .newsletter-form :is(input, button, a):focus-visible {
   outline: 2px solid #ba831d;
   outline-offset: 3px;
