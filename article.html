@@ -107,13 +107,14 @@
 
       <div class="footer-col footer-newsletter">
         <h4>Inscrivez-vous à notre newsletter</h4>
-        <p>Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
-        <form class="newsletter-form" id="newsletterForm" novalidate>
-          <label class="sr-only" for="newsletterEmail">Votre email</label>
+        <p id="newsletterDescription">Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
+        <form class="newsletter-form" id="newsletterForm" method="post" aria-describedby="newsletterDescription" novalidate>
+          <label class="sr-only" for="newsletterEmail">Votre adresse e-mail</label>
           <div class="newsletter-row">
-            <input type="email" id="newsletterEmail" name="newsletter_email" placeholder="Votre email" autocomplete="email" required />
-            <button class="btn primary" type="submit" id="newsletterSubmit">S’inscrire</button>
+            <input type="email" id="newsletterEmail" maxlength="254" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" required />
+            <button class="btn primary" type="submit" id="newsletterSubmit" disabled>S’inscrire</button>
           </div>
+          <noscript>Activez JavaScript pour vous inscrire à la newsletter.</noscript>
           <div class="newsletter-status" id="newsletterStatus" role="status" aria-live="polite" aria-atomic="true"></div>
         </form>
       </div>
@@ -121,8 +122,26 @@
     <div class="footer-bottom">© 2026 Agri-tech — Tous droits réservés</div>
   </footer>
 
+  <dialog id="articleNewsletter" class="newsletter-dialog" aria-labelledby="articleNewsletterTitle" aria-describedby="articleNewsletterDescription">
+    <div class="newsletter-dialog-layout">
+      <div class="newsletter-dialog-visual" aria-hidden="true"></div>
+      <div class="newsletter-dialog-content">
+        <button class="newsletter-dialog-close" type="button" aria-label="Fermer l’invitation" autofocus>×</button>
+        <h2 id="articleNewsletterTitle">Recevez les actualités <span>Agri-tech</span> dans votre boîte mail.</h2>
+        <p id="articleNewsletterDescription">Conseils agricoles, nouveaux articles, formations et opportunités, directement par <span>e-mail.</span></p>
+        <form class="newsletter-form" method="post" aria-describedby="articleNewsletterConsent" novalidate>
+          <label for="articleNewsletterEmail">Votre adresse e-mail</label>
+          <input type="email" id="articleNewsletterEmail" name="newsletter_email" autocomplete="email" maxlength="254" required />
+          <label class="newsletter-consent"><input type="checkbox" name="newsletter_consent" required /> J’accepte de recevoir périodiquement par e-mail la newsletter Agri-tech (articles, conseils, formations et opportunités).</label>
+          <button class="btn primary" type="submit" disabled>S’inscrire</button>
+          <small id="articleNewsletterConsent">Pas de spam. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription par e-mail</a>.</small>
+          <div class="newsletter-status" role="status" aria-live="polite" aria-atomic="true"></div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
   <script src="js/analytics.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
   <script type="module" src="js/pages/footer-newsletter.js"></script>
   <script type="module" src="js/pages/article.js"></script>
