@@ -72,8 +72,13 @@ dans l’éditeur de tables Supabase. Les futures listes d’envoi doivent utili
 uniquement le statut `active`. Une réinscription après désinscription passe
 par le même contact, avec vérification de la demande avant réactivation.
 
-Le navigateur enregistre la date d’affichage et retient la confirmation
-d’inscription. Un article dont le corps mesure moins de 800 px ou moins d’un
+Le navigateur limite l’invitation à une fois par session d’onglet, y compris
+après navigation et rechargement. La date enregistrée dans `localStorage`
+impose aussi un délai de 7 jours partagé entre les onglets de la même origine.
+`sessionStorage` suit la durée de vie de l’onglet. Un onglet ouvert
+indépendamment a sa propre session. Web Locks sérialise les vérifications
+simultanées lorsqu’il est disponible. Sans stockage utilisable, l’invitation
+automatique est masquée. Le navigateur retient la confirmation d’inscription. Un article dont le corps mesure moins de 800 px ou moins d’un
 écran ne déclenche pas d’invitation. Le pied de page reste utilisable sans
 stockage local.
 

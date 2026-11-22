@@ -21,12 +21,13 @@ const server = createServer(async (req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const lastShown = 'agritech:newsletter:last-shown';
+const sessionShown = 'agritech:newsletter:session-shown';
 const subscribed = 'agritech:newsletter:subscribed';
 const day = 24 * 60 * 60 * 1000;
 let browser;
 
-async function fixture(options, preview = false) {
-  const context = await browser.newContext(options);
+async function fixture(options, preview = false, existingContext) {
+  const context = existingContext ?? await browser.newContext(options);
   const page = await context.newPage();
   const errors = [];
   const submissions = [];
@@ -92,38 +93,51 @@ try {
     executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
     headless: true, args: ['--no-sandbox']
   });
-  const desktop = await fixture({ viewport: { width: 1280, height: 850 } });
+  const firstTab = await fixture({ viewport: { width: 1280, height: 850 } });
+  {
+    const { page, dialog } = firstTab;
+    await openArticle(page);
+    assert.equal(await dialog.isVisible(), false);
+    await readTo(page, 0.52);
+    assert.equal(await dialog.isVisible(), false);
+    const focusTarget = page.locator('.article-detail-share');
+    await focusTarget.evaluate(button => button.focus({ preventScroll: true }));
+    await readTo(page, 0.56);
+    await dialog.waitFor();
+    assert.ok(parseFloat(await page.locator('.article-reading-progress__bar').evaluate(bar => bar.style.width)) > 0);
+    assert.equal(await dialog.locator(':focus').getAttribute('aria-label'), 'Fermer l’invitation');
+    await page.keyboard.press('Tab');
+    assert.equal(await dialog.locator(':focus').getAttribute('type'), 'email');
+    const scroll = await page.evaluate(() => scrollY);
+    await page.keyboard.press('Escape');
+    await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.activeElement.matches('.article-detail-share'));
+    assert.equal(await page.evaluate(() => scrollY), scroll);
+    assert.ok(await page.evaluate(key => Number(localStorage.getItem(key)) > 0, lastShown));
+
+    await openArticle(page, 'autre');
+    await readTo(page, 0.58);
+    assert.equal(await dialog.isVisible(), false);
+    await page.reload();
+    await page.locator('.article-content').waitFor();
+    assert.equal(await dialog.isVisible(), false);
+    assert.equal(await page.evaluate(key => sessionStorage.getItem(key), sessionShown), 'true');
+    await page.evaluate(([key, ago]) => localStorage.setItem(key, Date.now() - ago), [lastShown, 7 * day - 60_000]);
+  }
+
+  // An independently opened tab shares the cooldown but starts a new tab session.
+  const desktop = await fixture(undefined, false, firstTab.page.context());
   const { page, dialog, submissions } = desktop;
   await openArticle(page);
+  assert.equal(await page.evaluate(key => sessionStorage.getItem(key), sessionShown), null);
+  await readTo(page, 0.58);
   assert.equal(await dialog.isVisible(), false);
-  await readTo(page, 0.52);
-  assert.equal(await dialog.isVisible(), false);
-  const focusTarget = page.locator('.article-detail-share');
-  await focusTarget.evaluate(button => button.focus({ preventScroll: true }));
-  await readTo(page, 0.56);
-  await dialog.waitFor();
-  assert.ok(parseFloat(await page.locator('.article-reading-progress__bar').evaluate(bar => bar.style.width)) > 0);
-  assert.equal(await dialog.locator(':focus').getAttribute('aria-label'), 'Fermer l’invitation');
-  await page.keyboard.press('Tab');
-  assert.equal(await dialog.locator(':focus').getAttribute('type'), 'email');
-  const scroll = await page.evaluate(() => scrollY);
-  await page.keyboard.press('Escape');
-  await dialog.waitFor({ state: 'hidden' });
-  await page.waitForFunction(() => document.activeElement.matches('.article-detail-share'));
-  assert.equal(await page.evaluate(() => scrollY), scroll);
-  assert.ok(await page.evaluate(key => Number(localStorage.getItem(key)) > 0, lastShown));
 
-  await openArticle(page, 'autre');
-  await readTo(page, 0.58);
-  assert.equal(await dialog.isVisible(), false);
-  await page.reload();
-  await page.locator('.article-content').waitFor();
-  assert.equal(await dialog.isVisible(), false);
-  await page.evaluate(([key, ago]) => localStorage.setItem(key, Date.now() - ago), [lastShown, 29 * day]);
-  await openArticle(page);
-  await readTo(page, 0.58);
-  assert.equal(await dialog.isVisible(), false);
-  await page.evaluate(([key, ago]) => localStorage.setItem(key, Date.now() - ago), [lastShown, 30 * day + 1000]);
+  await page.evaluate(([key, ago]) => localStorage.setItem(key, Date.now() - ago), [lastShown, 7 * day + 1000]);
+  await openArticle(firstTab.page, 'apres-sept-jours');
+  await readTo(firstTab.page, 0.58);
+  assert.equal(await firstTab.dialog.isVisible(), false);
+
   await openArticle(page, 'court');
   await page.mouse.wheel(0, 1400);
   assert.equal(await dialog.isVisible(), false);
@@ -149,7 +163,10 @@ try {
   await status.getByText('Merci, votre inscription à la newsletter est confirmée.').waitFor();
   assert.deepEqual(submissions[1], { email: 'lecteur@example.org', source: 'article' });
 
-  await page.evaluate(key => localStorage.removeItem(key), lastShown);
+  await page.evaluate(([shown, session]) => {
+    localStorage.removeItem(shown);
+    sessionStorage.removeItem(session);
+  }, [lastShown, sessionShown]);
   await openArticle(page, 'autre');
   await readTo(page, 0.58);
   assert.equal(await dialog.isVisible(), false);
@@ -202,10 +219,11 @@ try {
 
   for (const viewport of [{ width: 1440, height: 900 }, { width: 320, height: 568 }]) {
     const preview = await fixture({ viewport, reducedMotion: 'reduce' }, true);
-    await preview.page.addInitScript(([shown, signedUp]) => {
+    await preview.page.addInitScript(([shown, signedUp, session]) => {
       localStorage.setItem(shown, '123');
       localStorage.setItem(signedUp, 'true');
-    }, [lastShown, subscribed]);
+      sessionStorage.setItem(session, 'existing-marker');
+    }, [lastShown, subscribed, sessionShown]);
     await openArticle(preview.page, 'sols&previewNewsletter=1');
     await preview.dialog.waitFor();
     const visual = preview.dialog.locator('.newsletter-dialog-visual');
@@ -225,6 +243,7 @@ try {
     assert.deepEqual(preview.submissions, []);
     assert.deepEqual(await preview.page.evaluate(keys => keys.map(key => localStorage.getItem(key)),
       [lastShown, subscribed]), ['123', 'true']);
+    assert.equal(await preview.page.evaluate(key => sessionStorage.getItem(key), sessionShown), 'existing-marker');
     await preview.page.keyboard.press('Escape');
     await preview.dialog.waitFor({ state: 'hidden' });
     await preview.page.reload();

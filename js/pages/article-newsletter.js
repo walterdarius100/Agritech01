@@ -2,10 +2,13 @@ import {
   bindNewsletterForm, NEWSLETTER_INTERVAL, NEWSLETTER_SHOWN_KEY, NEWSLETTER_SUBSCRIBED_KEY
 } from '../services/newsletter.js';
 
+const SESSION_SHOWN_KEY = 'agritech:newsletter:session-shown';
+
 function mayShowInvitation() {
   try {
     const lastShown = localStorage.getItem(NEWSLETTER_SHOWN_KEY);
-    return !localStorage.getItem(NEWSLETTER_SUBSCRIBED_KEY) &&
+    return !sessionStorage.getItem(SESSION_SHOWN_KEY) &&
+      !localStorage.getItem(NEWSLETTER_SUBSCRIBED_KEY) &&
       (lastShown === null || Date.now() - Number(lastShown) >= NEWSLETTER_INTERVAL);
   } catch {
     return false;
@@ -73,6 +76,7 @@ export function initArticleNewsletter(content) {
 
     try {
       // Persist before placing the window in the top layer. A failed write suppresses it.
+      sessionStorage.setItem(SESSION_SHOWN_KEY, 'true');
       localStorage.setItem(NEWSLETTER_SHOWN_KEY, String(Date.now()));
     } catch {
       stopWatching();

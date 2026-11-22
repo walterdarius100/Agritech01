@@ -2,7 +2,7 @@ import { isEmailValid } from '../utils/validation.js';
 
 export const NEWSLETTER_SUBSCRIBED_KEY = 'agritech:newsletter:subscribed';
 export const NEWSLETTER_SHOWN_KEY = 'agritech:newsletter:last-shown';
-export const NEWSLETTER_INTERVAL = 30 * 24 * 60 * 60 * 1000;
+export const NEWSLETTER_INTERVAL = 7 * 24 * 60 * 60 * 1000;
 
 export function bindNewsletterForm(form, status, source, { preview = false } = {}) {
   const emailInput = form.elements.newsletter_email;
