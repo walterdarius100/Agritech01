@@ -96,8 +96,8 @@
         </section>
         <section class="legal-section">
           <h2>Newsletter</h2>
-          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. Vous pouvez demander l’arrêt de ces communications à <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">contact@agritech509ht.com</a>.</p>
-          <p>Votre navigateur mémorise l’affichage de l’invitation pour la limiter à une fois par session d’onglet et espacer deux affichages d’au moins 7 jours. Il mémorise aussi votre inscription pour éviter de vous solliciter à nouveau. Le service d’inscription utilise un identifiant temporaire dérivé de votre adresse IP pour limiter les abus.</p>
+          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. L’inscription devient active après confirmation de votre adresse. Vous pouvez vous désinscrire avec le lien personnel inclus dans les e-mails ou écrire à <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">contact@agritech509ht.com</a>.</p>
+          <p>Votre navigateur mémorise l’affichage de l’invitation pour la limiter à une fois par session d’onglet et espacer deux affichages d’au moins 7 jours. Il mémorise aussi votre inscription pour éviter de vous solliciter à nouveau. Le service limite le nombre de demandes et d’envois de confirmation pour prévenir les abus.</p>
         </section>
         <section class="legal-section">
           <h2>Données liées aux demandes de consultation ou de services</h2>
@@ -123,7 +123,7 @@
         </section>
         <section class="legal-section">
           <h2>Avec qui les données peuvent être partagées</h2>
-          <p>Les données peuvent être traitées par des services techniques utilisés pour faire fonctionner le site et les formulaires, notamment EmailJS pour la transmission des messages, Supabase pour la liste d’abonnés, les actualités, les images associées et les accès administrateur, Vercel pour le traitement des inscriptions, ainsi que Microsoft Clarity pour l’analyse comportementale. Agri-tech peut également utiliser d’autres outils validés si ceux-ci sont documentés avant activation.</p>
+          <p>Les données peuvent être traitées par des services techniques utilisés pour faire fonctionner le site et les formulaires, notamment EmailJS pour la transmission des messages, Supabase pour la liste d’abonnés, les actualités, les images associées et les accès administrateur, Resend pour les e-mails transactionnels de la newsletter, ainsi que Microsoft Clarity pour l’analyse comportementale. Agri-tech peut également utiliser d’autres outils validés si ceux-ci sont documentés avant activation.</p>
         </section>
         <section class="legal-section">
           <h2>Durée de conservation des données</h2>
@@ -196,7 +196,7 @@
       <div class="footer-col footer-newsletter">
         <h4>Inscrivez-vous à notre newsletter</h4>
         <p>Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
-        <form class="newsletter-form" id="newsletterForm" method="post" action="/api/newsletter" aria-describedby="newsletterConsent" novalidate>
+        <form class="newsletter-form" id="newsletterForm" method="post" aria-describedby="newsletterConsent" novalidate>
           <label class="sr-only" for="newsletterEmail">Votre adresse e-mail</label>
           <div class="newsletter-row">
             <input type="email" id="newsletterEmail" maxlength="254" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" required />

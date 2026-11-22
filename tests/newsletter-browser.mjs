@@ -7,7 +7,8 @@ import { resolve, extname } from 'node:path';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const root = resolve(new URL('..', import.meta.url).pathname);
 const server = createServer(async (req, res) => {
-  const path = resolve(root, '.' + new URL(req.url, 'http://localhost').pathname);
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+  const path = resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (!path.startsWith(root + '/')) return res.writeHead(403).end();
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
   try {
@@ -32,7 +33,6 @@ async function fixture(options, preview = false, existingContext) {
   const errors = [];
   const submissions = [];
   let networkFailure = false;
-  let recorded = false;
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -43,6 +43,19 @@ async function fixture(options, preview = false, existingContext) {
           async send(_service, _template, payload) { window.testContactPayload = payload; }
         };
       ` });
+    }
+    if (url.href === 'https://newsletter-test.invalid/functions/v1/newsletter') {
+      const headers = {
+        'access-control-allow-origin': origin,
+        'access-control-allow-headers': 'Content-Type',
+        'access-control-allow-methods': 'POST, OPTIONS'
+      };
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      const submission = route.request().postDataJSON();
+      submissions.push(submission);
+      if (networkFailure) return route.abort();
+      const outcome = { subscribe: 'received', confirm: 'confirmed', unsubscribe: 'unsubscribed' }[submission.action];
+      return route.fulfill({ status: outcome === 'received' ? 202 : 200, json: { outcome }, headers });
     }
     if (url.origin !== origin) return route.abort();
     if (url.pathname === '/js/services/articles-service.js') {
@@ -57,14 +70,14 @@ async function fixture(options, preview = false, existingContext) {
       ` });
     }
     if (url.pathname === '/api/newsletter') {
-      if (route.request().method() === 'GET' && url.searchParams.get('previewNewsletter') === '1') {
-        return route.fulfill({ status: preview ? 200 : 404, json: { preview } });
-      }
-      submissions.push(route.request().postDataJSON());
-      if (networkFailure) return route.abort();
-      const outcome = recorded ? 'already_subscribed' : 'subscribed';
-      recorded = true;
-      return route.fulfill({ status: outcome === 'subscribed' ? 201 : 200, json: { outcome } });
+      assert.equal(route.request().method(), 'GET');
+      return route.fulfill({ status: preview ? 200 : 404, json: { preview } });
+    }
+    if (url.pathname === '/js/config/newsletter-config.js') {
+      return route.fulfill({ contentType: 'text/javascript', body: `
+        export const NEWSLETTER_SITE_ORIGIN = ${JSON.stringify(origin)};
+        export const NEWSLETTER_API_URL = 'https://newsletter-test.invalid/functions/v1/newsletter';
+      ` });
     }
     return route.continue();
   });
@@ -156,12 +169,23 @@ try {
   desktop.fail(true);
   await input.fill('LECTEUR@EXAMPLE.ORG');
   await submit.click();
-  await status.getByText('Impossible de confirmer votre inscription. Veuillez réessayer.').waitFor();
+  await status.getByText('Impossible de traiter votre demande. Veuillez réessayer.').waitFor();
   assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), null);
   desktop.fail(false);
   await submit.click();
-  await status.getByText('Merci, votre inscription à la newsletter est confirmée.').waitFor();
-  assert.deepEqual(submissions[1], { email: 'lecteur@example.org', source: 'article' });
+  const receivedMessage = 'Demande reçue. Si une confirmation est nécessaire, vérifiez votre boîte e-mail.';
+  await status.getByText(receivedMessage).waitFor();
+  assert.deepEqual(submissions[1], { action: 'subscribe', email: 'lecteur@example.org', source: 'article' });
+
+  assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), null);
+  await page.goto(`${origin}/newsletter/#confirm=test-token`);
+  const confirm = page.getByRole('button', { name: 'Confirmer mon inscription' });
+  await confirm.waitFor();
+  assert.equal(submissions.length, 2); // A GET or scanner opening the page performs no action.
+  await confirm.click();
+  await page.getByText('Votre inscription est confirmée.').waitFor();
+  assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), 'true');
+  assert.deepEqual(submissions[2], { action: 'confirm', token: 'test-token' });
 
   await page.evaluate(([shown, session]) => {
     localStorage.removeItem(shown);
@@ -188,11 +212,18 @@ try {
   await contact.locator('#submitBtn').click();
   await contact.getByText('Votre message a bien été envoyé. Agri-tech vous répondra dès que possible.').waitFor();
   assert.equal(await page.evaluate(() => window.testContactPayload.TYPE_CONTACT), 'Contact');
-  assert.equal(submissions.length, 2);
+  assert.equal(submissions.length, 3);
   await page.locator('#newsletterEmail').fill('lecteur@example.org');
   await page.locator('#newsletterSubmit').click();
-  await page.locator('#newsletterStatus').getByText('Cette adresse e-mail est déjà inscrite.').waitFor();
-  assert.deepEqual(submissions[2], { email: 'lecteur@example.org', source: 'footer' });
+  await page.locator('#newsletterStatus').getByText(receivedMessage).waitFor();
+  assert.deepEqual(submissions[3], { action: 'subscribe', email: 'lecteur@example.org', source: 'footer' });
+  await page.goto(`${origin}/newsletter/#unsubscribe=test-token`);
+  const unsubscribe = page.getByRole('button', { name: 'Me désinscrire' });
+  await unsubscribe.waitFor();
+  assert.equal(submissions.length, 4);
+  await unsubscribe.click();
+  await page.getByText('Votre désinscription est enregistrée.').waitFor();
+  assert.deepEqual(submissions[4], { action: 'unsubscribe', token: 'test-token' });
 
   const mobile = await fixture({
     viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce'

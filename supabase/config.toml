@@ -1,0 +1,5 @@
+project_id = "agritech-newsletter"
+
+[functions.newsletter]
+# Public forms and signed, single-purpose links have no Supabase user session.
+verify_jwt = false

@@ -241,3 +241,23 @@ html:has(.newsletter-dialog[open]) {
 @media (prefers-reduced-motion: reduce) {
   .newsletter-dialog[open] { animation: none; }
 }
+
+.newsletter-account {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 36rem);
+  margin: 0 auto;
+  padding: clamp(20px, 5vw, 40px);
+  border: 1px solid #d8dece;
+  border-radius: 20px;
+  background: #fcf8ee;
+  color: #0f3d2e;
+}
+
+.newsletter-account .btn[hidden] {
+  display: none;
+}
+
+.newsletter-account a {
+  text-decoration: underline;
+}

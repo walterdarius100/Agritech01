@@ -1,8 +1,19 @@
+import { NEWSLETTER_API_URL, NEWSLETTER_SITE_ORIGIN } from '../config/newsletter-config.js';
 import { isEmailValid } from '../utils/validation.js';
 
 export const NEWSLETTER_SUBSCRIBED_KEY = 'agritech:newsletter:subscribed';
 export const NEWSLETTER_SHOWN_KEY = 'agritech:newsletter:last-shown';
 export const NEWSLETTER_INTERVAL = 7 * 24 * 60 * 60 * 1000;
+
+export async function requestNewsletter(payload) {
+  if (window.location.origin !== NEWSLETTER_SITE_ORIGIN) throw new Error('Newsletter indisponible sur cette origine');
+  return fetch(NEWSLETTER_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10000)
+  });
+}
 
 export function bindNewsletterForm(form, status, source, { preview = false } = {}) {
   const emailInput = form.elements.newsletter_email;
@@ -40,34 +51,20 @@ export function bindNewsletterForm(form, status, source, { preview = false } = {
     show('loading', 'Inscription en cours…');
 
     try {
-      const response = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source }),
-        signal: AbortSignal.timeout(10000)
-      });
+      const response = await requestNewsletter({ action: 'subscribe', email, source });
       const { outcome } = await response.json();
-      if (response.ok && ['subscribed', 'already_subscribed'].includes(outcome)) {
-        try {
-          localStorage.setItem(NEWSLETTER_SUBSCRIBED_KEY, 'true');
-        } catch {
-          // Automatic invitations are suppressed if storage is unavailable.
-        }
-        show('success', outcome === 'subscribed'
-          ? 'Merci, votre inscription à la newsletter est confirmée.'
-          : 'Cette adresse e-mail est déjà inscrite.');
+      if (response.status === 202 && outcome === 'received') {
+        show('info', 'Demande reçue. Si une confirmation est nécessaire, vérifiez votre boîte e-mail.');
         if (emailInput.value.trim().toLowerCase() === email) form.reset();
-      } else if (response.ok && outcome === 'pending') {
-        show('info', 'Une inscription est déjà en attente de confirmation pour cette adresse.');
-      } else if (response.ok && outcome === 'contact_required') {
-        show('info', 'Pour vous réinscrire, écrivez à contact@agritech509ht.com.');
+      } else if (response.status === 400 && outcome === 'invalid') {
+        show('error', 'Veuillez saisir une adresse e-mail valide.');
       } else if (response.status === 429) {
         show('error', 'Trop de tentatives. Veuillez réessayer plus tard.');
       } else {
         throw new Error('Inscription non confirmée');
       }
     } catch {
-      show('error', 'Impossible de confirmer votre inscription. Veuillez réessayer.');
+      show('error', 'Impossible de traiter votre demande. Veuillez réessayer.');
     } finally {
       submitting = false;
       button.removeAttribute('aria-disabled');
