@@ -177,11 +177,12 @@
         <p>Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
         <form class="newsletter-form" id="newsletterForm" method="post" aria-describedby="newsletterConsent" novalidate>
           <label class="sr-only" for="newsletterEmail">Votre adresse e-mail</label>
+          <label class="newsletter-consent"><input type="checkbox" name="newsletter_consent" required /> J’accepte de recevoir périodiquement par e-mail la newsletter Agri-tech (articles, conseils, formations et opportunités).</label>
           <div class="newsletter-row">
             <input type="email" id="newsletterEmail" maxlength="254" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" required />
             <button class="btn primary" type="submit" id="newsletterSubmit" disabled>S’inscrire</button>
           </div>
-          <small id="newsletterConsent">En vous inscrivant, vous recevrez la newsletter Agri-tech par e-mail. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription</a>.</small>
+          <small id="newsletterConsent"><a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription</a>.</small>
           <noscript>Activez JavaScript pour vous inscrire à la newsletter.</noscript>
           <div class="newsletter-status" id="newsletterStatus" role="status" aria-live="polite" aria-atomic="true"></div>
         </form>

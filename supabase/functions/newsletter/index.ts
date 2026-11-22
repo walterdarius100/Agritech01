@@ -9,8 +9,7 @@ type NewsletterConfig = {
   admin?: string;
 };
 
-type LinkAction = 'confirm' | 'unsubscribe';
-type RequestBody = { action?: unknown; email?: unknown; source?: unknown; token?: unknown };
+type RequestBody = { action?: unknown; email?: unknown; source?: unknown; consent?: unknown; token?: unknown };
 type MailJob = {
   id: string;
   claim_id: string;
@@ -19,7 +18,9 @@ type MailJob = {
   email: string;
   source: 'article' | 'footer';
   subscribed_at: string;
-} & ({ kind: 'confirm'; nonce: string } | { kind: 'admin' | 'welcome'; nonce: null });
+  kind: 'admin' | 'welcome' | 'confirm';
+  template_version?: 1 | 2;
+};
 
 const encoder = new TextEncoder();
 const uuidPattern = '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}';
@@ -59,6 +60,81 @@ async function readBody(request: Request): Promise<RequestBody | null> {
   return JSON.parse(text + decoder.decode());
 }
 
+const officialSite = 'https://agritech509ht.com/';
+const logoUrl = officialSite + 'assets/images/logo-agritech.png';
+const contact = 'contact@agritech509ht.com';
+
+type EmailDetails =
+  | { kind: 'admin'; email: string; source: 'article' | 'footer'; timestamp: string }
+  | { kind: 'welcome'; unsubscribe: string };
+
+function brandedEmail(title: string, content: string, footer: string) {
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<body style="margin:0;padding:0;background:#f8f4ea;color:#14211b;font-family:Inter,'Segoe UI',Arial,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4ea"><tr>
+<td align="center" style="padding:24px 12px">
+<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+ style="width:100%;max-width:600px;text-align:left;background:#fff;border:1px solid #dfdfd4;border-radius:16px">
+<tr><td bgcolor="#0f3d2e" style="padding:18px 22px;border-radius:15px 15px 0 0;border-bottom:4px solid #f2b84b;color:#fff">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td style="padding-right:12px"><img src="${logoUrl}" width="53" height="40" alt="" style="display:block;border:0"></td>
+<td style="font-size:21px;font-weight:700;color:#fff">Agri-tech</td></tr></table>
+</td></tr>
+<tr><td style="padding:25px 22px;font-size:16px;line-height:1.6">
+<h1 style="margin:0 0 18px;color:#0f3d2e;font-size:27px;line-height:1.2">${escapeHtml(title.replace('Agri-tech', 'Agri‑tech'))}</h1>
+${content}
+</td></tr>
+<tr><td bgcolor="#e8f5ee" style="padding:16px 22px;border-radius:0 0 15px 15px;color:#14211b;font-size:14px;line-height:1.6">
+<strong>Agri-tech</strong> · <a href="${officialSite}" style="color:#0f3d2e;text-decoration:underline">agritech509ht.com</a>
+${footer}
+</td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>`;
+}
+
+export function renderNewsletterEmail(details: EmailDetails) {
+  if (details.kind === 'admin') {
+    const subject = 'Nouvel abonné à la newsletter — Agri-tech';
+    const date = new Intl.DateTimeFormat('fr', {
+      dateStyle: 'long', timeStyle: 'short', timeZone: 'America/Port-au-Prince'
+    }).format(new Date(details.timestamp)) + ' (heure de Port-au-Prince)';
+    const source = details.source === 'footer' ? 'Pied de page (footer)' : 'Article';
+    const rows = [
+      ['Adresse e-mail', details.email], ['Date et heure', date], ['Source', source],
+      ['Statut à l’inscription', 'Actif']
+    ];
+    const summary = 'L’inscription a bien été enregistrée dans Supabase.';
+    const table = rows.map(([label, value]) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #dfdfd4">
+<strong style="color:#0f3d2e">${escapeHtml(label)}</strong><br>
+<span style="overflow-wrap:anywhere;word-break:break-word">${escapeHtml(value)}</span></td></tr>`).join('');
+    return {
+      subject,
+      text: `Nouvelle inscription à la newsletter\n\n${summary}\n\n${rows.map(([label, value]) => `${label} : ${value}`).join('\n')}\n\nAgri-tech · ${officialSite}`,
+      html: brandedEmail('Nouvelle inscription à la newsletter',
+        `<p style="margin:0 0 16px">${summary}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;background:#f8f4ea">${table}</table>`, '')
+    };
+  }
+
+  const subject = 'Bienvenue dans la communauté Agri-tech !';
+  const introduction = 'Merci de vous être inscrit à la newsletter Agri-tech. Votre demande a bien été reçue et votre adresse est inscrite.';
+  const topics = 'Vous recevrez nos nouveaux articles, conseils agricoles, informations sur nos formations et opportunités. Nous vous écrirons à une cadence raisonnable.';
+  const footerText = 'Si vous n’êtes pas à l’origine de cette inscription, vous pouvez vous désinscrire ou nous écrire.';
+  return {
+    subject,
+    text: `Bonjour,\n\n${introduction}\n\n${topics}\n\nDécouvrir Agri-tech : ${officialSite}\n\nL’équipe Agri-tech\n\n${footerText}\nMe désinscrire : ${details.unsubscribe}\n${contact}`,
+    html: brandedEmail(subject, `<p style="margin:0 0 14px">Bonjour,</p>
+<p style="margin:0 0 14px">${introduction}</p><p style="margin:0 0 20px">${topics}</p>
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#0f3d2e" style="border-radius:8px">
+<a href="${officialSite}" style="display:inline-block;padding:12px 17px;color:#fff;text-decoration:none;font-weight:700">Découvrir Agri-tech</a>
+</td></tr></table><p style="margin:20px 0 0">L’équipe Agri-tech</p>`,
+      `<p style="margin:10px 0 0">${footerText}<br>
+<a href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline">Me désinscrire</a> ·
+<a href="mailto:${contact}" style="color:#0f3d2e;text-decoration:underline">${contact}</a></p>`)
+  };
+}
+
 export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetch) {
   const origin = config.siteUrl ? new URL(config.siteUrl).origin : null;
   const { databaseUrl = '', databaseKey = '' } = config;
@@ -67,20 +143,20 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
     'raw', encoder.encode(config.linkSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']
   );
 
-  async function link(action: LinkAction, id: string, nonce: string) {
-    const signature = await crypto.subtle.sign('HMAC', await signingKey(), encoder.encode(`${action}:${id}:${nonce}`));
+  async function unsubscribeLink(id: string, nonce: string) {
+    const signature = await crypto.subtle.sign('HMAC', await signingKey(), encoder.encode(`unsubscribe:${id}:${nonce}`));
     const url = new URL('/newsletter/', origin ?? undefined);
-    url.hash = `${action}=${id}.${nonce}.${hex(signature)}`;
+    url.hash = `unsubscribe=${id}.${nonce}.${hex(signature)}`;
     return url.href;
   }
 
-  async function verifyLink(action: LinkAction, token: unknown) {
+  async function verifyLink(token: unknown) {
     const match = typeof token === 'string' && tokenPattern.exec(token);
     if (!match) return null;
     const [, id, nonce, signature] = match;
     const bytes = Uint8Array.from(signature.match(/../g) ?? [], pair => Number.parseInt(pair, 16));
-    const valid = await crypto.subtle.verify('HMAC', await signingKey(), bytes, encoder.encode(`${action}:${id}:${nonce}`));
-    return valid ? { p_action: action, p_id: id, p_nonce: nonce } : null;
+    const valid = await crypto.subtle.verify('HMAC', await signingKey(), bytes, encoder.encode(`unsubscribe:${id}:${nonce}`));
+    return valid ? { p_action: 'unsubscribe', p_id: id, p_nonce: nonce } : null;
   }
 
   async function rpc<T = unknown>(name: string, payload: object = {}): Promise<T> {
@@ -96,7 +172,7 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
     return response.json();
   }
 
-  async function mail(job: MailJob) {
+  async function legacyMail(job: MailJob) {
     const from = config.from;
     if (job.kind === 'admin') {
       return {
@@ -105,15 +181,12 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
       };
     }
 
-    const unsubscribe = await link('unsubscribe', job.subscriber_id, job.unsubscribe_nonce);
-    const confirmation = job.kind === 'confirm' ? await link('confirm', job.subscriber_id, job.nonce) : null;
-    const title = confirmation ? 'Confirmez votre inscription' : 'Bienvenue chez Agri-tech';
-    const introduction = confirmation
-      ? 'Une demande d’inscription à la newsletter Agri-tech a été reçue pour cette adresse. Le lien expire 24 heures après la demande. Si vous n’êtes pas à l’origine de la demande, vous pouvez ignorer ce message.'
-      : 'Merci pour votre inscription à la newsletter Agri-tech. Retrouvez nos conseils agricoles, nouveaux articles, formations et opportunités.';
-    const target = confirmation || (origin ?? '');
-    const label = confirmation ? 'Confirmer mon inscription' : 'Visiter Agri-tech';
-    const unsubscribeLabel = confirmation ? 'Annuler la demande' : 'Me désinscrire';
+    const unsubscribe = await unsubscribeLink(job.subscriber_id, job.unsubscribe_nonce);
+    const title = 'Bienvenue chez Agri-tech';
+    const introduction = 'Merci pour votre inscription à la newsletter Agri-tech. Retrouvez nos conseils agricoles, nouveaux articles, formations et opportunités.';
+    const target = origin ?? '';
+    const label = 'Visiter Agri-tech';
+    const unsubscribeLabel = 'Me désinscrire';
     return {
       from, to: [job.email], subject: `${title} · Agri-tech`,
       text: `${introduction}\n\n${label} : ${target}\n\n${unsubscribeLabel} : ${unsubscribe}\nVous pouvez aussi écrire à contact@agritech509ht.com.`,
@@ -128,7 +201,18 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
   }
 
   async function send(job: MailJob) {
-    const message = await mail(job);
+    if (job.kind === 'confirm') return { p_result: 'failed', p_provider: null, p_error: 'legacy_opt_in_retired' };
+
+    // Keep the old payload for legacy retries so the existing Resend key still matches.
+    const message = job.template_version !== 2
+      ? await legacyMail(job)
+      : {
+        from: config.from,
+        to: [job.kind === 'admin' ? config.admin : job.email],
+        ...renderNewsletterEmail(job.kind === 'admin'
+          ? { kind: 'admin', email: job.email, source: job.source, timestamp: job.subscribed_at }
+          : { kind: 'welcome', unsubscribe: await unsubscribeLink(job.subscriber_id, job.unsubscribe_nonce) })
+      };
     try {
       const response = await fetcher('https://api.resend.com/emails', {
         method: 'POST',
@@ -201,16 +285,16 @@ export function createNewsletterHandler(config: NewsletterConfig, fetcher = fetc
         if (email.length > 254 || !emailPattern.test(email) || (body.source !== 'article' && body.source !== 'footer')) {
           return json(400, 'invalid');
         }
-        const outcome = await rpc('request_newsletter', { p_email: email, p_source: body.source });
+        if (body.consent !== true) return json(400, 'consent_required');
+        const outcome = await rpc('request_newsletter', { p_email: email, p_source: body.source, p_consent: true });
         if (outcome === 'received') return json(202, 'received');
         if (outcome === 'limited') return json(429, 'limited');
         if (outcome === 'invalid') return json(400, 'invalid');
-      } else if (body?.action === 'confirm' || body?.action === 'unsubscribe') {
-        const payload = await verifyLink(body.action, body.token);
+      } else if (body?.action === 'unsubscribe') {
+        const payload = await verifyLink(body.token);
         if (!payload) return json(400, 'invalid_link');
         const outcome = await rpc('apply_newsletter_link', payload);
-        if (outcome === 'confirmed' && body.action === 'confirm') return json(200, outcome);
-        if (outcome === 'unsubscribed' && body.action === 'unsubscribe') return json(200, outcome);
+        if (outcome === 'unsubscribed') return json(200, outcome);
         if (outcome === 'invalid_link') return json(400, outcome);
       } else {
         return json(400, 'invalid');

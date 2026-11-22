@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { renderNewsletterEmail } from '../supabase/functions/newsletter/index.ts';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -54,7 +55,7 @@ async function fixture(options, preview = false, existingContext) {
       const submission = route.request().postDataJSON();
       submissions.push(submission);
       if (networkFailure) return route.abort();
-      const outcome = { subscribe: 'received', confirm: 'confirmed', unsubscribe: 'unsubscribed' }[submission.action];
+      const outcome = { subscribe: 'received', unsubscribe: 'unsubscribed' }[submission.action];
       return route.fulfill({ status: outcome === 'received' ? 202 : 200, json: { outcome }, headers });
     }
     if (url.origin !== origin) return route.abort();
@@ -158,7 +159,8 @@ try {
   await readTo(page, 0.56);
   await dialog.waitFor();
 
-  const input = dialog.locator('input');
+  const input = dialog.locator('input[type=email]');
+  const consent = dialog.getByRole('checkbox');
   const submit = dialog.locator('button[type=submit]');
   const status = dialog.getByRole('status');
   await submit.click();
@@ -166,26 +168,25 @@ try {
   await input.fill('invalide');
   await submit.click();
   await status.getByText('Veuillez saisir une adresse e-mail valide.').waitFor();
-  desktop.fail(true);
   await input.fill('LECTEUR@EXAMPLE.ORG');
+  await submit.click();
+  await status.getByText('Veuillez accepter de recevoir la newsletter Agri-tech.').waitFor();
+  assert.equal(submissions.length, 0);
+  await consent.check();
+  desktop.fail(true);
   await submit.click();
   await status.getByText('Impossible de traiter votre demande. Veuillez réessayer.').waitFor();
   assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), null);
   desktop.fail(false);
   await submit.click();
-  const receivedMessage = 'Demande reçue. Si une confirmation est nécessaire, vérifiez votre boîte e-mail.';
+  const receivedMessage = 'Merci ! Votre demande d’inscription à la newsletter Agri-tech a bien été reçue.';
   await status.getByText(receivedMessage).waitFor();
-  assert.deepEqual(submissions[1], { action: 'subscribe', email: 'lecteur@example.org', source: 'article' });
+  assert.deepEqual(submissions[1], { action: 'subscribe', email: 'lecteur@example.org', source: 'article', consent: true });
 
-  assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), null);
-  await page.goto(`${origin}/newsletter/#confirm=test-token`);
-  const confirm = page.getByRole('button', { name: 'Confirmer mon inscription' });
-  await confirm.waitFor();
-  assert.equal(submissions.length, 2); // A GET or scanner opening the page performs no action.
-  await confirm.click();
-  await page.getByText('Votre inscription est confirmée.').waitFor();
   assert.equal(await page.evaluate(key => localStorage.getItem(key), subscribed), 'true');
-  assert.deepEqual(submissions[2], { action: 'confirm', token: 'test-token' });
+  await page.goto(`${origin}/newsletter/#confirm=test-token`);
+  await page.getByText(/Ce lien de confirmation a été retiré/).waitFor();
+  assert.equal(submissions.length, 2);
 
   await page.evaluate(([shown, session]) => {
     localStorage.removeItem(shown);
@@ -212,18 +213,19 @@ try {
   await contact.locator('#submitBtn').click();
   await contact.getByText('Votre message a bien été envoyé. Agri-tech vous répondra dès que possible.').waitFor();
   assert.equal(await page.evaluate(() => window.testContactPayload.TYPE_CONTACT), 'Contact');
-  assert.equal(submissions.length, 3);
+  assert.equal(submissions.length, 2);
   await page.locator('#newsletterEmail').fill('lecteur@example.org');
+  await page.locator('#newsletterForm').getByRole('checkbox').check();
   await page.locator('#newsletterSubmit').click();
   await page.locator('#newsletterStatus').getByText(receivedMessage).waitFor();
-  assert.deepEqual(submissions[3], { action: 'subscribe', email: 'lecteur@example.org', source: 'footer' });
+  assert.deepEqual(submissions[2], { action: 'subscribe', email: 'lecteur@example.org', source: 'footer', consent: true });
   await page.goto(`${origin}/newsletter/#unsubscribe=test-token`);
   const unsubscribe = page.getByRole('button', { name: 'Me désinscrire' });
   await unsubscribe.waitFor();
-  assert.equal(submissions.length, 4);
+  assert.equal(submissions.length, 3);
   await unsubscribe.click();
   await page.getByText('Votre désinscription est enregistrée.').waitFor();
-  assert.deepEqual(submissions[4], { action: 'unsubscribe', token: 'test-token' });
+  assert.deepEqual(submissions[3], { action: 'unsubscribe', token: 'test-token' });
 
   const mobile = await fixture({
     viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce'
@@ -268,7 +270,8 @@ try {
     const previewSubmit = preview.dialog.locator('button[type=submit]');
     const submitBounds = await previewSubmit.boundingBox();
     assert.ok(submitBounds.y + submitBounds.height <= bounds.y + bounds.height);
-    await preview.dialog.locator('input').fill('visuel@example.org');
+    await preview.dialog.locator('input[type=email]').fill('visuel@example.org');
+    await preview.dialog.getByRole('checkbox').check();
     await previewSubmit.click();
     await preview.dialog.getByText('Aperçu terminé. Aucune inscription n’a été envoyée.').waitFor();
     assert.deepEqual(preview.submissions, []);
@@ -280,6 +283,28 @@ try {
     await preview.page.reload();
     await preview.dialog.waitFor();
     assert.deepEqual(preview.errors, []);
+  }
+
+  for (const width of [320, 1024]) {
+    const mail = await browser.newPage({ viewport: { width, height: 800 } });
+    await mail.route('https://agritech509ht.com/assets/images/logo-agritech.png', route =>
+      route.fulfill({ path: resolve(root, 'assets/images/logo-agritech.png'), contentType: 'image/png' }));
+    for (const details of [
+      { kind: 'admin', email: 'a'.repeat(64) + '@example.org', source: 'footer', timestamp: '2026-11-22T15:30:00Z' },
+      { kind: 'welcome', unsubscribe: '#apercu-desinscription' }
+    ]) {
+      const { html, text } = renderNewsletterEmail(details);
+      await mail.setContent(html, { waitUntil: 'load' });
+      assert.equal(await mail.locator('img').evaluate(image => image.naturalWidth), 127);
+      assert.equal(await mail.evaluate(() => document.documentElement.scrollWidth), width);
+      assert.ok((await mail.getByRole('heading', { level: 1 }).boundingBox()).width <= 600);
+      assert.match(text, /https:\/\/agritech509ht.com\//);
+      if (details.kind === 'welcome') await mail.getByRole('link', { name: 'Me désinscrire' }).waitFor();
+      if (process.env.NEWSLETTER_SCREENSHOTS) {
+        await mail.screenshot({ path: `${process.env.NEWSLETTER_SCREENSHOTS}/email-${details.kind}-${width}.png`, fullPage: true });
+      }
+    }
+    await mail.close();
   }
 
   const denied = await fixture();

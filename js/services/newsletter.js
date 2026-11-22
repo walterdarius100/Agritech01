@@ -17,6 +17,7 @@ export async function requestNewsletter(payload) {
 
 export function bindNewsletterForm(form, status, source, { preview = false } = {}) {
   const emailInput = form.elements.newsletter_email;
+  const consent = form.elements.newsletter_consent;
   const button = form.querySelector('button[type="submit"]');
   const label = button.textContent;
   let submitting = false;
@@ -40,6 +41,11 @@ export function bindNewsletterForm(form, status, source, { preview = false } = {
     }
 
     emailInput.removeAttribute('aria-invalid');
+    if (!consent.checked) {
+      show('error', 'Veuillez accepter de recevoir la newsletter Agri-tech.');
+      consent.focus();
+      return;
+    }
     if (preview) {
       show('info', 'Aperçu terminé. Aucune inscription n’a été envoyée.');
       return;
@@ -51,17 +57,24 @@ export function bindNewsletterForm(form, status, source, { preview = false } = {
     show('loading', 'Inscription en cours…');
 
     try {
-      const response = await requestNewsletter({ action: 'subscribe', email, source });
+      const response = await requestNewsletter({ action: 'subscribe', email, source, consent: true });
       const { outcome } = await response.json();
       if (response.status === 202 && outcome === 'received') {
-        show('info', 'Demande reçue. Si une confirmation est nécessaire, vérifiez votre boîte e-mail.');
+        show('success', 'Merci ! Votre demande d’inscription à la newsletter Agri-tech a bien été reçue.');
+        try {
+          localStorage.setItem(NEWSLETTER_SUBSCRIBED_KEY, 'true');
+        } catch {
+          // The server remains authoritative, even when browser storage is blocked.
+        }
         if (emailInput.value.trim().toLowerCase() === email) form.reset();
       } else if (response.status === 400 && outcome === 'invalid') {
         show('error', 'Veuillez saisir une adresse e-mail valide.');
+      } else if (response.status === 400 && outcome === 'consent_required') {
+        show('error', 'Veuillez accepter de recevoir la newsletter Agri-tech.');
       } else if (response.status === 429) {
         show('error', 'Trop de tentatives. Veuillez réessayer plus tard.');
       } else {
-        throw new Error('Inscription non confirmée');
+        throw new Error('Demande indisponible');
       }
     } catch {
       show('error', 'Impossible de traiter votre demande. Veuillez réessayer.');

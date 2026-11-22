@@ -96,8 +96,8 @@
         </section>
         <section class="legal-section">
           <h2>Newsletter</h2>
-          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. L’inscription devient active après confirmation de votre adresse. Vous pouvez vous désinscrire avec le lien personnel inclus dans les e-mails ou écrire à <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">contact@agritech509ht.com</a>.</p>
-          <p>Votre navigateur mémorise l’affichage de l’invitation pour la limiter à une fois par session d’onglet et espacer deux affichages d’au moins 7 jours. Il mémorise aussi votre inscription pour éviter de vous solliciter à nouveau. Le service limite le nombre de demandes et d’envois de confirmation pour prévenir les abus.</p>
+          <p>Lorsque vous vous inscrivez à la newsletter, votre adresse e-mail est utilisée pour vous envoyer des conseils, informations sur les formations, opportunités agricoles ou contenus liés aux activités d’Agri-tech. Votre inscription devient active lorsque vous soumettez le formulaire et acceptez de recevoir la newsletter. Nous conservons la date, la source et la version de ce consentement. Vous pouvez vous désinscrire avec le lien personnel inclus dans les e-mails ou écrire à <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">contact@agritech509ht.com</a>.</p>
+          <p>Votre navigateur mémorise l’affichage de l’invitation pour la limiter à une fois par session d’onglet et espacer deux affichages d’au moins 7 jours. Il mémorise aussi votre inscription pour éviter de vous solliciter à nouveau. Le service limite le nombre de demandes d’inscription pour prévenir les abus.</p>
         </section>
         <section class="legal-section">
           <h2>Données liées aux demandes de consultation ou de services</h2>
@@ -198,11 +198,12 @@
         <p>Conseils pratiques, formations et opportunités agricoles adaptés à la réalité haïtienne.</p>
         <form class="newsletter-form" id="newsletterForm" method="post" aria-describedby="newsletterConsent" novalidate>
           <label class="sr-only" for="newsletterEmail">Votre adresse e-mail</label>
+          <label class="newsletter-consent"><input type="checkbox" name="newsletter_consent" required /> J’accepte de recevoir périodiquement par e-mail la newsletter Agri-tech (articles, conseils, formations et opportunités).</label>
           <div class="newsletter-row">
             <input type="email" id="newsletterEmail" maxlength="254" name="newsletter_email" placeholder="Votre adresse e-mail" autocomplete="email" required />
             <button class="btn primary" type="submit" id="newsletterSubmit" disabled>S’inscrire</button>
           </div>
-          <small id="newsletterConsent">En vous inscrivant, vous recevrez la newsletter Agri-tech par e-mail. <a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription</a>.</small>
+          <small id="newsletterConsent"><a href="mailto:contact@agritech509ht.com?subject=D%C3%A9sinscription%20newsletter">Demander la désinscription</a>.</small>
           <noscript>Activez JavaScript pour vous inscrire à la newsletter.</noscript>
           <div class="newsletter-status" id="newsletterStatus" role="status" aria-live="polite" aria-atomic="true"></div>
         </form>

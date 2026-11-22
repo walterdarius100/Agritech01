@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createNewsletterHandler } from '../supabase/functions/newsletter/index.ts';
@@ -17,8 +18,8 @@ const config = {
 
 const providerCalls = [];
 const providerAccepted = new Map();
-const failOnce = new Set(['admin', 'welcome']);
-let loseConfirmationResponse = true;
+const failOnce = new Set();
+let loseWelcomeResponse = false;
 let databaseDown = false;
 let rpcCalls = 0;
 
@@ -28,13 +29,13 @@ async function transport(url, request) {
     const key = request.headers['Idempotency-Key'];
     assert.ok(key.startsWith('newsletter/'));
     assert.equal(request.headers.Authorization, 'Bearer test-resend-key');
-    const kind = payload.subject.startsWith('Nouvelle') ? 'admin' : payload.subject.startsWith('Confirmez') ? 'confirm' : 'welcome';
+    const kind = payload.subject.startsWith('Nouvel') ? 'admin' : 'welcome';
     providerCalls.push({ key, kind, payload });
     if (failOnce.delete(kind)) return new Response(null, { status: 503 });
     if (providerAccepted.has(key)) assert.deepEqual(providerAccepted.get(key), payload);
     providerAccepted.set(key, payload);
-    if (kind === 'confirm' && loseConfirmationResponse) {
-      loseConfirmationResponse = false;
+    if (kind === 'welcome' && loseWelcomeResponse) {
+      loseWelcomeResponse = false;
       throw new Error('Simulate losing the HTTP response after provider acceptance');
     }
     return Response.json({ id: key });
@@ -63,7 +64,7 @@ async function submit(payload, headers = {}) {
 }
 
 function subscribe(email, source = 'footer') {
-  return submit({ action: 'subscribe', email, source });
+  return submit({ action: 'subscribe', email, source, consent: true });
 }
 
 function processMail(secret = config.workerSecret) {
@@ -74,11 +75,6 @@ function processMail(secret = config.workerSecret) {
 
 async function select(statement) {
   return (await db.query(statement)).rows;
-}
-
-async function retryQueued() {
-  await db.exec("update public.newsletter_mail set next_at = now() where status = 'queued';");
-  assert.equal((await processMail()).status, 200);
 }
 
 function tokenFrom(kind, action) {
@@ -92,6 +88,15 @@ try {
   for (const file of ['202611210001_newsletter_subscribers.sql', '202611220001_newsletter_double_opt_in.sql']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), 'utf8'));
   }
+  await db.exec(`
+    select public.request_newsletter('ancienne@example.org', 'article');
+    insert into public.newsletter_subscribers (email, source, status) values ('ancien-actif@example.org', 'article', 'active');
+    insert into public.newsletter_mail (subscriber_id, kind)
+      select id, 'welcome' from public.newsletter_subscribers where email = 'ancien-actif@example.org';
+    update public.newsletter_mail set status = 'accepted' where kind = 'admin';
+  `);
+  const [legacy] = await select("select id, confirmation_nonce, unsubscribe_nonce from public.newsletter_subscribers where email = 'ancienne@example.org'");
+  await db.exec(await readFile(new URL('../supabase/migrations/202611220002_newsletter_direct_opt_in.sql', import.meta.url), 'utf8'));
   await db.exec('set role service_role;');
 
   const cors = await handler(new Request(endpoint, { method: 'OPTIONS', headers: { Origin: origin } }));
@@ -104,6 +109,25 @@ try {
   assert.deepEqual(await subscribe('invalid'), [400, 'invalid']);
   assert.deepEqual(await subscribe('valid@example.org', 'contact'), [400, 'invalid']);
   assert.deepEqual(await subscribe('a'.repeat(2200) + '@example.org'), [400, 'invalid']);
+  assert.deepEqual(await submit({ action: 'subscribe', source: 'footer', email: 'valid@example.org' }), [400, 'consent_required']);
+
+  function legacyToken(action, nonce) {
+    const signature = createHmac('sha256', config.linkSecret).update(`${action}:${legacy.id}:${nonce}`).digest('hex');
+    return `${legacy.id}.${nonce}.${signature}`;
+  }
+  assert.deepEqual(await select("select status, consented_at, confirmation_nonce from public.newsletter_subscribers where email = 'ancienne@example.org'"),
+    [{ status: 'pending', consented_at: null, confirmation_nonce: null }]);
+  assert.deepEqual(await select("select kind, status from public.newsletter_mail where subscriber_id = (select id from public.newsletter_subscribers where email = 'ancienne@example.org') order by kind"),
+    [{ kind: 'admin', status: 'accepted' }, { kind: 'confirm', status: 'cancelled' }]);
+  assert.deepEqual(await submit({ action: 'confirm', token: legacyToken('confirm', legacy.confirmation_nonce) }), [400, 'invalid']);
+  assert.equal((await processMail()).status, 200);
+  assert.equal(providerCalls.length, 1);
+  assert.equal(providerCalls[0].payload.subject, 'Bienvenue chez Agri-tech · Agri-tech');
+  assert.equal(providerCalls[0].payload.to[0], 'ancien-actif@example.org');
+  assert.deepEqual(await subscribe('ancienne@example.org'), [202, 'received']);
+  assert.deepEqual(await select("select status, source, consent_source, consent_version from public.newsletter_subscribers where email = 'ancienne@example.org'"),
+    [{ status: 'active', source: 'article', consent_source: 'footer', consent_version: 'newsletter-direct-v1' }]);
+  assert.deepEqual(await submit({ action: 'unsubscribe', token: legacyToken('unsubscribe', legacy.unsubscribe_nonce) }), [200, 'unsubscribed']);
 
   databaseDown = true;
   assert.deepEqual(await subscribe('valid@example.org'), [503, 'unavailable']);
@@ -111,77 +135,62 @@ try {
   assert.deepEqual(await Promise.all([
     subscribe(' WALTer@Example.org ', 'article'), subscribe('walter@example.org')
   ]), [[202, 'received'], [202, 'received']]);
-  const [subscriber] = await select('select email, source, status from public.newsletter_subscribers');
-  assert.equal(subscriber.email, 'walter@example.org');
-  assert.ok(['article', 'footer'].includes(subscriber.source));
-  assert.equal(subscriber.status, 'pending');
-  assert.equal((await select('select id from public.newsletter_subscribers')).length, 1);
-  assert.equal((await select('select kind from public.newsletter_mail')).length, 2);
+  const subscribers = await select("select email, source, status, consent_version, consented_at from public.newsletter_subscribers where email = 'walter@example.org'");
+  assert.equal(subscribers.length, 1);
+  assert.ok(['article', 'footer'].includes(subscribers[0].source));
+  assert.equal(subscribers[0].status, 'active');
+  assert.equal(subscribers[0].consent_version, 'newsletter-direct-v1');
+  assert.ok(subscribers[0].consented_at);
+  const messages = "from public.newsletter_mail where subscriber_id = (select id from public.newsletter_subscribers where email = 'walter@example.org')";
+  assert.deepEqual(await select(`select kind, status ${messages} order by kind`),
+    [{ kind: 'admin', status: 'queued' }, { kind: 'welcome', status: 'queued' }]);
 
+  // Keep the transition fixture separate while exercising the new signup retries.
+  await db.exec("update public.newsletter_mail set next_at = now() + interval '1 day' where subscriber_id = (select id from public.newsletter_subscribers where email = 'ancienne@example.org') and template_version = 2;");
+  providerCalls.length = 0;
+  failOnce.add('admin');
+  loseWelcomeResponse = true;
   assert.equal((await processMail()).status, 200);
   assert.equal(providerCalls.length, 2);
-  assert.deepEqual(await select('select distinct status from public.newsletter_mail'), [{ status: 'queued' }]);
-  assert.equal(providerAccepted.size, 1);
-  const token = tokenFrom('confirm', 'confirm');
-  const unsubscribe = tokenFrom('confirm', 'unsubscribe');
-  const wrongSignature = token.slice(0, -1) + (token.endsWith('0') ? '1' : '0');
-  assert.deepEqual(await submit({ action: 'confirm', token: wrongSignature }), [400, 'invalid_link']);
-  assert.deepEqual(await submit({ action: 'unsubscribe', token }), [400, 'invalid_link']);
-  await retryQueued();
-  assert.equal(providerAccepted.size, 2);
-  assert.equal(providerCalls.find(call => call.kind === 'admin').payload.to[0], config.admin);
-  assert.match(providerCalls.find(call => call.kind === 'admin').payload.text, /en attente de confirmation/);
-  assert.equal(providerCalls.filter(call => call.kind === 'confirm')[0].key, providerCalls.filter(call => call.kind === 'confirm')[1].key);
-  assert.equal((await select("select id from public.newsletter_mail where kind = 'welcome'")).length, 0);
-
-  const confirms = await Promise.all([
-    submit({ action: 'confirm', token }), submit({ action: 'confirm', token })
-  ]);
-  assert.deepEqual(confirms.map(result => result[0]).sort(), [200, 400]);
-  assert.deepEqual(await select('select status from public.newsletter_subscribers'), [{ status: 'active' }]);
-  assert.equal((await select("select id from public.newsletter_mail where kind = 'welcome'")).length, 1);
-
+  assert.deepEqual(await select(`select distinct status ${messages}`), [{ status: 'queued' }]);
+  const unsubscribe = tokenFrom('welcome', 'unsubscribe');
+  const wrongSignature = unsubscribe.slice(0, -1) + (unsubscribe.endsWith('0') ? '1' : '0');
+  assert.deepEqual(await submit({ action: 'unsubscribe', token: wrongSignature }), [400, 'invalid_link']);
+  assert.equal((await select("select status from public.newsletter_subscribers where email = 'walter@example.org'"))[0].status, 'active');
+  // Force only this subscriber’s tasks due, leaving the transition fixture untouched.
+  await db.exec(`update public.newsletter_mail set next_at = now() where status = 'queued' and subscriber_id = (select id from public.newsletter_subscribers where email = 'walter@example.org');`);
   assert.equal((await processMail()).status, 200);
-  assert.deepEqual(await select("select status, last_error from public.newsletter_mail where kind = 'welcome'"),
-    [{ status: 'queued', last_error: 'provider_503' }]);
-  assert.deepEqual(await select('select status from public.newsletter_subscribers'), [{ status: 'active' }]);
-  await retryQueued();
-  assert.equal(providerAccepted.size, 3);
-  assert.equal(tokenFrom('welcome', 'unsubscribe'), unsubscribe);
-  assert.equal((await select("select id from public.newsletter_mail where status = 'accepted' and provider_id is not null")).length, 3);
+  assert.equal(providerCalls.filter(call => call.kind === 'welcome').length, 2);
+  assert.equal(providerCalls.filter(call => call.kind === 'welcome')[0].key, providerCalls.filter(call => call.kind === 'welcome')[1].key);
+  assert.equal(providerCalls.filter(call => call.kind === 'admin')[0].key, providerCalls.filter(call => call.kind === 'admin')[1].key);
+  const admin = providerCalls.find(call => call.kind === 'admin').payload;
+  assert.deepEqual(admin.to, [config.admin]);
+  assert.match(admin.text, /enregistrée dans Supabase/);
+  assert.match(admin.text, /Statut à l’inscription : Actif/);
+  const welcome = providerCalls.find(call => call.kind === 'welcome').payload;
+  assert.equal(welcome.subject, 'Bienvenue dans la communauté Agri-tech !');
+  assert.match(welcome.html, /logo-agritech\.png/);
+  assert.doesNotMatch(welcome.html, /Confirmer mon inscription|#confirm=/);
+  assert.equal((await select(`select id ${messages} and status = 'accepted' and provider_id is not null`)).length, 2);
+  assert.equal(providerAccepted.size, 3); // Two new messages plus the legacy welcome.
 
   for (let i = 0; i < 2; i++) {
     assert.deepEqual(await submit({ action: 'unsubscribe', token: unsubscribe }), [200, 'unsubscribed']);
   }
   assert.deepEqual(await subscribe('walter@example.org'), [202, 'received']);
-  assert.deepEqual(await select('select status from public.newsletter_subscribers'), [{ status: 'unsubscribed' }]);
-  assert.equal((await select('select id from public.newsletter_mail')).length, 3);
+  assert.deepEqual(await select("select status from public.newsletter_subscribers where email = 'walter@example.org'"), [{ status: 'unsubscribed' }]);
+  assert.equal((await select(`select id ${messages}`)).length, 2);
 
-  assert.deepEqual(await subscribe('autre@example.org', 'footer'), [202, 'received']);
-  assert.equal((await processMail()).status, 200);
-  const another = providerCalls.find(call => call.kind === 'confirm' && call.payload.to[0] === 'autre@example.org');
-  const expired = another.payload.text.match(/#confirm=([^\s]+)/)[1];
-  await db.exec("update public.newsletter_subscribers set confirmation_expires_at = now() - interval '1 minute' where email = 'autre@example.org';");
-  assert.deepEqual(await submit({ action: 'confirm', token: expired }), [400, 'invalid_link']);
   assert.deepEqual(await subscribe('autre@example.org'), [202, 'received']);
-  assert.equal((await select("select id from public.newsletter_mail where kind = 'confirm'")).length, 3);
-  await db.exec("update public.newsletter_mail set first_attempt_at = now() - interval '21 hours' where status = 'queued';");
+  await db.exec("update public.newsletter_mail set first_attempt_at = now() - interval '21 hours' where status = 'queued' and next_at <= now();");
   const calls = providerCalls.length;
   assert.equal((await processMail()).status, 200);
   assert.equal(providerCalls.length, calls);
-  assert.deepEqual(await select("select last_error from public.newsletter_mail where status = 'failed'"),
-    [{ last_error: 'retry_window_or_attempt_limit' }]);
-
-  assert.deepEqual(await subscribe('annulation@example.org'), [202, 'received']);
-  assert.equal((await processMail()).status, 200);
-  const cancelMail = providerCalls.find(call => call.kind === 'confirm' && call.payload.to[0] === 'annulation@example.org');
-  const cancelToken = cancelMail.payload.text.match(/#unsubscribe=([^\s]+)/)[1];
-  const unusedConfirmation = cancelMail.payload.text.match(/#confirm=([^\s]+)/)[1];
-  assert.deepEqual(await submit({ action: 'unsubscribe', token: cancelToken }), [200, 'unsubscribed']);
-  assert.deepEqual(await submit({ action: 'confirm', token: unusedConfirmation }), [400, 'invalid_link']);
-  assert.equal((await select("select id from public.newsletter_subscribers where status = 'active'")).length, 0);
-
+  assert.equal((await select("select id from public.newsletter_mail where last_error = 'retry_window_or_attempt_limit'")).length, 2);
+  await db.exec("update public.newsletter_request_limits set attempts = 60 where bucket = 'daily';");
+  assert.deepEqual(await subscribe('nouveau@example.org'), [429, 'limited']);
   await db.exec("update public.newsletter_request_limits set attempts = 30 where bucket = 'global';");
+  await db.exec("update public.newsletter_request_limits set attempts = 5 where bucket = 'daily';");
   assert.deepEqual(await subscribe('nouveau@example.org'), [429, 'limited']);
   for (const role of ['anon', 'authenticated']) {
     await db.exec(`reset role; set role ${role};`);
@@ -190,7 +199,7 @@ try {
       'select provider_id from public.newsletter_mail',
       'select bucket from public.newsletter_request_limits',
       "update public.newsletter_subscribers set status = 'active'",
-      "select public.request_newsletter('test@example.org','footer')",
+      "select public.request_newsletter('test@example.org','footer',true)",
       "select public.apply_newsletter_link('confirm', gen_random_uuid(), gen_random_uuid())",
       'select public.claim_newsletter_mail()'
     ]) await assert.rejects(db.query(sql), /permission denied/);
@@ -200,7 +209,7 @@ try {
     process.env.VERCEL_ENV = environment;
     for (const method of ['GET', 'POST']) {
       let status;
-      preview({ method, url: '/api/newsletter?previewNewsletter=1' }, {
+      await preview({ method, url: '/api/newsletter?previewNewsletter=1' }, {
         setHeader() {},
         status(value) { status = value; return this; },
         json() {}
@@ -208,8 +217,23 @@ try {
       assert.equal(status, method === 'GET' && environment !== 'production' ? 200 : 404);
     }
   }
+  for (const env of ['production', 'preview']) {
+    process.env.VERCEL_ENV = env;
+    for (const kind of ['welcome', 'admin']) {
+      let status;
+      let html;
+      await preview({ method: 'GET', url: `/api/newsletter?previewMail=${kind}` }, {
+        setHeader() {},
+        status(value) { status = value; return this; },
+        json() {},
+        send(value) { html = value; }
+      });
+      assert.equal(status, env === 'preview' ? 200 : 404);
+      if (env === 'preview') assert.match(html, /logo-agritech\.png/);
+    }
+  }
   delete process.env.VERCEL_ENV;
-  console.log('Newsletter : migrations PostgreSQL, Edge, confidentialité, double opt-in, désinscription et reprises vérifiés.');
+  console.log('Newsletter : migrations PostgreSQL, inscription directe, consentement, transition, désinscription et reprises vérifiés.');
 } finally {
   await db.close();
 }

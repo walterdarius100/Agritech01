@@ -1,3 +1,21 @@
+label.newsletter-consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  font-size: .8rem;
+  line-height: 1.45;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.newsletter-consent input {
+  width: 17px;
+  height: 17px;
+  margin: 1px 0 0;
+  accent-color: #176b48;
+}
+
 .footer-newsletter small {
   line-height: 1.5;
 }
@@ -148,7 +166,7 @@ html:has(.newsletter-dialog[open]) {
   font-weight: 750;
 }
 
-.newsletter-dialog input {
+.newsletter-dialog input[type="email"] {
   width: 100%;
   min-width: 0;
   min-height: 48px;
@@ -161,7 +179,7 @@ html:has(.newsletter-dialog[open]) {
   font-size: 1rem;
 }
 
-.newsletter-dialog input[aria-invalid="true"] {
+.newsletter-dialog input[type="email"][aria-invalid="true"] {
   border-color: #8a1f1f;
 }
 
