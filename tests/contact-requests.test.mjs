@@ -34,8 +34,16 @@ test('une réponse perdue survit au rechargement de la page et une demande confi
 function pipeline() {
   const requests = [];
   const notes = new Map();
-  const props = new Map([['CONTACT_PIPELINE_SECRET', 'fixture'], ['PIPELINE_SPREADSHEET_ID', 'copy']]);
-  const lock = { held: false, tryLock() { assert.equal(this.held, false); this.held = true; return true; }, releaseLock() { this.held = false; } };
+  const props = new Map([['CONTACT_PIPELINE_SECRET', 'fixture'], ['PIPELINE_SPREADSHEET_ID', 'copy'], ['CONTACT_PIPELINE_SHARED_WRITER', 'verified']]);
+  const lock = {
+    held: false,
+    tryLock() {
+      if (this.held) return false;
+      this.held = true;
+      return true;
+    },
+    releaseLock() { this.held = false; }
+  };
   const rows = Array.from({ length: 6 }, () => Array(32).fill(''));
   const formulas = Array.from({ length: 6 }, () => Array(32).fill(''));
   const sheet = {
@@ -44,7 +52,7 @@ function pipeline() {
     getLastColumn: () => 32,
     getMaxRows: () => rows.length,
     getLastRow: () => 5,
-    getParent: () => ({ getSpreadsheetTimeZone: () => 'America/Port-au-Prince' }),
+    getParent: () => ({ getId: () => 'copy', getSpreadsheetTimeZone: () => 'America/Port-au-Prince' }),
     getSheetId: () => 11,
     getRange(row, column, count, width) {
       if (row === 1) return { getDisplayValues: () => [rows[0]] };
@@ -71,7 +79,7 @@ function pipeline() {
       setProperty: (key, value) => props.set(key, value)
     }) },
     LockService: { getScriptLock: () => lock },
-    SpreadsheetApp: { openById: id => {
+    SpreadsheetApp: { flush() { assert.equal(lock.held, true); }, openById: id => {
       assert.equal(id, 'copy');
       assert.equal(lock.held, true);
       return { getSheets: () => [sheet] };
@@ -89,14 +97,16 @@ function pipeline() {
     } } }
   });
   vm.runInContext(readFileSync(new URL('../apps-script/ContactPipeline.gs', import.meta.url), 'utf8'), ctx);
-  rows[0] = vm.runInContext('PIPELINE_HEADERS.slice()', ctx);
+  rows[0] = vm.runInContext('AGRI_PIPELINE_HEADERS.slice()', ctx);
   rows[1][0] = 'AGR-0012';
   rows[1][4] = '509-12345678';
   rows[1][6] = serviceNeeds[0];
   rows[1][12] = 'Dossier en cours';
   for (let index = 2; index <= 4; index++) {
-    rows[index][26] = 0;
-    formulas[index][26] = '=IF(A1="",0,1)';
+    for (const column of [21, 22, 23, 26, 27]) {
+      rows[index][column] = 0;
+      formulas[index][column] = '=IF(A1="",0,1)';
+    }
   }
   const contact = {
     id: crypto.randomUUID(), name: '=1+2', email: 'marie@example.test', phone: '+50912345678',
@@ -106,9 +116,21 @@ function pipeline() {
     const payload = JSON.stringify(data);
     const timestamp = String(Math.floor(Date.now() / 1000) - age);
     const signature = createHmac('sha256', valid ? 'fixture' : 'other').update(`v1\n${timestamp}\n${payload}`).digest('hex');
-    return ctx.doPost({ postData: { contents: JSON.stringify({ payload, timestamp, signature }) } });
+    return ctx.handleAgriContactPost_({ postData: { contents: JSON.stringify({ payload, timestamp, signature }) } });
   };
-  return { invoke, rows, formulas, requests, contact, loseAck: value => { networkFailure = value; } };
+  function invokeGoogleForm(duringWrite) {
+    return ctx.withAgriPipelineLock_(() => {
+      const row = Array(31).fill('');
+      row[0] = ctx.nextAgriPipelineFormId_(sheet);
+      if (duringWrite) duringWrite();
+      row[2] = 'Consultation Google Form';
+      row[12] = 'Qualification historique';
+      row[27] = 'Alerte héritée';
+      ctx.writeAgriPipelineFormRow_(sheet, row);
+      return row[0];
+    });
+  }
+  return { invoke, invokeGoogleForm, props, rows, formulas, requests, contact, loseAck: value => { networkFailure = value; } };
 }
 
 test('Apps Script refuse signatures invalides et anciennes, sans accéder au classeur', () => {
@@ -140,10 +162,31 @@ test('Apps Script conserve les AGR et formules, distingue doublon commercial et 
 
 test('Apps Script refuse de déplacer des colonnes ou de remplacer une formule cible', () => {
   const p = pipeline();
-  p.formulas[2][27] = '=IF(A3="","",1)';
+  p.formulas[2][30] = '=IF(A3="","",1)';
   assert.equal(p.invoke().code, 'layout');
-  p.formulas[2][27] = '';
+  p.formulas[2][30] = '';
   p.rows[0][30] = 'Autre colonne';
   assert.equal(p.invoke().code, 'layout');
   assert.equal(p.requests.length, 0);
+});
+
+test('site et Google Form réservent des AGR distincts sous le même verrou et préservent V, W, X, AA, AB', () => {
+  const p = pipeline();
+  p.props.delete('CONTACT_PIPELINE_SHARED_WRITER');
+  assert.equal(p.invoke().code, 'writer_not_ready');
+  assert.equal(p.requests.length, 0);
+  assert.equal(p.invokeGoogleForm(), 'AGR-0013');
+  p.props.set('CONTACT_PIPELINE_SHARED_WRITER', 'verified');
+  assert.equal(p.invoke().dossierId, 'AGR-0014');
+  assert.equal(p.invoke().dossierId, 'AGR-0014');
+  assert.equal(p.invokeGoogleForm(() => {
+    const concurrentSite = { ...p.contact, id: crypto.randomUUID() };
+    assert.equal(p.invoke(concurrentSite).code, 'busy');
+  }), 'AGR-0015');
+  assert.equal(p.rows[2][12], 'Qualification historique');
+  assert.equal(p.rows[2][31], '');
+  assert.equal(p.rows[3][31], p.contact.id);
+  assert.equal(p.requests.length, 3);
+  assert.ok(p.requests.every(batch => batch.every(({ updateCells }) =>
+    ![21, 22, 23, 26, 27].includes(updateCells.start.columnIndex))));
 });

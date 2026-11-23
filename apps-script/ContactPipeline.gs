@@ -1,8 +1,8 @@
 // Enable the Advanced Google Sheets service (identifier "Sheets", version v4).
-const PIPELINE_TAB = 'Pipeline clients';
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const DOSSIER_ID = /^AGR-\d{4,}$/;
-const PIPELINE_HEADERS = [
+const AGRI_PIPELINE_TAB = 'Pipeline clients';
+const AGRI_UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const AGRI_DOSSIER_ID = /^AGR-\d{4,}$/;
+const AGRI_PIPELINE_HEADERS = [
   'ID dossier', 'Date 1er contact', 'Nom client / Organisation', 'Contact principal',
   'Téléphone', 'Email', 'Type de projet', 'Localisation', 'Source', 'Canal principal',
   'Niveau intérêt', 'Priorité', 'Statut', 'Prochaine action', 'Responsable',
@@ -11,9 +11,9 @@ const PIPELINE_HEADERS = [
   'Date clôture prévue', 'Décision attendue', 'Dernière interaction', 'Jours sans interaction',
   'Alerte suivi', 'Issue', 'Date prochaine action', 'Notes', 'ID demande Supabase'
 ];
-const UUID_COLUMN = PIPELINE_HEADERS.length - 1;
+const AGRI_UUID_COLUMN = AGRI_PIPELINE_HEADERS.length - 1;
 
-function doPost(e) {
+function handleAgriContactPost_(e) {
   const respond = result => ContentService.createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
   try {
@@ -22,27 +22,27 @@ function doPost(e) {
     const envelope = JSON.parse(body);
     const props = PropertiesService.getScriptProperties();
     const secret = props.getProperty('CONTACT_PIPELINE_SECRET');
-    if (!verifyContactSignature_(envelope, secret, Date.now())) {
+    if (!agriVerifyContactSignature_(envelope, secret, Date.now())) {
       return respond({ status: 'error', code: 'unauthorized' });
     }
 
     const contact = JSON.parse(envelope.payload);
-    if (!validContact_(contact)) return respond({ status: 'error', code: 'invalid' });
+    if (!agriValidContact_(contact)) return respond({ status: 'error', code: 'invalid' });
 
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(10000)) return respond({ status: 'error', code: 'busy' });
-    try {
-      return respond(syncContact_(props.getProperty('PIPELINE_SPREADSHEET_ID'), contact, props));
-    } finally {
-      lock.releaseLock();
+    if (props.getProperty('CONTACT_PIPELINE_SHARED_WRITER') !== 'verified') {
+      return respond({ status: 'error', code: 'writer_not_ready' });
     }
+    return respond(withAgriPipelineLock_(
+      () => agriSyncContact_(props.getProperty('PIPELINE_SPREADSHEET_ID'), contact, props),
+      () => ({ status: 'error', code: 'busy' })
+    ));
   } catch (error) {
     // The provider exception may contain submitted values. Return only fixed codes.
     return respond({ status: 'error', code: 'unconfirmed' });
   }
 }
 
-function verifyContactSignature_(envelope, secret, now) {
+function agriVerifyContactSignature_(envelope, secret, now) {
   if (!secret || !envelope || typeof envelope.timestamp !== 'string' ||
       !/^\d{10}$/.test(envelope.timestamp) || typeof envelope.payload !== 'string' ||
       typeof envelope.signature !== 'string' || !/^[a-f0-9]{64}$/.test(envelope.signature) ||
@@ -57,68 +57,51 @@ function verifyContactSignature_(envelope, secret, now) {
   return difference === 0;
 }
 
-function validContact_(contact) {
-  return contact && typeof contact.id === 'string' && UUID_V4.test(contact.id) &&
+function agriValidContact_(contact) {
+  return contact && typeof contact.id === 'string' && AGRI_UUID_V4.test(contact.id) &&
     ['name', 'email', 'phone', 'need', 'message', 'source', 'received_at'].every(key => typeof contact[key] === 'string') &&
     contact.name.length <= 120 && contact.email.length <= 254 && contact.phone.length <= 40 &&
     contact.need.length <= 200 && contact.message.length <= 1200 && contact.source === 'Site Agri-Tech' &&
     Number.isFinite(Date.parse(contact.received_at));
 }
 
-function pipelineSheet_(spreadsheetId) {
+function agriPipelineSheet_(spreadsheetId) {
   if (!spreadsheetId) return null;
   const ss = SpreadsheetApp.openById(spreadsheetId);
-  const sheet = ss.getSheets().find(candidate => candidate.getName().trim() === PIPELINE_TAB);
-  if (!sheet || sheet.getMaxColumns() < PIPELINE_HEADERS.length) return null;
-  const header = sheet.getRange(1, 1, 1, PIPELINE_HEADERS.length).getDisplayValues()[0];
-  return header.every((value, index) => value.trim() === PIPELINE_HEADERS[index]) ? sheet : null;
+  const sheet = ss.getSheets().find(candidate => candidate.getName().trim() === AGRI_PIPELINE_TAB);
+  if (!sheet || sheet.getMaxColumns() < AGRI_PIPELINE_HEADERS.length) return null;
+  const header = sheet.getRange(1, 1, 1, AGRI_PIPELINE_HEADERS.length).getDisplayValues()[0];
+  return header.every((value, index) => value.trim() === AGRI_PIPELINE_HEADERS[index]) ? sheet : null;
 }
 
-function syncContact_(spreadsheetId, contact, props) {
-  const sheet = pipelineSheet_(spreadsheetId);
+function agriSyncContact_(spreadsheetId, contact, props) {
+  const sheet = agriPipelineSheet_(spreadsheetId);
   if (!sheet) return { status: 'error', code: 'layout' };
 
-  const lastRow = sheet.getLastRow();
-  const width = Math.max(PIPELINE_HEADERS.length, sheet.getLastColumn());
-  // Include one blank row after the used range if the reviewed grid already contains it.
-  const scanEnd = Math.min(sheet.getMaxRows(), lastRow + 1);
-  if (scanEnd < 2) return { status: 'error', code: 'layout' };
-  const range = sheet.getRange(2, 1, scanEnd - 1, width);
-  const rows = range.getValues();
-  const formulas = range.getFormulas();
+  const { rows, formulas, nextIndex } = readAgriPipelineRows_(sheet);
 
-  const matches = rows.flatMap((row, index) => row[UUID_COLUMN] === contact.id ? [index] : []);
+  const matches = rows.flatMap((row, index) => row[AGRI_UUID_COLUMN] === contact.id ? [index] : []);
   if (matches.length) {
     const index = matches[0];
     const id = String(rows[index][0]).trim();
-    if (matches.length !== 1 || !DOSSIER_ID.test(id) || formulas[index][0] || formulas[index][UUID_COLUMN]) {
+    if (matches.length !== 1 || !AGRI_DOSSIER_ID.test(id) || formulas[index][0] || formulas[index][AGRI_UUID_COLUMN]) {
       return { status: 'error', code: 'layout' };
     }
-    const note = sheet.getRange(index + 2, UUID_COLUMN + 1).getNote();
-    return synced_(contact.id, id, DOSSIER_ID.test(note) ? note : '');
+    const note = sheet.getRange(index + 2, AGRI_UUID_COLUMN + 1).getNote();
+    return agriSynced_(contact.id, id, AGRI_DOSSIER_ID.test(note) ? note : '');
   }
 
-  const sequenceProperty = 'CONTACT_SEQUENCE_' + spreadsheetId;
-  let max = Number(props.getProperty(sequenceProperty) || 0);
-  let lastOccupied = -1;
   let possibleDuplicate = '';
-  rows.forEach((row, index) => {
+  rows.forEach(row => {
     const id = String(row[0]).trim();
-    if (row.some((value, column) => value !== '' && !formulas[index][column]) || id || row[UUID_COLUMN]) {
-      lastOccupied = index;
-    }
-    if (!DOSSIER_ID.test(id)) return;
-    max = Math.max(max, Number(id.slice(4)));
-    if (!possibleDuplicate && normalizeText_(row[6]) === normalizeText_(contact.need) &&
-        ((normalizePhone_(row[4]) && normalizePhone_(row[4]) === normalizePhone_(contact.phone)) ||
-        (normalizeText_(row[5]) && normalizeText_(row[5]) === normalizeText_(contact.email)))) {
+    if (!AGRI_DOSSIER_ID.test(id)) return;
+    if (!possibleDuplicate && agriNormalizeText_(row[6]) === agriNormalizeText_(contact.need) &&
+        ((agriNormalizePhone_(row[4]) && agriNormalizePhone_(row[4]) === agriNormalizePhone_(contact.phone)) ||
+        (agriNormalizeText_(row[5]) && agriNormalizeText_(row[5]) === agriNormalizeText_(contact.email)))) {
       possibleDuplicate = id;
     }
   });
-  if (!Number.isSafeInteger(max + 1)) return { status: 'error', code: 'layout' };
-
-  const id = 'AGR-' + String(max + 1).padStart(4, '0');
-  const date = sheetDate_(contact.received_at, sheet.getParent().getSpreadsheetTimeZone());
+  const date = agriSheetDate_(contact.received_at, sheet.getParent().getSpreadsheetTimeZone());
   const notes = [
     'Origine : formulaire du site web',
     'Message : ' + (contact.message || 'Aucun (formation)'),
@@ -127,48 +110,149 @@ function syncContact_(spreadsheetId, contact, props) {
   ].filter(Boolean).join('\n');
   // Only supplied fields are updated. A:AE blanks, formulas and validation stay in place.
   const cells = {
-    0: id, 1: date, 2: contact.name, 3: contact.name, 4: contact.phone, 5: contact.email,
+    1: date, 2: contact.name, 3: contact.name, 4: contact.phone, 5: contact.email,
     6: contact.need, 8: contact.source, 9: 'WhatsApp', 10: 'Tiède', 11: 'Moyenne',
     12: 'Nouveau prospect', 13: 'Appel de qualification', 14: 'À assigner',
     17: 'Non', 18: 'À qualifier après réunion', 24: 'Qualifier le besoin du prospect',
-    25: date, 27: 'À qualifier', 28: 'En cours', 30: notes, [UUID_COLUMN]: contact.id
+    25: date, 28: 'En cours', 30: notes, [AGRI_UUID_COLUMN]: contact.id
   };
-  const columns = Object.keys(cells).map(Number);
-  const index = lastOccupied + 1;
-  if (index >= rows.length || columns.some(column => rows[index][column] !== '' || formulas[index][column])) {
+  cells[0] = '';
+  if (!agriPipelineTargetIsFree_(rows, formulas, nextIndex, cells)) {
     return { status: 'error', code: 'layout' };
   }
+  const id = reserveAgriPipelineId_(spreadsheetId, props, rows.map(row => row[0]));
+  cells[0] = id;
+  writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, possibleDuplicate);
+  return agriSynced_(contact.id, id, possibleDuplicate);
+}
 
-  // Typed stringValue is always literal. The Sheets batch commits all cells or none.
-  const requests = columns.map(column => {
+function withAgriPipelineLock_(work, onBusy, waitMs = 10000) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(waitMs)) {
+    if (onBusy) return onBusy();
+    throw new Error('Pipeline occupé. Conserver la réponse source pour rapprochement.');
+  }
+  try {
+    return work();
+  } finally {
+    try {
+      SpreadsheetApp.flush();
+    } finally {
+      lock.releaseLock();
+    }
+  }
+}
+
+const AGRI_PIPELINE_FORMULA_COLUMNS = [21, 22, 23, 26, 27];
+
+function readAgriPipelineRows_(sheet) {
+  const lastRow = sheet.getLastRow();
+  const width = Math.max(AGRI_PIPELINE_HEADERS.length, sheet.getLastColumn());
+  // Include one blank row after the used range if the reviewed grid already contains it.
+  const scanEnd = Math.min(sheet.getMaxRows(), lastRow + 1);
+  if (scanEnd < 2) throw new Error('Grille du pipeline insuffisante.');
+  const range = sheet.getRange(2, 1, scanEnd - 1, width);
+  const rows = range.getValues();
+  const formulas = range.getFormulas();
+
+  let nextIndex = 0;
+  rows.forEach((row, index) => {
+    const occupied = row.some((value, column) => {
+      if (column === 0 || column === AGRI_UUID_COLUMN) return value !== '' || Boolean(formulas[index][column]);
+      return value !== '' && !formulas[index][column];
+    });
+    if (occupied) nextIndex = index + 1;
+  });
+  return { rows, formulas, nextIndex };
+}
+
+function reserveAgriPipelineId_(spreadsheetId, props, ids) {
+  const key = 'CONTACT_SEQUENCE_' + spreadsheetId;
+  let max = Number(props.getProperty(key) || 0);
+  if (!Number.isSafeInteger(max) || max < 0) throw new Error('Séquence AGR invalide.');
+  const used = new Set();
+  ids.forEach(value => {
+    const id = String(value).trim();
+    if (!AGRI_DOSSIER_ID.test(id)) return;
+    const number = Number(id.slice(4));
+    if (used.has(number)) throw new Error('Numérotation AGR existante ambiguë.');
+    used.add(number);
+    max = Math.max(max, number);
+  });
+  if (!Number.isSafeInteger(max + 1)) throw new Error('Séquence AGR épuisée.');
+  props.setProperty(key, String(max + 1));
+  return 'AGR-' + String(max + 1).padStart(4, '0');
+}
+
+// Call once inside the Google Form handler wrapped by withAgriPipelineLock_.
+function nextAgriPipelineFormId_(sheet) {
+  const ss = sheet.getParent();
+  const ids = sheet.getLastRow() < 2 ? [] : sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat();
+  return reserveAgriPipelineId_(ss.getId(), PropertiesService.getScriptProperties(), ids);
+}
+
+// Replace only the final rectangular row write. Keep the Form's qualification/mapping.
+function writeAgriPipelineFormRow_(sheet, row) {
+  const spreadsheetId = sheet.getParent().getId();
+  const props = PropertiesService.getScriptProperties();
+  if (spreadsheetId !== props.getProperty('PIPELINE_SPREADSHEET_ID') ||
+      !agriPipelineSheet_(spreadsheetId) || sheet.getName().trim() !== AGRI_PIPELINE_TAB ||
+      !Array.isArray(row) || row.length !== AGRI_UUID_COLUMN || !AGRI_DOSSIER_ID.test(row[0])) {
+    throw new Error('Structure de la ligne Google Form à vérifier.');
+  }
+  const { rows, formulas, nextIndex } = readAgriPipelineRows_(sheet);
+  if (rows.some(existing => String(existing[0]).trim() === row[0])) {
+    throw new Error('Identifiant Google Form déjà présent.');
+  }
+  const cells = {};
+  row.forEach((value, column) => {
+    if (value !== '' && value != null && !AGRI_PIPELINE_FORMULA_COLUMNS.includes(column)) {
+      cells[column] = value instanceof Date ? agriSheetDate_(value, sheet.getParent().getSpreadsheetTimeZone()) : value;
+    }
+  });
+  if (!agriPipelineTargetIsFree_(rows, formulas, nextIndex, cells)) {
+    throw new Error('Aucune ligne préparée et disponible pour Google Form.');
+  }
+  const rowNumber = nextIndex + 2;
+  writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, '');
+  return rowNumber;
+}
+
+function agriPipelineTargetIsFree_(rows, formulas, index, cells) {
+  return index < rows.length && Object.keys(cells).every(
+    column => rows[index][column] === '' && !formulas[index][column]
+  );
+}
+
+function writeAgriPipelineCells_(sheet, spreadsheetId, index, cells, possibleDuplicate) {
+  const requests = Object.keys(cells).map(Number).map(column => {
     const value = cells[column];
-    const cell = { userEnteredValue: typeof value === 'number' ? { numberValue: value } : { stringValue: value } };
-    if (column === UUID_COLUMN) cell.note = possibleDuplicate;
+    const typed = typeof value === 'number' ? { numberValue: value } :
+      typeof value === 'boolean' ? { boolValue: value } : { stringValue: String(value) };
+    const cell = { userEnteredValue: typed };
+    if (column === AGRI_UUID_COLUMN) cell.note = possibleDuplicate;
     return { updateCells: {
       start: { sheetId: sheet.getSheetId(), rowIndex: index + 1, columnIndex: column },
       rows: [{ values: [cell] }],
-      fields: column === UUID_COLUMN ? 'userEnteredValue,note' : 'userEnteredValue'
+      fields: column === AGRI_UUID_COLUMN ? 'userEnteredValue,note' : 'userEnteredValue'
     } };
   });
-  // Persist before committing so a transport failure can leave a gap, never reuse a number.
-  props.setProperty(sequenceProperty, String(max + 1));
   Sheets.Spreadsheets.batchUpdate({ requests }, spreadsheetId);
-  return synced_(contact.id, id, possibleDuplicate);
 }
 
-function synced_(id, dossierId, possibleDuplicateId) {
+function agriSynced_(id, dossierId, possibleDuplicateId) {
   return { status: 'synced', id, dossierId, possibleDuplicateId };
 }
 
-function normalizeText_(value) {
+function agriNormalizeText_(value) {
   return String(value).trim().toLowerCase();
 }
 
-function normalizePhone_(value) {
+function agriNormalizePhone_(value) {
   return String(value).replace(/\D/g, '');
 }
 
-function sheetDate_(iso, timezone) {
+function agriSheetDate_(iso, timezone) {
   const parts = Utilities.formatDate(new Date(iso), timezone, 'yyyy,MM,dd,HH,mm,ss').split(',').map(Number);
   return Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]) / 86400000 + 25569;
 }
@@ -176,13 +260,19 @@ function sheetDate_(iso, timezone) {
 // Run manually after configuring the workbook. Reports layout only, never lead values.
 function auditContactPipelineLayout() {
   const id = PropertiesService.getScriptProperties().getProperty('PIPELINE_SPREADSHEET_ID');
-  const sheet = pipelineSheet_(id);
+  const sheet = agriPipelineSheet_(id);
   if (!sheet) throw new Error('Vérifier A:AF et le nom de l’onglet.');
   const dataRows = Math.max(0, sheet.getLastRow() - 1);
-  const formulaCounts = PIPELINE_HEADERS.map(() => 0);
+  const formulaCounts = AGRI_PIPELINE_HEADERS.map(() => 0);
   if (dataRows) {
-    sheet.getRange(2, 1, dataRows, PIPELINE_HEADERS.length).getFormulas()
+    sheet.getRange(2, 1, dataRows, AGRI_PIPELINE_HEADERS.length).getFormulas()
       .forEach(row => row.forEach((formula, index) => { if (formula) formulaCounts[index]++; }));
   }
-  console.log(JSON.stringify({ dataRows, gridRows: sheet.getMaxRows(), formulaCounts }));
+  const { rows, formulas, nextIndex } = readAgriPipelineRows_(sheet);
+  const candidate = rows[nextIndex] ? formulas[nextIndex] : null;
+  console.log(JSON.stringify({
+    dataRows, gridRows: sheet.getMaxRows(), formulaCounts,
+    nextRow: candidate ? nextIndex + 2 : null,
+    nextRowFormulaColumns: AGRI_PIPELINE_FORMULA_COLUMNS.filter(column => candidate && candidate[column]).map(column => column + 1)
+  }));
 }

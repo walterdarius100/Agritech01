@@ -109,7 +109,7 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
           (!result.possibleDuplicateId || dossier.test(result.possibleDuplicateId))) {
         return { state: 'done', result: { dossier_id: result.dossierId, possible_duplicate_id: result.possibleDuplicateId || null } };
       }
-      return { state: 'pending', error: result.code === 'layout' ? 'pipeline_layout' : 'pipeline_ack' };
+      return { state: 'pending', error: ['layout', 'busy', 'writer_not_ready'].includes(result.code) ? `pipeline_${result.code}` : 'pipeline_ack' };
     }
 
     const to = job.kind === 'admin_email' ? config.CONTACT_ADMIN_EMAIL : contact.email;
@@ -148,17 +148,18 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
       if (job.attempts > 6) {
         outcome = { state: 'failed', error: 'lease_attempts_exhausted' };
       } else {
-        const [contact] = await database(`contact_requests?id=eq.${job.request_id}&select=id,name,email,phone,request_type,need,message,source,received_at`);
+        const [contact] = await database(`contact_v12_requests?id=eq.${job.request_id}&select=id,name,email,phone,request_type,need,message,source,received_at`);
         if (!contact) throw new Error('missing_contact');
         outcome = await deliver(job, contact);
       }
     } catch {
       outcome = { state: 'pending', error: 'delivery_unconfirmed' };
     }
-    await database('rpc/finish_contact_job', {
+    const finished = await database('rpc/finish_contact_v12_job', {
       p_id: job.request_id, p_kind: job.kind, p_lease: job.lease_token,
       p_state: outcome.state, p_error: outcome.error || null, p_result: outcome.result || null
     });
+    if (finished !== true) throw new Error('lease_lost');
   }
 
   return async (request: Request) => {
@@ -181,8 +182,10 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
     try {
       if (worker) {
         if (!await matchesSecret(config.CONTACT_WORKER_SECRET, request.headers.get('X-Contact-Worker') || '')) return reply(401, 'rejected');
-        await database('rpc/prune_contact_rate', {});
-        const jobs: Job[] = await database('rpc/claim_contact_jobs', {});
+        const requestId = new URL(request.url).searchParams.get('request_id');
+        if (requestId !== null && !uuid.test(requestId)) return reply(400, 'rejected');
+        if (requestId === null) await database('rpc/prune_contact_v12_rate', {});
+        const jobs: Job[] = await database('rpc/claim_contact_v12_jobs', { p_request_id: requestId });
         const results = await Promise.allSettled(jobs.map(processJob));
         return results.some(result => result.status === 'rejected') ? reply(503, 'worker_incomplete') : reply(200, 'worker_complete');
       }
@@ -198,7 +201,7 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
         hmac(secret, `email:${contact.email}`),
         network ? hmac(secret, `network:${network}`) : null
       ]);
-      const outcome = await database('rpc/record_contact_request', {
+      const outcome = await database('rpc/record_contact_v12_request', {
         p_id: contact.id, p_name: contact.name, p_email: contact.email, p_phone: contact.phone,
         p_type: contact.type, p_need: contact.need, p_message: contact.message,
         p_email_hash: emailHash, p_network_hash: networkHash
