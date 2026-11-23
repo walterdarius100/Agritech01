@@ -3,7 +3,16 @@ import { escapeHtml } from '../utils/sanitize.js';
 import { initMobileMenu, initScrollReveal } from './page-utils.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
 
+import { ARTICLE_CATEGORIES, getOfficialCategory, normalizeCategory } from '../utils/article-categories.js';
+
 const ARTICLES_PER_PAGE = 4;
+// Destinations des anciens liens après reclassement des articles correspondants.
+const legacyFilterDestinations = new Map([
+  ['actualite', ARTICLE_CATEGORIES[0]],
+  ['aviculture', ARTICLE_CATEGORIES[2]],
+  ['cuniculture', ARTICLE_CATEGORIES[2]],
+  ['apiculture', ARTICLE_CATEGORIES[2]]
+]);
 const grid = document.querySelector('#articlesGrid');
 const filters = document.querySelector('#articleFilters');
 const featuredContainer = document.querySelector('#featuredArticle');
@@ -27,7 +36,8 @@ function getOtherArticles() {
 function getFilteredArticles() {
   const articles = getOtherArticles();
   if (activeCategory === 'Tous') return articles;
-  return articles.filter((article) => article.category === activeCategory);
+  const key = normalizeCategory(activeCategory);
+  return articles.filter((article) => normalizeCategory(article.category) === key);
 }
 
 function buildPageUrl(page, category = activeCategory) {
@@ -40,8 +50,16 @@ function buildPageUrl(page, category = activeCategory) {
 
 function renderFilters() {
   if (!filters) return;
-  const categories = ['Tous', ...new Set(publishedArticles.map((article) => article.category))];
-  if (!categories.includes(activeCategory)) activeCategory = 'Tous';
+  const availableCategories = new Set(publishedArticles.map((article) => normalizeCategory(article.category)));
+  const categories = ['Tous', ...ARTICLE_CATEGORIES.filter((label) => availableCategories.has(normalizeCategory(label)))];
+  const activeKey = normalizeCategory(activeCategory);
+  const destination = legacyFilterDestinations.get(activeKey);
+  if (activeKey === 'tous') activeCategory = 'Tous';
+  else if (activeKey && availableCategories.has(activeKey)) {
+    activeCategory = getOfficialCategory(activeCategory) || activeCategory;
+  } else {
+    activeCategory = categories.includes(destination) ? destination : 'Tous';
+  }
 
   filters.innerHTML = categories
     .map((category) => `<a class="filter-btn ${category === activeCategory ? 'active' : ''}" href="${buildPageUrl(1, category)}" data-category="${escapeHtml(category)}">${escapeHtml(category)}</a>`)

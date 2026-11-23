@@ -3,6 +3,8 @@ export { getFeaturedArticle, getPublishedArticles };
 import { escapeHtml } from '../utils/sanitize.js';
 import { getDelayClass } from '../utils/validation.js';
 
+import { getOfficialCategory } from '../utils/article-categories.js';
+
 export function formatArticleDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Date non renseignée';
@@ -33,7 +35,7 @@ export function renderFeaturedArticle({ container, article }) {
       </a>
       <div class="featured-article-body">
         <div class="article-meta">
-          <span class="tag">${escapeHtml(article.category)}</span>
+          <span class="tag">${escapeHtml(getOfficialCategory(article.category) || article.category)}</span>
           <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
         </div>
         <h3><a href="${getArticleUrl(article)}">${escapeHtml(article.title)}</a></h3>
@@ -60,7 +62,7 @@ export function renderArticleCards({ container, articles = [], emptyMessage = 'A
         </a>
         <div class="article-card-body">
           <div class="article-meta">
-            <span class="tag">${escapeHtml(article.category)}</span>
+            <span class="tag">${escapeHtml(getOfficialCategory(article.category) || article.category)}</span>
             <time datetime="${escapeHtml(article.publishedAt)}">${escapeHtml(formatArticleDate(article.publishedAt))}</time>
           </div>
           <h3><a href="${getArticleUrl(article)}">${escapeHtml(article.title)}</a></h3>

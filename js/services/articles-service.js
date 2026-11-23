@@ -1,5 +1,7 @@
 import { getSupabaseClient, isSupabaseConfigured } from './supabase-client.js';
 
+import { ARTICLE_CATEGORIES } from '../utils/article-categories.js';
+
 const IMAGE_BUCKET = 'article-images';
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 
@@ -16,7 +18,8 @@ export function generateSlug(value) {
 }
 
 export function normalizeArticle(article = {}) {
-  const publishedAt = article.published_at || article.publishedAt || article.created_at || article.createdAt || '';
+  const publicationDate = article.published_at || article.publishedAt || '';
+  const publishedAt = publicationDate || article.created_at || article.createdAt || '';
   return {
     id: article.id,
     title: article.title || '',
@@ -34,8 +37,14 @@ export function normalizeArticle(article = {}) {
     updatedAt: article.updated_at || article.updatedAt || '',
     updated_at: article.updated_at || article.updatedAt || '',
     publishedAt,
-    published_at: publishedAt
+    published_at: publicationDate
   };
+}
+
+function validateCategory(category) {
+  if (!ARTICLE_CATEGORIES.includes(category)) {
+    throw Object.assign(new Error('Veuillez choisir une catégorie officielle.'), { code: 'ARTICLE_CATEGORY' });
+  }
 }
 
 function toDatabasePayload(article) {
@@ -47,7 +56,7 @@ function toDatabasePayload(article) {
   return {
     title: String(article.title || '').trim(),
     slug: generateSlug(article.slug || article.title),
-    category: String(article.category || '').trim(),
+    category: article.category,
     excerpt: String(article.excerpt || '').trim(),
     cover_image_url: String(article.cover_image_url || article.coverImage || '').trim() || null,
     author: String(article.author || 'Agri-tech').trim() || 'Agri-tech',
@@ -183,17 +192,19 @@ export function getFeaturedArticle(articles) {
 }
 
 export async function createArticle(article) {
-  const client = await getClientOrThrow();
+  validateCategory(article.category);
   const payload = toDatabasePayload(article);
+  const client = await getClientOrThrow();
 
   const { data, error } = await client.from('articles').insert(payload).select('*').single();
   if (error) throw error;
   return finishFeaturedWrite(client, data, payload.featured);
 }
 
-export async function updateArticle(id, article) {
+export async function updateArticle(id, article, { categoryOnly = false } = {}) {
+  validateCategory(article.category);
+  const payload = categoryOnly ? { category: article.category } : toDatabasePayload(article);
   const client = await getClientOrThrow();
-  const payload = toDatabasePayload(article);
 
   const { data, error } = await client.from('articles').update(payload).eq('id', id).select('*').single();
   if (error) throw error;

@@ -6,6 +6,9 @@ import { initMobileMenu, initScrollReveal } from './page-utils.js';
 import { initArticleNewsletter, initArticleNewsletterPreview } from './article-newsletter.js';
 import { logClientError } from '../utils/error-messages.js';
 
+import { getOfficialCategory } from '../utils/article-categories.js';
+import { getRelatedArticles } from '../utils/article-recommendations.js';
+
 const articleContainer = document.querySelector('#articleContent');
 const params = new URLSearchParams(window.location.search);
 const slug = params.get('slug');
@@ -310,7 +313,7 @@ async function handleArticleCopyShare() {
 }
 
 function renderRelatedArticleCard(article) {
-  const category = String(article.category || '').trim();
+  const category = getOfficialCategory(article.category) || String(article.category || '').trim();
   const articleUrl = `article.html?slug=${encodeURIComponent(article.slug)}`;
 
   return `
@@ -331,10 +334,8 @@ function renderRelatedArticleCard(article) {
   `;
 }
 
-function renderRelatedSection(articles, currentSlug) {
-  const relatedArticles = (articles || [])
-    .filter((candidate) => candidate.status === 'published' && candidate.slug !== currentSlug)
-    .slice(0, 3);
+function renderRelatedSection(articles, currentArticle) {
+  const relatedArticles = getRelatedArticles(articles, currentArticle);
 
   if (!relatedArticles.length) return '';
 
@@ -343,7 +344,7 @@ function renderRelatedSection(articles, currentSlug) {
       <div class="article-related-header">
         <div>
           <span class="eyebrow">À lire aussi</span>
-          <h2 id="relatedArticlesTitle">Dernières actualités</h2>
+          <h2 id="relatedArticlesTitle">À découvrir également</h2>
         </div>
         <a href="actualites.html" class="article-all-news-link">Voir toutes les actualités →</a>
       </div>
@@ -383,7 +384,7 @@ function renderArticle(article, relatedArticles = []) {
   currentArticleShareData = getShareData(article);
 
   const sanitizedContent = sanitizeArticleHtml(article.content);
-  const category = String(article.category || '').trim();
+  const category = getOfficialCategory(article.category) || String(article.category || '').trim();
   const excerpt = String(article.excerpt || '').trim();
   const author = String(article.author || 'Agri-tech').trim();
 
@@ -421,7 +422,7 @@ function renderArticle(article, relatedArticles = []) {
         </div>
         ${renderArticleShareSection(article)}
       </section>
-      ${renderRelatedSection(relatedArticles, article.slug)}
+      ${renderRelatedSection(relatedArticles, article)}
     </article>
   `;
 
