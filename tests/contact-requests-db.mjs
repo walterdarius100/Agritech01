@@ -130,6 +130,13 @@ try {
   assert.ok(parallel.every(response => response.status === 200));
   assert.deepEqual((await status(service.id)).map(job => [job.status, job.attempts]), [['done', 2], ['done', 2], ['done', 2]]);
   assert.equal((await query('select status from public.contact_requests where id=$1', [service.id]))[0].status, 'processed');
+  const [synced] = await query(
+    "select request_id, completed_at, result from public.contact_request_jobs where request_id=$1 and kind='pipeline'",
+    [service.id]
+  );
+  assert.equal(synced.request_id, service.id);
+  assert.ok(synced.completed_at);
+  assert.deepEqual(synced.result, { dossier_id: 'AGR-0123', possible_duplicate_id: null });
   assert.equal(providerAccepted.size, 2);
   assert.match(calls.find(call => call.kind === 'admin_email').payload.html, /&lt;script&gt;/);
   assert.doesNotMatch(calls.find(call => call.kind === 'receipt_email').payload.html, /Personne test|3600|Consultation/);

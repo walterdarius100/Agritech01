@@ -27,6 +27,33 @@ de l’URL Apps Script qui figurait dans l’ancien `js/config.js`. Vérifier au
 les utilisateurs externes du déploiement Apps Script et les déclencheurs Google,
 qui ne figurent pas dans le dépôt.
 
+## Correspondance du registre historique « Leads site web »
+
+Le registre confirmé contient les 13 colonnes ci-dessous. Il sert à documenter
+la réception et le transfert du formulaire du site. Le suivi commercial se
+fait dans `Pipeline clients`.
+
+| N° | Colonne historique | Équivalent pour les nouvelles demandes |
+| --- | --- | --- |
+| 1 | Date réception | `contact_requests.received_at`, horodaté par Supabase |
+| 2 | Nom | `contact_requests.name` |
+| 3 | Email | `contact_requests.email` |
+| 4 | Téléphone | `contact_requests.phone` |
+| 5 | Domaine | `contact_requests.need`, complété par `request_type` |
+| 6 | Message | `contact_requests.message`, vide pour une formation |
+| 7 | Consentement | `contact_requests.consent` et `consent_version` |
+| 8 | Source | `contact_requests.source` |
+| 9 | Date formulaire | `received_at` sert de référence pour les nouvelles demandes. L’horodatage du navigateur reste consultable dans le registre pour les anciennes demandes |
+| 10 | Statut import pipeline | `contact_request_jobs.status` pour la tâche `pipeline` |
+| 11 | Date import pipeline | `completed_at` si la tâche est `done`. Les tentatives sont suivies par `first_attempt_at`, `last_attempt_at`, `next_attempt_at` et `attempts` |
+| 12 | ID dossier pipeline | `contact_request_jobs.result.dossier_id`. La colonne AF du pipeline stocke l’UUID de la demande |
+| 13 | Note import | `last_error` en cas d’échec et `result.possible_duplicate_id` pour un rapprochement commercial |
+
+Conserver le registre et son historique dans Google Sheets avec les accès
+existants revus selon la politique de conservation. Aucune purge automatique
+ni reprise en masse des anciennes lignes n’est prévue. Après la bascule,
+les nouvelles demandes du site vont directement de Supabase au pipeline.
+
 ## Architecture
 
 ```mermaid
@@ -187,19 +214,46 @@ qui peuvent conserver des métadonnées de la requête.
   et fonction sur l’environnement cible. Garder le Cron de contact à l’arrêt
   pendant la bascule commerciale. Conserver les versions du site et des
   déploiements permettant le retour arrière.
+- Avant la bascule, identifier **par fonction et par déploiement** le
+  `doPost(e)` historique du site, le déclencheur
+  `importerLeadsSiteVersPipeline` et l’automatisation du Google Form.
+  Relever les identifiants des déclencheurs, les comptes d’exécution, les
+  classeurs sources et les lignes ou colonnes écrites. Sur une copie,
+  soumettre une réponse Google Form et vérifier qu’elle atteint le pipeline
+  par son circuit habituel. Si Google Form alimente aussi le registre ou
+  dépend du déclencheur ou du déploiement historique, suspendre la bascule
+  jusqu’à ce que son circuit autonome soit vérifié. Conserver l’activation
+  et les accès de son automatisation.
+- Tester en parallèle une soumission du site et une soumission Google Form
+  avec les deux chemins d’écriture sur la copie. Si les deux automatisations
+  choisissent la même ligne ou calculent le prochain `AGR-…` dans le même
+  espace de numérotation, leurs écritures doivent passer par un seul
+  allocateur et une insertion protégés par le même verrou. Le Google Form
+  garde son entrée et son déclencheur propres. Vérifier ce point avant
+  d’activer le Cron de contact. Un test sans collision ne suffit pas à
+  garantir la coordination si les projets écrivent sous des verrous distincts.
 - Publier le nouveau frontend lorsque la réception Supabase est prête. Tester
-  son enregistrement contrôlé avant de désactiver quoi que ce soit. L’ancien
-  Apps Script et EmailJS peuvent encore recevoir des soumissions depuis des
-  onglets chargés avant la publication. Relever l’heure de bascule et drainer
-  le registre Leads site web avec l’ancien importateur. Comparer les envois
-  EmailJS, le registre, le pipeline et Supabase autour de cette heure.
-- Arrêter le déclencheur de l’ancien import avant d’activer le nouveau Cron.
-  À partir de cet instant, traiter les entrées tardives du registre par
-  rapprochement manuel avec Supabase et le pipeline. Après la période de
-  chevauchement et la vérification des autres usages, désactiver le service
-  ou template EmailJS de contact ainsi que le déploiement public historique
-  s’il est exclusivement dédié à cet usage. Garder une trace des dossiers
-  rapprochés et surveiller les tâches `failed`.
+  son enregistrement contrôlé et relever l’heure de bascule. Des onglets
+  chargés avant la publication peuvent encore utiliser EmailJS et l’ancien
+  endpoint. Réconcilier les demandes autour de cette heure entre EmailJS,
+  le registre, Supabase et le pipeline.
+- Dans `Leads site web`, relever les lignes dont le statut est vide,
+  `À importer`, `Erreur` ou `Doublon potentiel`. Vérifier aussi les lignes
+  marquées `Importé` dont l’AGR est absent ou introuvable dans le pipeline.
+  Pour chaque ligne, chercher d’abord un dossier existant, puis transférer
+  une demande éligible une seule fois ou consigner le motif si elle reste
+  à traiter. Les lignes `Hors pipeline`, notamment les anciennes inscriptions
+  newsletter, restent dans l’historique. Drainer les lignes éligibles avec
+  l’ancien importateur avant d’arrêter **son seul déclencheur**, puis activer
+  le Cron de contact après validation des deux circuits.
+- Pendant le chevauchement, rapprocher manuellement les entrées tardives.
+  Après un dernier contrôle des lignes non transférées, désactiver le
+  service ou modèle EmailJS du contact et retirer le déploiement public
+  historique s’il est dédié au site. Si le déploiement est partagé, garder
+  les autres points d’entrée actifs et ne retirer que le chemin du formulaire
+  du site après l’avoir isolé. Vérifier ensuite la réception du site, du
+  Google Form et de la newsletter. Garder le registre historique accessible
+  aux personnes habilitées pour la consultation.
 - En cas de retour arrière, suspendre le nouveau Cron avec
   `select cron.unschedule('contact-requests-worker');` et attendre la fin des
   baux actifs avant de réactiver l’ancien import. Restaurer ensemble le
