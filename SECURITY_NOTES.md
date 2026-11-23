@@ -2,14 +2,13 @@
 
 Ce site est un site statique. Les recommandations ci-dessous servent à limiter les abus côté formulaire, analytics et automatisations externes, sans transformer le projet en application backend.
 
-## 1. Recommandations EmailJS
+## 1. Formulaire de contact
 
-- Utiliser une clé publique EmailJS dédiée à ce site uniquement.
-- Ne jamais placer de clé privée, mot de passe email ou token sensible dans `index.html`, `script.js` ou tout autre fichier public.
-- Garder les identifiants EmailJS dans la configuration prévue du formulaire, puis vérifier qu’ils ne donnent accès qu’au service nécessaire.
-- Utiliser un template EmailJS strict : inclure seulement les champs utiles du formulaire, sans données sensibles inutiles.
-- Activer les notifications EmailJS pour détecter rapidement une hausse anormale des envois.
-- Vérifier régulièrement l’historique d’envoi EmailJS pour repérer les soumissions suspectes.
+La réception passe par une fonction Supabase avec validation serveur et quotas.
+Les demandes, tâches et clés de quota sont fermées aux rôles publics. Les secrets
+de Resend, de la file et d’Apps Script sont configurés côté serveur. Les accès
+au pipeline et à la boîte administrative sont réservés à l’équipe habilitée.
+Voir le [guide de déploiement et de confidentialité](docs/contact-requests.md).
 
 ## 2. Restrictions de domaines autorisés
 
@@ -50,7 +49,7 @@ Recommandations complémentaires :
 
 ## 5. Suivi des demandes
 
-EmailJS transmet actuellement les messages vers `contact@agritech509ht.com`. Ne pas ajouter un nouvel outil de stockage des leads sans décision explicite, documentation et test de confidentialité.
+Les demandes de contact sont traitées indépendamment des inscriptions newsletter. Leur conservation et les demandes de correction ou de suppression sont décrites dans le guide de déploiement.
 
 ## 6. Analytics et confidentialité
 

@@ -1,5 +1,6 @@
 import { renderProjects } from './components/render-projects.js';
-import { EMAILJS_CONFIG, FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, PARTNERSHIP_NEED } from './config.js';
+import { FORM_ERROR_MESSAGE, FORM_STATUS_DURATION, FORM_SUCCESS_MESSAGE, FORM_UNCERTAIN_MESSAGE } from './config.js';
+import { PARTNERSHIP_NEED, contactRequestType } from './config/contact-needs.js';
 import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
@@ -8,7 +9,7 @@ import { renderFilters, renderServices } from './components/render-services.js';
 import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
-import { storeLead as storeLeadRequest } from './components/contact-form.js';
+import { createContactSubmission } from './components/contact-form.js';
 import { initMobileMenu } from './pages/page-utils.js';
 import { escapeHtml, sanitizePhone } from './utils/sanitize.js';
 import { isEmailValid } from './utils/validation.js';
@@ -16,13 +17,14 @@ import { getSafeErrorMessage, logClientError } from './utils/error-messages.js';
 
 // Agri-Tech application bootstrap.
 document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
-  if (window.emailjs) {
-    window.emailjs.init({
-      publicKey: EMAILJS_CONFIG.publicKey,
-      blockHeadless: true,
-      limitRate: { id: 'agritech-contact-form', throttle: 10000 }
-    });
+  let submissionStorage;
+  try {
+    submissionStorage = window.sessionStorage;
+  } catch {
+    // Submission keys can also be kept in memory.
   }
+  const submitContactRequest = createContactSubmission({ storage: submissionStorage });
+  let submittingContact = false;
   const elements = {
     serviceGrid: document.querySelector('#serviceGrid'),
     courseGrid: document.querySelector('#courseGrid'),
@@ -62,18 +64,9 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   let partnershipTimer = null;
   let courseIndex = 0;
   let resizeFrame = null;
-  let formResetTimer = null;
   let formStatusTimer = null;
   const messageMaxLength = Number(elements.messageInput?.getAttribute('maxlength')) || 1200;
 
-
-  function isEmailJsConfigured() {
-    return Boolean(
-      EMAILJS_CONFIG.publicKey &&
-      EMAILJS_CONFIG.serviceId &&
-      EMAILJS_CONFIG.templateId
-    );
-  }
 
   function clearFormStatusTimer() {
     if (!formStatusTimer) return;
@@ -130,18 +123,11 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function isFormationNeed(value) {
-    if (!value) return false;
-
-    return courses.some((course) => {
-      const courseNeed = course.need || `Cours en ligne - ${course.title}`;
-      return value === courseNeed;
-    }) || /formation|cours en ligne/i.test(value);
+    return contactRequestType(value) === 'formation';
   }
 
   function isPartnershipNeed(value) {
-    if (!value) return false;
-
-    return value === partnershipNeed || /partenariat/i.test(value);
+    return contactRequestType(value) === 'partenariat';
   }
 
   function updateMessageCounter() {
@@ -172,10 +158,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
 
     updateMessageCounter();
     updateSubmitButtonLabel();
-  }
-
-  async function storeLead(payload) {
-    await storeLeadRequest(EMAILJS_CONFIG, payload);
   }
 
   function setupScrollReveal(items = document.querySelectorAll('.reveal')) {
@@ -235,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (!elements.needSelect) return;
 
     const requestedNeed = new URLSearchParams(window.location.search).get('need');
-    if (!requestedNeed) return;
+    if (!contactRequestType(requestedNeed)) return;
 
     if (![...elements.needSelect.options].some((option) => option.value === requestedNeed)) {
       elements.needSelect.add(new Option(requestedNeed, requestedNeed));
@@ -539,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     if (elements.form) {
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (submittingContact) return;
 
         const name = elements.nameInput?.value.trim() || '';
         const email = elements.emailInput?.value.trim() || '';
@@ -546,15 +529,10 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
         const need = elements.needSelect?.value || '';
         const isFormationRequest = isFormationNeed(need);
         const message = isFormationRequest
-          ? 'Demande liée à une formation sélectionnée.'
+          ? ''
           : elements.messageInput?.value.trim() || '';
         const consent = elements.consentInput?.checked || false;
         const website = elements.honeypotInput?.value.trim() || '';
-
-        if (formResetTimer) {
-          window.clearTimeout(formResetTimer);
-          formResetTimer = null;
-        }
 
         clearFormStatusTimer();
 
@@ -570,47 +548,24 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
           return;
         }
 
-        if (!window.emailjs || !isEmailJsConfigured()) {
-          setFormStatus('error', FORM_ERROR_MESSAGE);
-          return;
-        }
-
-        const payload = {
-          from_name: name,
-          from_email: email,
-          phone,
-          need,
-          message,
-          consent: consent ? 'Oui' : 'Non',
-          source: 'Site Agri-Tech',
-          SOURCE: 'Formulaire de contact',
-          TYPE_CONTACT: 'Contact',
-          date: new Date().toISOString()
-        };
-
         try {
+          submittingContact = true;
           setSubmitState(true);
           setFormStatus('success', 'Envoi de votre demande en cours...');
 
-          await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, payload);
-
-          if (EMAILJS_CONFIG.autoReplyTemplateId) {
-            await window.emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.autoReplyTemplateId, payload);
+          const result = await submitContactRequest({ name, email, phone, need, message, consent, website });
+          if (result !== 'recorded') {
+            setFormStatus('error', result === 'rejected' ? FORM_ERROR_MESSAGE : FORM_UNCERTAIN_MESSAGE, true);
+            return;
           }
 
-          await storeLead(payload);
-
+          elements.form.reset();
+          updateMessageFieldVisibility();
           setFormStatus('success', FORM_SUCCESS_MESSAGE, true, true);
-
-          formResetTimer = window.setTimeout(() => {
-            elements.form.reset();
-            updateMessageFieldVisibility();
-            formResetTimer = null;
-          }, 500);
-        } catch (error) {
-          logClientError('formulaire contact', error);
-          setFormStatus('error', getSafeErrorMessage('email', error), true, true);
+        } catch {
+          setFormStatus('error', FORM_UNCERTAIN_MESSAGE, true);
         } finally {
+          submittingContact = false;
           setSubmitState(false);
         }
       });
@@ -626,7 +581,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     console.assert(testimonials.every((testimonial) => testimonial.image.startsWith('assets/images/')), 'Test échoué : images témoignages locales attendues.');
     console.assert(escapeHtml('<test>') === '&lt;test&gt;', 'Test échoué : protection HTML.');
     console.assert(isEmailValid('test@example.com'), 'Test échoué : validation email.');
-    console.assert(typeof storeLead === 'function', 'Test échoué : fonction stockage lead manquante.');
     console.assert(elements.messageInput === null || elements.messageInput.name === 'message', 'Test échoué : le nom du champ message doit rester inchangé.');
     console.assert(elements.messageInput === null || Number(elements.messageInput.getAttribute('maxlength')) === messageMaxLength, 'Test échoué : limite du champ message inattendue.');
     console.assert(elements.messageCounter === null || elements.messageCounter.textContent.includes(`/ ${messageMaxLength}`), 'Test échoué : compteur message initial inattendu.');

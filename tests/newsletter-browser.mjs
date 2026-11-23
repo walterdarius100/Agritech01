@@ -33,17 +33,24 @@ async function fixture(options, preview = false, existingContext) {
   const page = await context.newPage();
   const errors = [];
   const submissions = [];
+  const contacts = [];
+  let contactFailure = null;
   let networkFailure = false;
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
-    if (url.hostname === 'cdn.jsdelivr.net' && url.pathname.includes('@emailjs/browser')) {
-      return route.fulfill({ contentType: 'text/javascript', body: `
-        window.emailjs = {
-          init() {},
-          async send(_service, _template, payload) { window.testContactPayload = payload; }
-        };
-      ` });
+    if (url.pathname === '/functions/v1/contact-requests') {
+      const headers = {
+        'access-control-allow-origin': origin,
+        'access-control-allow-headers': 'Content-Type',
+        'access-control-allow-methods': 'POST, OPTIONS'
+      };
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      const contact = route.request().postDataJSON();
+      contacts.push(contact);
+      if (contactFailure === 'uncertain') return route.abort();
+      if (contactFailure === 'rejected') return route.fulfill({ status: 400, json: { status: 'rejected' }, headers });
+      return route.fulfill({ json: { status: 'recorded', id: contact.id }, headers });
     }
     if (url.href === 'https://newsletter-test.invalid/functions/v1/newsletter') {
       const headers = {
@@ -83,7 +90,7 @@ async function fixture(options, preview = false, existingContext) {
     return route.continue();
   });
   const dialog = page.locator('#articleNewsletter');
-  return { page, dialog, submissions, errors, fail: value => { networkFailure = value; } };
+  return { page, dialog, submissions, errors, contacts, fail: value => { networkFailure = value; }, failContact: value => { contactFailure = value; } };
 }
 
 async function openArticle(page, slug = 'sols') {
@@ -211,8 +218,43 @@ try {
   await contact.locator('#message').fill('Demande de consultation.');
   await contact.locator('#consent').check();
   await contact.locator('#submitBtn').click();
-  await contact.getByText('Votre message a bien été envoyé. Agri-tech vous répondra dès que possible.').waitFor();
-  assert.equal(await page.evaluate(() => window.testContactPayload.TYPE_CONTACT), 'Contact');
+  await contact.getByText('Votre demande a bien été enregistrée.', { exact: false }).waitFor();
+  assert.equal(desktop.contacts[0].message, 'Demande de consultation.');
+  assert.equal(desktop.contacts[0].consent, true);
+
+  const fillContactIdentity = async () => {
+    await contact.locator('#name').fill('Lecteur test');
+    await contact.locator('#email').fill('contact@example.org');
+    await contact.locator('#phone').fill('+509 3600 0000');
+    await contact.locator('#consent').check();
+  };
+  await page.goto(`${origin}/index.html?need=Formation%20Agri-tech%20Academy#leadForm`);
+  await contact.getByRole('button', { name: 'Réservez votre place' }).waitFor();
+  assert.equal(await contact.locator('#message').isVisible(), false);
+  await fillContactIdentity();
+  desktop.failContact('uncertain');
+  await contact.locator('#submitBtn').click();
+  await contact.getByText('L’enregistrement de votre demande reste à vérifier.', { exact: false }).waitFor();
+  desktop.failContact(null);
+  await contact.locator('#submitBtn').click();
+  await contact.getByText('Votre demande a bien été enregistrée.', { exact: false }).waitFor();
+  assert.equal(desktop.contacts[1].message, '');
+  assert.equal(desktop.contacts[1].id, desktop.contacts[2].id);
+
+  await contact.locator('#need').selectOption('Partenariat');
+  await contact.getByRole('button', { name: 'Discuter d’un partenariat' }).waitFor();
+  await fillContactIdentity();
+  await contact.locator('#submitBtn').click();
+  await contact.getByText('Veuillez compléter les champs obligatoires', { exact: false }).waitFor();
+  assert.equal(desktop.contacts.length, 3);
+  await contact.locator('#message').fill('Demande de partenariat.');
+  desktop.failContact('rejected');
+  await contact.locator('#submitBtn').click();
+  await contact.getByText('Votre demande n’a pas été enregistrée.', { exact: false }).waitFor();
+  desktop.failContact(null);
+  await contact.locator('#submitBtn').click();
+  await contact.getByText('Votre demande a bien été enregistrée.', { exact: false }).waitFor();
+  assert.equal(desktop.contacts[3].need, 'Partenariat');
   assert.equal(submissions.length, 2);
   await page.locator('#newsletterEmail').fill('lecteur@example.org');
   assert.equal(await page.locator('#newsletterForm').getByRole('checkbox').count(), 0);

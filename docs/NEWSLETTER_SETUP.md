@@ -2,8 +2,7 @@
 
 GitHub Pages sert les formulaires et la page `/newsletter/`. Les formulaires
 appellent la même Edge Function Supabase. Supabase stocke les abonnements et
-les envois. Resend expédie les deux e-mails. Les formulaires de contact
-conservent EmailJS et leur traitement existant.
+les envois. Resend expédie les deux e-mails. Le [formulaire de contact](contact-requests.md) suit un parcours indépendant.
 
 ## Comportement
 

@@ -6,7 +6,7 @@ Ce dépôt contient la V1 opérationnelle du site officiel d’Agri-tech, entrep
 
 Domaine officiel : <https://agritech509ht.com>
 
-Cette V1 est volontairement simple et stable : elle repose sur un site statique enrichi par JavaScript, avec Supabase pour les contenus dynamiques et EmailJS pour la transmission des demandes de contact.
+Cette V1 est volontairement simple et stable : elle repose sur un site statique enrichi par JavaScript, avec Supabase pour les contenus dynamiques et la réception des demandes de contact.
 
 ## Architecture actuelle
 
@@ -18,7 +18,7 @@ La V1 actuelle utilise :
 - GitHub Pages pour l’hébergement public ;
 - Cloudflare pour le domaine, le DNS et HTTPS ;
 - Supabase pour les articles, les images et les données dynamiques ;
-- EmailJS pour le formulaire de contact ;
+- Resend pour les notifications et Google Sheets pour le suivi commercial ;
 - Microsoft Clarity pour l’analyse comportementale.
 
 > Important : le site live actuel n’est pas une application Next.js, Clerk, Prisma ou Postgres externe. Ces technologies peuvent faire partie d’une vision future, mais elles ne décrivent pas l’état réel de la V1.
@@ -45,7 +45,7 @@ Le site permet actuellement :
 - l’affichage dynamique des articles publiés depuis Supabase ;
 - l’affichage des articles complets ;
 - l’utilisation d’un formulaire de contact ;
-- l’envoi des messages via EmailJS ;
+- l’enregistrement des demandes de contact dans Supabase ;
 - la réception des messages sur `contact@agritech509ht.com` ;
 - le suivi comportemental via Microsoft Clarity.
 
@@ -54,7 +54,7 @@ Le site permet actuellement :
 Documentation maintenue :
 
 - `README.md` : état réel du projet et règles de maintenance.
-- `EMAILJS_GUIDE.md` : formulaire, EmailJS et champs à préserver.
+- [Demandes de contact](docs/contact-requests.md) : architecture, déploiement et retour arrière.
 - `ANALYTICS_SETUP.md` : état actuel des analytics.
 - `SECURITY_NOTES.md` : notes de sécurité front-end et fournisseurs.
 - `GUIDE_PHOTOS.md` : recommandations de visuels.
@@ -114,34 +114,13 @@ article-images
 
 Avant toute modification Storage, vérifier les policies de lecture publique et d’écriture authentifiée dans Supabase.
 
-## Formulaire de contact et EmailJS
+## Formulaire de contact
 
-- Le formulaire principal se trouve sur la page d’accueil.
-- L’id existant du formulaire est `leadForm`.
-- Les liens directs vers le formulaire doivent utiliser :
-
-```text
-index.html#leadForm
-```
-
-ou en URL absolue :
-
-```text
-https://agritech509ht.com/index.html#leadForm
-```
-
-Le formulaire envoie les messages via EmailJS. L’adresse de réception actuelle est :
-
-```text
-contact@agritech509ht.com
-```
-
-Règles importantes :
-
-- le destinataire est géré dans le template EmailJS ;
-- le Reply-To doit rester l’email du visiteur ;
-- les noms des champs envoyés à EmailJS ne doivent pas être changés sans vérifier le template ;
-- EmailJS ne doit pas être modifié inutilement si le formulaire fonctionne.
+Le formulaire `index.html#leadForm` enregistre les demandes de service, de
+formation et de partenariat dans Supabase. Les notifications Resend et la
+synchronisation vers le pipeline Google Sheets sont traitées en arrière-plan.
+Le [guide de déploiement](docs/contact-requests.md) décrit la configuration et
+la transition depuis EmailJS.
 
 ## Domaine, DNS et déploiement
 
