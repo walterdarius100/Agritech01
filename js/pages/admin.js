@@ -1,3 +1,4 @@
+import { ARTICLE_CATEGORIES } from '../utils/article-categories.js';
 import { initProjectAdmin } from './admin-projects.js';
 import { getSupabaseClient, getSupabaseDiagnostics } from '../services/supabase-client.js';
 import { getSafeErrorMessage, logClientError } from '../utils/error-messages.js';
@@ -47,6 +48,7 @@ const elements = {
   articleTitle: document.querySelector('#articleTitle'),
   articleSlug: document.querySelector('#articleSlug'),
   articleCategory: document.querySelector('#articleCategory'),
+  articleCategoryNotice: document.querySelector('#articleCategoryNotice'),
   articleAuthor: document.querySelector('#articleAuthor'),
   articleExcerpt: document.querySelector('#articleExcerpt'),
   articleCoverUrl: document.querySelector('#articleCoverUrl'),
@@ -79,6 +81,7 @@ const elements = {
 
 let operationPending = false;
 let uncertainCreate = false;
+let originalForm = null;
 
 function lockForm(locked) {
   const controls = [...elements.articleForm.querySelectorAll('input, select, textarea, button')];
@@ -299,11 +302,22 @@ function updateCoverPreview(source = elements.articleCoverUrl?.value || '') {
   if (elements.coverPreviewPlaceholder) elements.coverPreviewPlaceholder.hidden = true;
 }
 
+function loadArticleCategory(value = '') {
+  const valid = ARTICLE_CATEGORIES.includes(value);
+  elements.articleCategory.value = valid ? value : '';
+  elements.articleCategoryNotice.hidden = valid || !elements.articleId.value;
+  elements.articleCategoryNotice.textContent = elements.articleCategoryNotice.hidden
+    ? ''
+    : `Catégorie enregistrée — ${value.trim() ? value : 'non renseignée'}. Choisissez une catégorie officielle avant d’enregistrer.`;
+}
+
 function resetForm() {
   if (operationPending) return;
   uncertainCreate = false;
   elements.articleForm.reset();
   elements.articleId.value = '';
+  originalForm = null;
+  loadArticleCategory();
   elements.articleAuthor.value = 'Agri-tech';
   elements.articleStatus.value = 'draft';
   elements.articleFormTitle.textContent = 'Nouvel article';
@@ -330,7 +344,7 @@ function openForm(article = null) {
   elements.articleId.value = article.id || '';
   elements.articleTitle.value = article.title || '';
   elements.articleSlug.value = article.slug || '';
-  elements.articleCategory.value = article.category || '';
+  loadArticleCategory(article.category);
   elements.articleAuthor.value = article.author || 'Agri-tech';
   elements.articleExcerpt.value = article.excerpt || '';
   elements.articleCoverUrl.value = article.coverImage || '';
@@ -341,6 +355,7 @@ function openForm(article = null) {
   clearPreviewObjectUrl();
   updateCoverPreview(article.coverImage || '');
   slugTouched = true;
+  originalForm = collectFormPayload(null, { raw: true });
   elements.articleTitle?.focus();
   renderArticlePreview();
 }
@@ -396,7 +411,7 @@ function renderArticlePreview() {
   `;
 }
 
-function collectFormPayload(forcedStatus = null) {
+function collectFormPayload(forcedStatus = null, { raw = false } = {}) {
   const status = forcedStatus || elements.articleStatus.value || 'draft';
   const publishedAt = elements.articlePublishedAt.value ? new Date(elements.articlePublishedAt.value).toISOString() : null;
   return {
@@ -406,10 +421,10 @@ function collectFormPayload(forcedStatus = null) {
     excerpt: elements.articleExcerpt.value,
     cover_image_url: elements.articleCoverUrl.value,
     author: elements.articleAuthor.value,
-    content: getCurrentSanitizedArticleContent(),
+    content: raw ? getCurrentArticleContent() : getCurrentSanitizedArticleContent(),
     status,
     featured: elements.articleFeatured.checked,
-    published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt
+    published_at: publishedAt
   };
 }
 
@@ -419,6 +434,15 @@ async function saveArticle(forcedStatus = null) {
     setMessage(elements.dashboardMessage, 'Résultat de création incertain. Rechargez la liste et vérifiez le slug avant toute nouvelle création. Le contenu reste dans le formulaire.', 'error');
     return;
   }
+  if (!ARTICLE_CATEGORIES.includes(elements.articleCategory.value)) {
+    setMessage(elements.dashboardMessage, 'Veuillez choisir une catégorie officielle.', 'error');
+    elements.articleCategory.focus();
+    return;
+  }
+  if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim()) {
+    setMessage(elements.dashboardMessage, 'Le titre et le slug sont obligatoires.', 'error');
+    return;
+  }
   operationPending = true;
   lockForm(true);
   let stage = 'save-article';
@@ -426,18 +450,19 @@ async function saveArticle(forcedStatus = null) {
   let saved = null;
   try {
     setMessage(elements.dashboardMessage, 'Vérification des images et enregistrement en cours…', 'info');
-    const rawContent = await prepareArticleEditorForSave();
-    if (hasEmbeddedBase64Image(rawContent)) throw Object.assign(new Error('Images temporaires.'), { code: 'EDITOR_UPLOAD' });
-    if (!elements.articleTitle.value.trim() || !elements.articleSlug.value.trim() || !elements.articleCategory.value.trim()) {
-      setMessage(elements.dashboardMessage, 'Titre, slug et catégorie sont obligatoires.', 'error');
-      return;
-    }
-    if (!hasReadableArticleContent(rawContent)) {
-      setMessage(elements.dashboardMessage, 'Veuillez ajouter un contenu à l’article.', 'error');
-      return;
-    }
-    const payload = collectFormPayload(forcedStatus);
+    let payload = collectFormPayload(forcedStatus, { raw: true });
     const file = elements.articleImage.files?.[0];
+    const categoryOnly = originalForm && !file && payload.category !== originalForm.category
+      && Object.keys(payload).every((key) => key === 'category' || payload[key] === originalForm[key]);
+    if (!categoryOnly) {
+      const rawContent = await prepareArticleEditorForSave();
+      if (hasEmbeddedBase64Image(rawContent)) throw Object.assign(new Error('Images temporaires.'), { code: 'EDITOR_UPLOAD' });
+      if (!hasReadableArticleContent(rawContent)) {
+        setMessage(elements.dashboardMessage, 'Veuillez ajouter un contenu à l’article.', 'error');
+        return;
+      }
+      payload = collectFormPayload(forcedStatus);
+    }
     if (file) {
       stage = 'upload';
       // Retain a successful upload across Database failures; never delete a URL
@@ -451,11 +476,13 @@ async function saveArticle(forcedStatus = null) {
     stage = 'save-article';
     databaseStarted = true;
     saved = elements.articleId.value
-      ? await updateArticle(elements.articleId.value, payload)
+      ? await updateArticle(elements.articleId.value, payload, { categoryOnly })
       : await createArticle(payload);
     elements.articleId.value = saved.id;
     elements.articleStatus.value = saved.status;
     elements.articleFormTitle.textContent = 'Modifier l’article';
+    loadArticleCategory(saved.category);
+    originalForm = collectFormPayload(null, { raw: true });
     stage = 'refresh';
     articles = await getAllArticlesForAdmin();
     renderArticles();
@@ -628,6 +655,11 @@ function bindEvents() {
       openForm(article);
       return;
     }
+    if (button.dataset.action === 'publish' && !ARTICLE_CATEGORIES.includes(article.category)) {
+      openForm(article);
+      setMessage(elements.dashboardMessage, 'Choisissez une catégorie officielle avant de publier.', 'error');
+      return;
+    }
 
     operationPending = true;
     button.disabled = true;
@@ -658,6 +690,10 @@ function bindEvents() {
         elements.articleStatus.value = actionArticle.status;
         elements.articleFeatured.checked = actionArticle.featured;
         elements.articlePublishedAt.value = actionArticle.publishedAt?.slice(0, 16) || '';
+        if (originalForm) {
+          const { status, featured, published_at } = collectFormPayload();
+          Object.assign(originalForm, { status, featured, published_at });
+        }
       }
       articles = await getAllArticlesForAdmin();
       renderArticles();
@@ -674,6 +710,9 @@ function bindEvents() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   projectAdmin = initProjectAdmin(() => currentSession ? supabase : null);
+  for (const category of ARTICLE_CATEGORIES) {
+    elements.articleCategory.add(new Option(category, category));
+  }
   bindEvents();
   updateDiagnostics();
   await initArticleEditor({

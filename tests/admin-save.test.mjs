@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { registerHooks } from 'node:module';
 
 let writeError, uploadError, refreshError, cleanupError, savedCount = 0, writes = 0, uploads = 0;
-const stored = { id: 'id-1', title: 'Titre', slug: 'titre', category: 'Test', status: 'draft' };
+const stored = { id: 'id-1', title: 'Titre', slug: 'titre', category: 'Production animale', status: 'draft' };
 const client = {
   storage: { from: () => ({
     async upload() { uploads++; return { error: uploadError }; },
@@ -56,7 +56,7 @@ function reset() {
   writeError = uploadError = refreshError = cleanupError = null; savedCount = writes = uploads = 0;
   content = '<p>Contenu conservé</p>'; uploadResult = []; waitUpload = null;
   elements.articleId.value = 'existing'; elements.articleTitle.value = 'Titre';
-  elements.articleSlug.value = 'titre'; elements.articleCategory.value = 'Test';
+  elements.articleSlug.value = 'titre'; elements.articleCategory.value = stored.category;
   elements.articlePublishedAt.value = ''; elements.articleImage.value = ''; elements.articleImage.files = [];
 }
 

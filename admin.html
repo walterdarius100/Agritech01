@@ -148,7 +148,10 @@
             <div class="form-grid two">
               <div>
                 <label for="articleCategory">Catégorie</label>
-                <input id="articleCategory" name="category" type="text" required />
+                <select id="articleCategory" name="category" aria-describedby="articleCategoryNotice" required>
+                  <option value="" disabled selected>Choisir une catégorie</option>
+                </select>
+                <small id="articleCategoryNotice" hidden></small>
               </div>
               <div>
                 <label for="articleAuthor">Auteur</label>
