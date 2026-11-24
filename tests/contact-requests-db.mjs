@@ -197,7 +197,24 @@ try {
   assert.equal(providerAccepted.get(`contact/admin_email/${service.id}`).to, config.CONTACT_ADMIN_EMAIL);
   assert.equal(providerAccepted.get(`contact/receipt_email/${service.id}`).to, service.email);
   assert.match(calls.find(call => call.kind === 'admin_email').payload.html, /&lt;script&gt;/);
-  assert.doesNotMatch(calls.find(call => call.kind === 'receipt_email').payload.html, /Personne test|3600|Consultation/);
+  const receipt = providerAccepted.get(`contact/receipt_email/${service.id}`);
+  assert.equal(receipt.subject, 'Nous avons bien reçu votre demande — Agri-tech');
+  assert.match(receipt.html, /Bonjour <strong>&lt;b&gt;Personne test&lt;\/b&gt;<\/strong>,/);
+  assert.doesNotMatch(receipt.html, /<b>Personne test<\/b>|3600|Consultation|L[’']équipe Agri-tech/);
+  assert.ok(receipt.html.includes(`<strong style="color:#0f3d2e">Service – ${service.need}</strong>.`));
+  assert.match(receipt.html, /<strong>Walter Darius<\/strong><br><em>Directeur général d'Agri-tech<\/em>/);
+  const footer = 'Cet e-mail transactionnel vous a été envoyé pour confirmer la réception de votre demande adressée à Agri-tech.';
+  assert.ok(receipt.html.includes(`<em>${footer}</em>`));
+  assert.equal(receipt.text, [
+    `Bonjour ${service.name},`,
+    "Nous vous remercions d'avoir contacté Agri-tech.",
+    `Nous confirmons la bonne réception de votre demande : Service – ${service.need}.`,
+    'Notre équipe a bien enregistré votre demande et en prendra connaissance très prochainement.',
+    'Nous reviendrons vers vous dans les plus brefs délais pour discuter de votre besoin et des prochaines étapes.',
+    'Merci pour votre confiance.',
+    "Walter Darius\nDirecteur général d'Agri-tech",
+    `---\n\n${footer}`
+  ].join('\n\n'));
 
   const formation = makeContact({ need: ACADEMY_NEED, message: '' });
   const partnership = makeContact({ need: PARTNERSHIP_NEED });
