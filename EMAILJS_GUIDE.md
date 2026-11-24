@@ -1,5 +1,7 @@
 # Guide EmailJS — formulaire Agri-tech V1
 
+Ce guide décrit le système historique utilisé pour le retour arrière. Le parcours V1.2 est décrit dans le [guide des demandes de contact](docs/contact-requests.md).
+
 Le formulaire principal est sur `index.html` et son id existant est :
 
 ```text
