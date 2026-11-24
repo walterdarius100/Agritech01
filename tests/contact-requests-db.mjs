@@ -194,6 +194,8 @@ try {
   assert.ok(synced.completed_at);
   assert.deepEqual(synced.result, { dossier_id: 'AGR-0123', possible_duplicate_id: null });
   assert.equal(providerAccepted.size, 2);
+  assert.equal(providerAccepted.get(`contact/admin_email/${service.id}`).to, config.CONTACT_ADMIN_EMAIL);
+  assert.equal(providerAccepted.get(`contact/receipt_email/${service.id}`).to, service.email);
   assert.match(calls.find(call => call.kind === 'admin_email').payload.html, /&lt;script&gt;/);
   assert.doesNotMatch(calls.find(call => call.kind === 'receipt_email').payload.html, /Personne test|3600|Consultation/);
 

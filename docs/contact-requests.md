@@ -209,13 +209,18 @@ clés aléatoires indépendantes pour le worker, le pipeline et les quotas.
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Variables intégrées au runtime Supabase |
 | `CONTACT_RESEND_API_KEY` ou `RESEND_API_KEY` | Clé d’envoi serveur. La seconde sert de repli |
 | `CONTACT_FROM` | Identité d’expédition vérifiée par Resend |
-| `CONTACT_ADMIN_EMAIL` | Boîte Agri-tech autorisée pour les notifications |
+| `CONTACT_ADMIN_EMAIL` | `projets@agritech509ht.com`, boîte administrative pour les notifications de contact |
 | `CONTACT_SITE_ORIGINS` | Origines exactes séparées par des virgules, sans slash final. Par défaut `https://agritech509ht.com` |
 | `CONTACT_RATE_SECRET` | Clé HMAC des empreintes de quota |
 | `CONTACT_TRUSTED_IP_HEADER` | Facultatif. Configurer uniquement si l’ingress écrase les valeurs du client |
 | `CONTACT_WORKER_SECRET` | Clé d’authentification du worker. Même valeur dans Vault lors de l’étape 7 |
 | `CONTACT_PIPELINE_URL` | Après l’étape 5, URL HTTPS `/exec?agri_contact_v12=1` publiée depuis le projet Google Form |
 | `CONTACT_PIPELINE_SECRET` | Même chaîne que la propriété du projet Apps Script partagé |
+
+En production, mettre à jour manuellement `CONTACT_ADMIN_EMAIL` dans les secrets
+Edge Functions de Supabase. La nouvelle valeur est disponible pour les prochains
+appels du worker après l’enregistrement du secret. Cette mise à jour de
+configuration s’applique aux prochains envois administratifs.
 
 Vérifier les quotas Resend, qui sont partagés entre les clés d’un même compte.
 Le traitement du contact conserve des états et des clés d’idempotence
