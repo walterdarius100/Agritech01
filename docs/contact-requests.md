@@ -488,6 +488,72 @@ Les diagnostics émettent uniquement des codes fixes. Les réponses Google,
 les URL de redirection, les signatures et les données des demandes ne
 figurent ni dans `last_error` ni dans la réponse du diagnostic.
 
+## Reprise après `pipeline_formula_template`
+
+La sonde `pipeline_ready` valide le connecteur et la signature. Le retour
+`pipeline_formula_template` provient du contrôle du modèle dans
+`ContactPipeline.gs`, avant toute réservation AGR ou écriture du site.
+L’Edge Function transmet ce code au journal de la tâche. Avec une cible à
+la ligne 80 et une propriété effectivement lue à 79, les indices internes
+sont 78 et 77. Le modèle précède donc bien la cible et les indices des
+colonnes V, W, X, AA et AB sont corrects. Il reste à vérifier, dans le
+projet partagé, la valeur lue, les expressions réellement présentes sur
+la ligne 79 et l’occupation des cellules cibles sans formule. Une valeur
+affichée ou une cellule calculée affichant du vide ne suffit pas pour
+identifier une formule. Le code compare `getValues()` et `getFormulas()`.
+
+`dataRows: 284` décrit la dernière ligne utilisée de la feuille, hors
+en-tête. La ligne cible suit la dernière ligne contenant une valeur hors
+formule ou une cellule d’identité A/AF occupée. La lecture inclut toutes
+les lignes utilisées, plus une ligne si la grille le permet. Des lignes
+contenant uniquement des formules peuvent donc se trouver plus bas que
+la ligne cible. Un dossier ou une valeur saisie plus bas déplace la cible
+après cette ligne. Une formule ou une valeur dans une cellule que le site
+doit écrire bloque l’insertion. Une note existante en AF bloque également
+l’écriture du site, qui remplacerait cette note.
+
+1. Dans le projet Apps Script **partagé avec Google Form**, enregistrer le
+   nouveau fichier `ContactPipeline.gs`. Garder `Code.gs` et la fonction
+   Edge actuels. L’audit s’exécute depuis l’éditeur sur le code enregistré,
+   sans publier de version ni toucher au classeur.
+2. Exécuter une fois `auditContactPipelineLayout()`. Lire uniquement le
+   journal technique. `modelRow` indique le numéro lu, ou `null` pour
+   une propriété absente ou illisible. `modelIndexValid`, `nextRow`,
+   `lastOccupiedRow`, `scannedThroughRow` et `formulaRowsBelowTarget`
+   expliquent les positions. `formulaColumns` indique pour chacune des
+   colonnes 22, 23, 24, 27 et 28 la présence d’une formule et d’une valeur
+   sur la cible, ainsi que la présence de la formule sur le modèle.
+   `targetCells` décrit A:AF et `siteWriteBlockedColumns` liste les
+   cellules incompatibles avec l’écriture du site.
+3. Corriger la configuration à partir de `reasons`.
+
+   | Motif | Action |
+   | --- | --- |
+   | `model_property_missing`, `model_row_invalid` | Vérifier la propriété `CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW` du projet partagé et saisir un numéro de ligne entier |
+   | `model_out_of_scan`, `model_not_before_target` | Choisir une ligne modèle située dans la zone analysée, avant la cible |
+   | `model_formula_missing` | Examiner les colonnes où `targetHasFormula` et `modelHasFormula` sont tous deux faux. Vérifier puis configurer une autre ligne modèle disposant des expressions requises |
+   | `target_out_of_grid`, `target_formula_cell_occupied`, `target_write_cells_occupied` | Vérifier la grille et l’occupation de la cible avec le responsable du classeur. Laisser les cellules existantes intactes |
+
+   `suggestedModelRow` indique la ligne précédente la plus proche dotée
+   des cinq formules. Vérifier ses expressions dans Google Sheets avant de
+   la choisir. La présence d’une formule ne prouve pas que ses références
+   correspondent au suivi attendu. Les références relatives de ligne doivent
+   viser le dossier de la ligne modèle. Les références absolues doivent
+   rester celles des cellules de paramétrage attendues. Sheets applique ces
+   règles natives via `PASTE_FORMULA`. Le connecteur copie uniquement les
+   formules manquantes, sans recopier les valeurs ni les formats.
+4. Une fois le motif résolu et la cible confirmée, publier une nouvelle
+   version du déploiement Web **existant** dans ce projet. Conserver son
+   URL, le paramètre `agri_contact_v12=1`, les secrets et le Cron arrêté.
+   Vérifier AF pour l’UUID de recette, puis effectuer une seule reprise
+   ciblée de `a47b9c16-93c2-49bb-8fc1-5c4b83de9251` à partir de
+   `next_attempt_at`. Les tâches déjà `done` ne sont pas éligibles au
+   worker. Une opération réussie donne `pipeline=done`, un AGR dans
+   `result.dossier_id`, exactement une occurrence de l’UUID en AF et
+   des résultats de calcul cohérents dans les cinq colonnes. Contrôler
+   ces points sur la ligne du test et observer le prochain traitement
+   Google Form normal pour confirmer la continuité.
+
 ## Exploitation et confidentialité
 
 Dans Supabase, consulter les tâches par `request_id`. Les résultats contiennent

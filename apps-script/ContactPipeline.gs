@@ -115,16 +115,8 @@ function agriSyncContact_(spreadsheetId, contact, props) {
     'Consentement à être recontacté : Oui',
     possibleDuplicate ? 'Doublon potentiel avec ' + possibleDuplicate + ' (à examiner)' : ''
   ].filter(Boolean).join('\n');
-  // Only supplied fields are updated. A:AE blanks, formulas and validation stay in place.
-  const cells = {
-    1: date, 2: contact.name, 3: contact.name, 4: contact.phone, 5: contact.email,
-    6: contact.need, 8: contact.source, 9: 'WhatsApp', 10: 'Tiède', 11: 'Moyenne',
-    12: 'Nouveau prospect', 13: 'Appel de qualification', 14: 'À assigner',
-    17: 'Non', 18: 'À qualifier après réunion', 24: 'Qualifier le besoin du prospect',
-    25: date, 28: 'En cours', 30: notes, [AGRI_UUID_COLUMN]: contact.id
-  };
-  cells[0] = '';
-  if (!agriPipelineTargetIsFree_(rows, formulas, nextIndex, cells)) {
+  const cells = agriSitePipelineCells_(contact, date, notes);
+  if (!agriPipelineTargetIsFree_(sheet, rows, formulas, nextIndex, cells)) {
     return { status: 'error', code: 'layout' };
   }
   const copies = agriPipelineFormulaCopies_(sheet, props, rows, formulas, nextIndex);
@@ -137,6 +129,18 @@ function agriSyncContact_(spreadsheetId, contact, props) {
     return { status: 'error', code: 'sheet_write' };
   }
   return agriSynced_(contact.id, id, possibleDuplicate);
+}
+
+function agriSitePipelineCells_(contact, date, notes) {
+  // Only supplied fields are updated. A:AE blanks, formulas and validation stay in place.
+  return {
+    0: '',
+    1: date, 2: contact.name, 3: contact.name, 4: contact.phone, 5: contact.email,
+    6: contact.need, 8: contact.source, 9: 'WhatsApp', 10: 'Tiède', 11: 'Moyenne',
+    12: 'Nouveau prospect', 13: 'Appel de qualification', 14: 'À assigner',
+    17: 'Non', 18: 'À qualifier après réunion', 24: 'Qualifier le besoin du prospect',
+    25: date, 28: 'En cours', 30: notes, [AGRI_UUID_COLUMN]: contact.id
+  };
 }
 
 function withAgriPipelineLock_(work, onBusy, waitMs = 10000) {
@@ -223,7 +227,7 @@ function writeAgriPipelineFormRow_(sheet, row) {
       cells[column] = value instanceof Date ? agriSheetDate_(value, sheet.getParent().getSpreadsheetTimeZone()) : value;
     }
   });
-  if (!agriPipelineTargetIsFree_(rows, formulas, nextIndex, cells)) {
+  if (!agriPipelineTargetIsFree_(sheet, rows, formulas, nextIndex, cells)) {
     throw new Error('Aucune ligne préparée et disponible pour Google Form.');
   }
   const rowNumber = nextIndex + 2;
@@ -233,25 +237,49 @@ function writeAgriPipelineFormRow_(sheet, row) {
   return rowNumber;
 }
 
-function agriPipelineTargetIsFree_(rows, formulas, index, cells) {
+function agriPipelineTargetIsFree_(sheet, rows, formulas, index, cells) {
   return index < rows.length && Object.keys(cells).every(
     column => rows[index][column] === '' && !formulas[index][column]
-  );
+  ) && (!Object.prototype.hasOwnProperty.call(cells, AGRI_UUID_COLUMN) || !sheet.getRange(index + 2, AGRI_UUID_COLUMN + 1).getNote());
+}
+
+function agriPipelineFormulaPlan_(props, rows, formulas, index) {
+  const raw = props.getProperty('CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW');
+  const parsed = raw && /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : null;
+  const modelRow = Number.isSafeInteger(parsed) ? parsed : null;
+  const source = modelRow === null ? null : modelRow - 2;
+  const targetExists = Boolean(rows[index] && formulas[index]);
+  const modelIndexValid = source !== null && source >= 0 && source < formulas.length;
+  const columns = AGRI_PIPELINE_FORMULA_COLUMNS.map(column => ({
+    column: column + 1,
+    modelHasFormula: modelIndexValid && Boolean(formulas[source][column]),
+    targetHasFormula: targetExists && Boolean(formulas[index][column]),
+    targetHasValue: targetExists && rows[index][column] !== ''
+  }));
+  const missing = columns.filter(column => !column.targetHasFormula);
+  const reasons = [];
+  if (!targetExists) reasons.push('target_out_of_grid');
+  else if (missing.length) {
+    if (!raw || !raw.trim()) reasons.push('model_property_missing');
+    else if (modelRow === null || modelRow < 2) reasons.push('model_row_invalid');
+    else if (!modelIndexValid) reasons.push('model_out_of_scan');
+    else if (source >= index) reasons.push('model_not_before_target');
+    else if (missing.some(column => !column.modelHasFormula)) reasons.push('model_formula_missing');
+    if (missing.some(column => column.targetHasValue)) reasons.push('target_formula_cell_occupied');
+  }
+  return { modelRow, source, modelIndexValid, targetExists, columns, missing, reasons };
 }
 
 function agriPipelineFormulaCopies_(sheet, props, rows, formulas, index) {
-  const missing = AGRI_PIPELINE_FORMULA_COLUMNS.filter(column => !formulas[index][column]);
-  if (!missing.length) return [];
-  const source = Number(props.getProperty('CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW')) - 2;
-  if (!Number.isInteger(source) || source < 0 || source >= index || !formulas[source] ||
-      missing.some(column => !formulas[source][column] || rows[index][column] !== '')) return null;
+  const plan = agriPipelineFormulaPlan_(props, rows, formulas, index);
+  if (plan.reasons.length) return null;
   const range = (row, column) => ({
     sheetId: sheet.getSheetId(), startRowIndex: row + 1, endRowIndex: row + 2,
     startColumnIndex: column, endColumnIndex: column + 1
   });
   // Sheets adjusts relative references. Copy each formula without values or formatting.
-  return missing.map(column => ({ copyPaste: {
-    source: range(source, column), destination: range(index, column),
+  return plan.missing.map(({ column }) => ({ copyPaste: {
+    source: range(plan.source, column - 1), destination: range(index, column - 1),
     pasteType: 'PASTE_FORMULA', pasteOrientation: 'NORMAL'
   } }));
 }
@@ -291,20 +319,55 @@ function agriSheetDate_(iso, timezone) {
 
 // Run manually after configuring the workbook. Reports layout only, never lead values.
 function auditContactPipelineLayout() {
-  const id = PropertiesService.getScriptProperties().getProperty('PIPELINE_SPREADSHEET_ID');
-  const sheet = agriPipelineSheet_(id);
+  const props = PropertiesService.getScriptProperties();
+  const sheet = agriPipelineSheet_(props.getProperty('PIPELINE_SPREADSHEET_ID'));
   if (!sheet) throw new Error('Vérifier A:AF et le nom de l’onglet.');
-  const dataRows = Math.max(0, sheet.getLastRow() - 1);
-  const formulaCounts = AGRI_PIPELINE_HEADERS.map(() => 0);
-  if (dataRows) {
-    sheet.getRange(2, 1, dataRows, AGRI_PIPELINE_HEADERS.length).getFormulas()
-      .forEach(row => row.forEach((formula, index) => { if (formula) formulaCounts[index]++; }));
-  }
   const { rows, formulas, nextIndex } = readAgriPipelineRows_(sheet);
-  const candidate = rows[nextIndex] ? formulas[nextIndex] : null;
-  console.log(JSON.stringify({
-    dataRows, gridRows: sheet.getMaxRows(), formulaCounts,
-    nextRow: candidate ? nextIndex + 2 : null,
-    nextRowFormulaColumns: AGRI_PIPELINE_FORMULA_COLUMNS.filter(column => candidate && candidate[column]).map(column => column + 1)
+  const plan = agriPipelineFormulaPlan_(props, rows, formulas, nextIndex);
+  const formulaCounts = AGRI_PIPELINE_HEADERS.map((_, column) =>
+    formulas.reduce((count, row) => count + Number(Boolean(row[column])), 0)
+  );
+  const writeColumns = Object.keys(agriSitePipelineCells_({}, '', '')).map(Number);
+  const targetCells = AGRI_PIPELINE_HEADERS.map((_, column) => ({
+    column: column + 1,
+    hasFormula: plan.targetExists && Boolean(formulas[nextIndex][column]),
+    hasValue: plan.targetExists && rows[nextIndex][column] !== ''
   }));
+  const siteWriteBlockedColumns = targetCells
+    .filter(cell => writeColumns.includes(cell.column - 1) && (cell.hasFormula || cell.hasValue))
+    .map(cell => cell.column);
+  const targetAfHasNote = plan.targetExists && Boolean(sheet.getRange(nextIndex + 2, AGRI_UUID_COLUMN + 1).getNote());
+  if (targetAfHasNote && !siteWriteBlockedColumns.includes(AGRI_UUID_COLUMN + 1)) {
+    siteWriteBlockedColumns.push(AGRI_UUID_COLUMN + 1);
+  }
+
+  let suggestedModelRow = null;
+  for (let index = Math.min(nextIndex, rows.length) - 1; index >= 0; index--) {
+    if (AGRI_PIPELINE_FORMULA_COLUMNS.every(column => Boolean(formulas[index][column]))) {
+      suggestedModelRow = index + 2;
+      break;
+    }
+  }
+  const formulaRowsBelowTarget = formulas.slice(nextIndex + 1).filter(row => row.some(Boolean)).length;
+  const report = {
+    dataRows: Math.max(0, sheet.getLastRow() - 1),
+    gridRows: sheet.getMaxRows(),
+    scannedThroughRow: rows.length + 1,
+    lastOccupiedRow: nextIndex ? nextIndex + 1 : null,
+    formulaRowsBelowTarget,
+    formulaCounts,
+    nextRow: plan.targetExists ? nextIndex + 2 : null,
+    nextRowFormulaColumns: plan.columns.filter(column => column.targetHasFormula).map(column => column.column),
+    modelRow: plan.modelRow,
+    modelIndexValid: plan.modelIndexValid,
+    suggestedModelRow,
+    formulaColumns: plan.columns,
+    targetCells,
+    targetAfHasNote,
+    siteWriteBlockedColumns,
+    reasons: [...(siteWriteBlockedColumns.length ? ['target_write_cells_occupied'] : []), ...plan.reasons],
+    readyForSite: plan.targetExists && !siteWriteBlockedColumns.length && !plan.reasons.length
+  };
+  console.log(JSON.stringify(report));
+  return report;
 }

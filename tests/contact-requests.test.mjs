@@ -65,6 +65,7 @@ function pipeline() {
   };
   let networkFailure = false;
   const ctx = vm.createContext({
+    console: { log() {} },
     ContentService: {
       MimeType: { JSON: 'json' },
       createTextOutput: body => ({ setMimeType: () => JSON.parse(body) })
@@ -81,7 +82,6 @@ function pipeline() {
     LockService: { getScriptLock: () => lock },
     SpreadsheetApp: { flush() { assert.equal(lock.held, true); }, openById: id => {
       assert.equal(id, 'copy');
-      assert.equal(lock.held, true);
       return { getSheets: () => [sheet] };
     } },
     Sheets: { Spreadsheets: { batchUpdate({ requests: batch }) {
@@ -137,7 +137,10 @@ function pipeline() {
       return row[0];
     });
   }
-  return { invoke, invokeGoogleForm, props, rows, formulas, requests, contact, loseAck: value => { networkFailure = value; } };
+  const audit = () => JSON.parse(JSON.stringify(ctx.auditContactPipelineLayout()));
+  return { invoke, invokeGoogleForm, audit, props, rows, formulas, notes, requests, contact,
+    loseAck: value => { networkFailure = value; } };
+
 }
 
 test('Apps Script refuse signatures invalides et anciennes, sans accéder au classeur', () => {
@@ -219,4 +222,64 @@ test('un dossier sans formules bénéficie du modèle approuvé dans le même lo
   assert.equal(p.rows[2][31], p.contact.id);
   assert.equal(p.invoke().dossierId, 'AGR-0013');
   assert.equal(p.requests.length, 1);
+});
+
+test('audit sans écriture distingue propriété, indices et formules du modèle', () => {
+  const p = pipeline();
+  const columns = [21, 22, 23, 26, 27];
+  for (const column of columns) {
+    p.rows[2][column] = '';
+    p.formulas[2][column] = '';
+    p.formulas[1][column] = '=IF($A2="","",$B$1)';
+  }
+  const key = 'CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW';
+  assert.deepEqual(p.audit().reasons, ['model_property_missing']);
+  for (const [value, reason] of [
+    ['fixture-secret', 'model_row_invalid'], ['6', 'model_not_before_target'],
+    ['99', 'model_out_of_scan']
+  ]) {
+    p.props.set(key, value);
+    const report = p.audit();
+    assert.deepEqual(report.reasons, [reason]);
+    assert.doesNotMatch(JSON.stringify(report), /fixture-secret|IF\(|AGR-0012/);
+    assert.equal(p.invoke().code, 'formula_template');
+  }
+  p.props.set(key, '2');
+  p.formulas[1][27] = '';
+  p.rows[1][27] = 'Valeur saisie';
+  const incomplete = p.audit();
+  assert.equal(incomplete.modelRow, 2);
+  assert.equal(incomplete.modelIndexValid, true);
+  assert.deepEqual(incomplete.formulaColumns.filter(c => !c.modelHasFormula).map(c => c.column), [28]);
+  assert.deepEqual(incomplete.reasons, ['model_formula_missing']);
+  assert.equal(p.invoke().code, 'formula_template');
+  assert.equal(p.requests.length, 0);
+  assert.equal(p.props.has('CONTACT_SEQUENCE_copy'), false);
+});
+
+test('audit distingue lignes de formules et données métier plus bas et protège la cible', () => {
+  const p = pipeline();
+  const initial = p.audit();
+  assert.equal(initial.nextRow, 3);
+  assert.equal(initial.lastOccupiedRow, 2);
+  assert.equal(initial.formulaRowsBelowTarget, 2);
+
+  p.rows[3][2] = 'Dossier partiel';
+  const partial = p.audit();
+  assert.equal(partial.lastOccupiedRow, 4);
+  assert.equal(partial.nextRow, 5);
+
+  p.formulas[4][30] = '=IF(A5="","",A5)';
+  p.notes.set(5, 'Note à préserver');
+  const occupied = p.audit();
+  assert.deepEqual(occupied.siteWriteBlockedColumns, [31, 32]);
+  assert.equal(occupied.readyForSite, false);
+  assert.equal(p.invoke().code, 'layout');
+  assert.equal(p.requests.length, 0);
+
+  p.rows[4][0] = 'AGR-0019';
+  const lower = p.audit();
+  assert.equal(lower.lastOccupiedRow, 5);
+  assert.equal(lower.nextRow, 6);
+  assert.equal(lower.suggestedModelRow, 5);
 });
