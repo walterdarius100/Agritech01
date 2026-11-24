@@ -292,7 +292,8 @@ fichier dans un autre projet.
 
 5. Exécuter `auditContactPipelineLayout` depuis le projet partagé. Vérifier
    la prochaine ligne, les formules attendues, validations, protections et
-   formats de dates B et Z. Préparer, si nécessaire, une ligne neuve après
+   formats de dates B et Z. Si la ligne cible manque de formules, configurer
+   le modèle approuvé via `CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW`. Préparer, si nécessaire, une ligne neuve après
    les dossiers sans écraser les lignes existantes. Publier une application
    Web versionnée, exécutée sous le compte autorisé, accessible sans session
    Google pour permettre le POST HMAC. Reporter son URL routée dans
@@ -407,6 +408,85 @@ Conserver la réception Supabase pendant le chevauchement des onglets ouverts
 et rapprocher les demandes reçues. Garder la table historique, les tables V1.2,
 les journaux, les AGR et les dossiers existants. Relancer avec les mêmes UUID
 après correction du défaut qui a motivé l’arrêt.
+
+## Incident de synchronisation après installation
+
+Le test réel a enregistré l’UUID `a47b9c16-93c2-49bb-8fc1-5c4b83de9251`.
+Les deux tâches Resend ont obtenu un identifiant d’acceptation. La tâche
+`pipeline` a conservé `delivery_unconfirmed`, et le dossier n’a pas été
+retrouvé en AF lors du contrôle communiqué. Dans l’ancienne version, une
+exception réseau, un délai dépassé et une réponse non JSON pouvaient tous
+donner ce même code. Le HTTP 200 `worker_complete` confirme la fin du lot,
+y compris lorsqu’une tâche repart en attente. L’exécution Apps Script
+« Terminée » indique seulement que le script a terminé. Rapprocher son
+horodatage de `last_attempt_at` avant toute attribution. Les réponses
+`{"processed":0}` ne correspondent pas au format de ce worker.
+
+### Mise à jour sans réinstaller le SQL
+
+1. Dans le **projet partagé Google Form**, choisir une ligne existante et
+   approuvée contenant les cinq formules de suivi V, W, X, AA et AB.
+   Vérifier les références relatives et absolues de cette ligne. Enregistrer
+   son numéro dans la propriété `CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW`.
+   La ligne modèle doit précéder la ligne cible. La cible observée était 79
+   lors du diagnostic, mais elle peut avoir avancé depuis. Le connecteur
+   copie seulement les formules absentes, dans le même lot atomique que
+   l’AGR et AF, et laisse les formules existantes en place. Le Google Form
+   utilise le même mécanisme. Si le modèle manque ou est incomplet pour une
+   cellule à remplir, le lot est refusé sans créer de dossier.
+2. Mettre à jour `ContactPipeline.gs` dans ce projet et publier une **nouvelle
+   version du déploiement Web**. Conserver le routage
+   `agri_contact_v12=1` de `doPost(e)`. Dans « Gérer les déploiements »,
+   comparer en privé l’URL du déploiement partagé à la valeur de
+   `CONTACT_PIPELINE_URL`, avec `/exec?agri_contact_v12=1`. Une URL de
+   l’ancien projet autonome ou une URL `/dev` est à corriger. Redéployer
+   ensuite l’Edge Function depuis la PR. Conserver la migration installée,
+   les secrets Vault, le déclencheur Google Form et le Cron de contact à l’arrêt.
+3. Effectuer un seul diagnostic sans écriture. Utiliser le worker authentifié
+   depuis Supabase et ne consulter que son statut et son code de réponse.
+
+   ```sql
+   select net.http_post(
+     url := (select decrypted_secret from vault.decrypted_secrets
+             where name = 'contact_worker_url') || '?probe=pipeline',
+     headers := jsonb_build_object(
+       'X-Contact-Worker', (select decrypted_secret from vault.decrypted_secrets
+                            where name = 'contact_worker_secret')
+     ),
+     body := '{}'::jsonb,
+     timeout_milliseconds := 30000
+   ) as request_id;
+   ```
+
+   Dans `net._http_response`, filtrer sur cet identifiant et lire
+   `status_code` et `content` uniquement. Le diagnostic signe un message
+   dépourvu de coordonnées, vérifie la réponse de la version attendue et
+   ne réserve aucune tâche. `pipeline_ready` confirme le routage, la
+   signature et la version. L’accès effectif au classeur et l’écriture se
+   vérifient lors de la reprise de l’UUID.
+4. Après `pipeline_ready`, vérifier AF pour l’UUID de recette, puis relancer
+   uniquement cet UUID avec `?request_id=a47b9c16-93c2-49bb-8fc1-5c4b83de9251`
+   une fois la tâche `pipeline` éligible selon `next_attempt_at`. Garder
+   les tâches e-mail déjà `done`. Vérifier `pipeline=done`, le
+   `result.dossier_id`, l’UUID dans AF et les cinq formules de la nouvelle
+   ligne. Si AF contient déjà l’UUID, la reprise retourne l’AGR existant.
+
+### Lecture des nouveaux codes
+
+| Code | Diagnostic |
+| --- | --- |
+| `pipeline_endpoint`, `pipeline_route`, `pipeline_version` | Vérifier l’URL `/exec`, le paramètre de routage et la version publiée du projet partagé |
+| `pipeline_redirect` | Redirection inattendue, notamment vers une page de connexion. Le worker suit uniquement la redirection de Google ContentService vers `script.googleusercontent.com/macros/echo` par GET sans renvoyer le corps signé |
+| `pipeline_timeout`, `pipeline_transport`, `pipeline_http_<statut>` | Incident réseau, délai dépassé ou erreur HTTP. Vérifier AF avant toute reprise manuelle |
+| `pipeline_response_format`, `pipeline_ack` | Réponse non JSON ou accusé incompatible |
+| `pipeline_unauthorized`, `pipeline_writer_not_ready` | Vérifier le secret des deux côtés et la propriété d’activation du projet partagé |
+| `pipeline_invalid` pendant la sonde | Un ancien déploiement peut rejeter le message de diagnostic. Vérifier la version publiée |
+| `pipeline_layout`, `pipeline_formula_template`, `pipeline_sheet_access`, `pipeline_sheet_write` | Contrôler la ligne, le modèle, les droits Sheets ou l’échec de l’écriture |
+| `pipeline_busy`, `pipeline_unconfirmed`, `pipeline_internal` | Verrou occupé, erreur Apps Script sans détail ou exception interne du worker |
+
+Les diagnostics émettent uniquement des codes fixes. Les réponses Google,
+les URL de redirection, les signatures et les données des demandes ne
+figurent ni dans `last_error` ni dans la réponse du diagnostic.
 
 ## Exploitation et confidentialité
 

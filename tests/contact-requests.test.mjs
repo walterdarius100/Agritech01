@@ -87,7 +87,14 @@ function pipeline() {
     Sheets: { Spreadsheets: { batchUpdate({ requests: batch }) {
       assert.equal(lock.held, true);
       requests.push(batch);
-      for (const { updateCells } of batch) {
+      for (const { updateCells, copyPaste } of batch) {
+        if (copyPaste) {
+          assert.equal(copyPaste.pasteType, 'PASTE_FORMULA');
+          const { source, destination } = copyPaste;
+          formulas[destination.startRowIndex][destination.startColumnIndex] =
+            formulas[source.startRowIndex][source.startColumnIndex];
+          continue;
+        }
         const { rowIndex, columnIndex } = updateCells.start;
         const cell = updateCells.rows[0].values[0];
         rows[rowIndex][columnIndex] = cell.userEnteredValue.stringValue ?? cell.userEnteredValue.numberValue;
@@ -143,7 +150,7 @@ test('Apps Script refuse signatures invalides et anciennes, sans accéder au cla
 test('Apps Script conserve les AGR et formules, distingue doublon commercial et rejeu, écrit des chaînes littérales', () => {
   const p = pipeline();
   p.loseAck(true);
-  assert.equal(p.invoke().code, 'unconfirmed');
+  assert.equal(p.invoke().code, 'sheet_write');
   assert.deepEqual(p.invoke(), { status: 'synced', id: p.contact.id, dossierId: 'AGR-0013', possibleDuplicateId: 'AGR-0012' });
   p.loseAck(false);
   const other = { ...p.contact, id: crypto.randomUUID() };
@@ -189,4 +196,27 @@ test('site et Google Form réservent des AGR distincts sous le même verrou et p
   assert.equal(p.requests.length, 3);
   assert.ok(p.requests.every(batch => batch.every(({ updateCells }) =>
     ![21, 22, 23, 26, 27].includes(updateCells.start.columnIndex))));
+});
+
+test('un dossier sans formules bénéficie du modèle approuvé dans le même lot atomique', () => {
+  const p = pipeline();
+  const columns = [21, 22, 23, 26, 27];
+  for (const column of columns) {
+    p.formulas[1][column] = '=IF(A2="","",0)';
+    p.formulas[2][column] = '';
+    p.rows[2][column] = '';
+  }
+  p.formulas[2][27] = '=EXISTING()';
+  assert.equal(p.invoke({ operation: 'probe' }).protocol, 'agri-contact-v12-pipeline-2');
+  assert.equal(p.invoke().code, 'formula_template');
+  assert.equal(p.requests.length, 0);
+  p.props.set('CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW', '2');
+  assert.equal(p.invoke().dossierId, 'AGR-0013');
+  const copies = p.requests[0].filter(request => request.copyPaste);
+  assert.deepEqual(Array.from(copies, request => request.copyPaste.destination.startColumnIndex), [21, 22, 23, 26]);
+  assert.ok(columns.every(column => p.formulas[2][column]));
+  assert.equal(p.formulas[2][27], '=EXISTING()');
+  assert.equal(p.rows[2][31], p.contact.id);
+  assert.equal(p.invoke().dossierId, 'AGR-0013');
+  assert.equal(p.requests.length, 1);
 });

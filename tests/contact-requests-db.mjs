@@ -15,7 +15,7 @@ const config = {
   CONTACT_RATE_SECRET: 'fixture-rate',
   CONTACT_TRUSTED_IP_HEADER: 'X-Test-IP',
   CONTACT_WORKER_SECRET: 'fixture-worker',
-  CONTACT_PIPELINE_URL: 'https://pipeline.example/exec',
+  CONTACT_PIPELINE_URL: 'https://script.google.com/macros/s/test-deployment/exec?agri_contact_v12=1',
   CONTACT_PIPELINE_SECRET: 'fixture-pipeline',
   RESEND_API_KEY: 'fixture-resend',
   CONTACT_FROM: 'Agri-tech <form@example.org>',
@@ -27,6 +27,7 @@ const lost = new Set();
 const failOnce = new Set();
 const query = async (sql, args) => (await db.query(sql, args)).rows;
 let loseDatabaseReply = false;
+let probeMode = 'ready';
 
 async function transport(url, options) {
   const path = new URL(url);
@@ -48,13 +49,32 @@ async function transport(url, options) {
   }
 
   if (url === config.CONTACT_PIPELINE_URL) {
+    assert.equal(options.redirect, 'manual');
+    assert.equal(options.method, 'POST');
     const sign = createHmac('sha256', config.CONTACT_PIPELINE_SECRET)
       .update(`v1\n${payload.timestamp}\n${payload.payload}`).digest('hex');
     assert.equal(payload.signature, sign);
-    const { id } = JSON.parse(payload.payload);
+    const { id, operation } = JSON.parse(payload.payload);
+    if (operation === 'probe' && probeMode === 'redirect') {
+      return Response.redirect('https://accounts.google.com/signin', 302);
+    }
+    if (operation === 'probe' && probeMode === 'transport') throw new TypeError('Private transport details');
+    if (operation === 'probe') return Response.redirect('https://script.googleusercontent.com/macros/echo?probe=1', 302);
     calls.push({ id, kind: 'pipeline' });
-    if (failOnce.delete('pipeline')) return Response.json({ status: 'error', code: 'layout' });
-    return Response.json({ status: 'synced', id, dossierId: 'AGR-0123', possibleDuplicateId: '' });
+    if (failOnce.delete('pipeline')) return new Response('<html>Private proxy response</html>');
+    return Response.redirect(`https://script.googleusercontent.com/macros/echo?id=${id}`, 302);
+  }
+
+  if (path.origin === 'https://script.googleusercontent.com') {
+    assert.equal(options.method, 'GET');
+    assert.equal(options.body, undefined);
+    assert.equal(options.headers, undefined);
+    if (path.searchParams.has('probe')) {
+      return Response.json({ status: 'ready', protocol: 'agri-contact-v12-pipeline-2' });
+    }
+    return Response.json({
+      status: 'synced', id: path.searchParams.get('id'), dossierId: 'AGR-0123', possibleDuplicateId: ''
+    });
   }
 
   assert.equal(url, 'https://api.resend.com/emails');
@@ -138,6 +158,18 @@ try {
   const unprocessed = makeContact({ email: 'other@example.org' });
   assert.equal((await submit(unprocessed)).code, 200);
   assert.equal((await worker(config.CONTACT_WORKER_SECRET, 'invalid')).status, 400);
+  for (const [mode, status, code] of [
+    ['ready', 200, 'pipeline_ready'], ['redirect', 502, 'pipeline_redirect'],
+    ['transport', 502, 'pipeline_transport']
+  ]) {
+    probeMode = mode;
+    const response = await handler(new Request(endpoint + '/worker?probe=pipeline', {
+      method: 'POST', headers: { 'X-Contact-Worker': config.CONTACT_WORKER_SECRET }
+    }));
+    assert.equal(response.status, status);
+    assert.deepEqual(await response.json(), { status: code });
+  }
+  assert.ok((await status(service.id)).every(job => job.attempts === 0));
   failOnce.add('admin_email').add('pipeline');
   lost.add('receipt_email');
   assert.equal((await worker(config.CONTACT_WORKER_SECRET, service.id)).status, 200);
@@ -145,7 +177,7 @@ try {
   await db.query('delete from public.contact_v12_requests where id=$1', [unprocessed.id]);
   const failures = await status(service.id);
   assert.deepEqual(failures.map(job => [job.kind, job.last_error]), [
-    ['admin_email', 'resend_503'], ['pipeline', 'pipeline_layout'], ['receipt_email', 'delivery_unconfirmed']
+    ['admin_email', 'resend_503'], ['pipeline', 'pipeline_response_format'], ['receipt_email', 'delivery_unconfirmed']
   ]);
   assert.equal((await query('select status from public.contact_v12_requests where id=$1', [service.id]))[0].status, 'pending');
 

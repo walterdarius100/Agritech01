@@ -88,28 +88,77 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
     return await response.json();
   }
 
-  async function deliver(job: Job, contact: Contact) {
-    if (job.kind === 'pipeline') {
-      const endpoint = config.CONTACT_PIPELINE_URL;
-      const secret = config.CONTACT_PIPELINE_SECRET;
-      if (!endpoint || !secret) return { state: 'failed', error: 'pipeline_configuration' };
-      const payload = JSON.stringify(contact);
-      const timestamp = String(Math.floor(Date.now() / 1000));
-      const signature = await hmac(secret, `v1\n${timestamp}\n${payload}`);
-      const response = await fetcher(endpoint, {
+  async function callPipeline(payload: string) {
+    const secret = config.CONTACT_PIPELINE_SECRET;
+    if (!secret || !config.CONTACT_PIPELINE_URL) return { error: 'pipeline_configuration' };
+    let endpoint: URL;
+    try {
+      endpoint = new URL(config.CONTACT_PIPELINE_URL);
+      if (endpoint.origin !== 'https://script.google.com' || endpoint.username || endpoint.password ||
+          !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint.pathname) ||
+          endpoint.searchParams.getAll('agri_contact_v12').join(',') !== '1' || endpoint.hash) {
+        return { error: 'pipeline_endpoint' };
+      }
+    } catch {
+      return { error: 'pipeline_endpoint' };
+    }
+
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = await hmac(secret, `v1\n${timestamp}\n${payload}`);
+    const signal = AbortSignal.timeout(20000);
+    try {
+      let response = await fetcher(endpoint.href, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ timestamp, payload, signature }),
-        signal: AbortSignal.timeout(20000)
+        redirect: 'manual',
+        signal
       });
-      if (!response.ok) return { state: 'pending', error: 'pipeline_http' };
-      const result = await response.json();
-      if (result.status === 'synced' && result.id === contact.id && dossier.test(result.dossierId) &&
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('Location');
+        let target: URL;
+        try {
+          if (![302, 303].includes(response.status) || !location) return { error: 'pipeline_redirect' };
+          target = new URL(location, endpoint);
+          if (target.origin !== 'https://script.googleusercontent.com' || target.username || target.password ||
+              target.pathname !== '/macros/echo') return { error: 'pipeline_redirect' };
+        } catch {
+          return { error: 'pipeline_redirect' };
+        }
+        // ContentService serves the POST result from a one-time URL. Send neither body nor credentials.
+        response = await fetcher(target.href, { method: 'GET', redirect: 'manual', signal });
+        if (response.status >= 300 && response.status < 400) return { error: 'pipeline_redirect' };
+      }
+      if (!response.ok) return { error: `pipeline_http_${response.status}` };
+      const body = await response.text();
+      if (body.trim() === 'not_found') return { error: 'pipeline_route' };
+      try {
+        const result = JSON.parse(body);
+        if (!result || typeof result !== 'object' || Array.isArray(result)) return { error: 'pipeline_ack' };
+        if (result.status === 'error' && ['layout', 'busy', 'writer_not_ready', 'unauthorized', 'invalid',
+          'formula_template', 'unconfirmed', 'sheet_access', 'sheet_write'].includes(result.code)) {
+          return { error: `pipeline_${result.code}` };
+        }
+        return { result };
+      } catch {
+        return { error: 'pipeline_response_format' };
+      }
+    } catch {
+      return { error: signal.aborted ? 'pipeline_timeout' : 'pipeline_transport' };
+    }
+  }
+
+  async function deliver(job: Job, contact: Contact) {
+    if (job.kind === 'pipeline') {
+      const { result, error } = await callPipeline(JSON.stringify(contact));
+      if (error) return { state: 'pending', error };
+      if (result.status === 'synced' && result.id === contact.id &&
+          typeof result.dossierId === 'string' && dossier.test(result.dossierId) &&
           typeof result.possibleDuplicateId === 'string' &&
           (!result.possibleDuplicateId || dossier.test(result.possibleDuplicateId))) {
         return { state: 'done', result: { dossier_id: result.dossierId, possible_duplicate_id: result.possibleDuplicateId || null } };
       }
-      return { state: 'pending', error: ['layout', 'busy', 'writer_not_ready'].includes(result.code) ? `pipeline_${result.code}` : 'pipeline_ack' };
+      return { state: 'pending', error: 'pipeline_ack' };
     }
 
     const to = job.kind === 'admin_email' ? config.CONTACT_ADMIN_EMAIL : contact.email;
@@ -153,7 +202,7 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
         outcome = await deliver(job, contact);
       }
     } catch {
-      outcome = { state: 'pending', error: 'delivery_unconfirmed' };
+      outcome = { state: 'pending', error: job.kind === 'pipeline' ? 'pipeline_internal' : 'delivery_unconfirmed' };
     }
     const finished = await database('rpc/finish_contact_v12_job', {
       p_id: job.request_id, p_kind: job.kind, p_lease: job.lease_token,
@@ -182,7 +231,15 @@ export function createContactHandler(config: Config, fetcher: typeof fetch = fet
     try {
       if (worker) {
         if (!await matchesSecret(config.CONTACT_WORKER_SECRET, request.headers.get('X-Contact-Worker') || '')) return reply(401, 'rejected');
-        const requestId = new URL(request.url).searchParams.get('request_id');
+        const params = new URL(request.url).searchParams;
+        const requestId = params.get('request_id');
+        if (params.has('probe')) {
+          if (params.get('probe') !== 'pipeline' || requestId !== null) return reply(400, 'rejected');
+          const { result, error } = await callPipeline(JSON.stringify({ operation: 'probe' }));
+          if (error) return reply(502, error);
+          return result.status === 'ready' && result.protocol === 'agri-contact-v12-pipeline-2'
+            ? reply(200, 'pipeline_ready') : reply(502, 'pipeline_version');
+        }
         if (requestId !== null && !uuid.test(requestId)) return reply(400, 'rejected');
         if (requestId === null) await database('rpc/prune_contact_v12_rate', {});
         const jobs: Job[] = await database('rpc/claim_contact_v12_jobs', { p_request_id: requestId });

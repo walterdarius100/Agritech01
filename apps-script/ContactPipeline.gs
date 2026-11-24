@@ -27,11 +27,13 @@ function handleAgriContactPost_(e) {
     }
 
     const contact = JSON.parse(envelope.payload);
-    if (!agriValidContact_(contact)) return respond({ status: 'error', code: 'invalid' });
-
     if (props.getProperty('CONTACT_PIPELINE_SHARED_WRITER') !== 'verified') {
       return respond({ status: 'error', code: 'writer_not_ready' });
     }
+    if (contact && contact.operation === 'probe') {
+      return respond({ status: 'ready', protocol: 'agri-contact-v12-pipeline-2' });
+    }
+    if (!agriValidContact_(contact)) return respond({ status: 'error', code: 'invalid' });
     return respond(withAgriPipelineLock_(
       () => agriSyncContact_(props.getProperty('PIPELINE_SPREADSHEET_ID'), contact, props),
       () => ({ status: 'error', code: 'busy' })
@@ -75,7 +77,12 @@ function agriPipelineSheet_(spreadsheetId) {
 }
 
 function agriSyncContact_(spreadsheetId, contact, props) {
-  const sheet = agriPipelineSheet_(spreadsheetId);
+  let sheet;
+  try {
+    sheet = agriPipelineSheet_(spreadsheetId);
+  } catch {
+    return { status: 'error', code: 'sheet_access' };
+  }
   if (!sheet) return { status: 'error', code: 'layout' };
 
   const { rows, formulas, nextIndex } = readAgriPipelineRows_(sheet);
@@ -120,9 +127,15 @@ function agriSyncContact_(spreadsheetId, contact, props) {
   if (!agriPipelineTargetIsFree_(rows, formulas, nextIndex, cells)) {
     return { status: 'error', code: 'layout' };
   }
+  const copies = agriPipelineFormulaCopies_(sheet, props, rows, formulas, nextIndex);
+  if (!copies) return { status: 'error', code: 'formula_template' };
   const id = reserveAgriPipelineId_(spreadsheetId, props, rows.map(row => row[0]));
   cells[0] = id;
-  writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, possibleDuplicate);
+  try {
+    writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, possibleDuplicate, copies);
+  } catch {
+    return { status: 'error', code: 'sheet_write' };
+  }
   return agriSynced_(contact.id, id, possibleDuplicate);
 }
 
@@ -214,7 +227,9 @@ function writeAgriPipelineFormRow_(sheet, row) {
     throw new Error('Aucune ligne préparée et disponible pour Google Form.');
   }
   const rowNumber = nextIndex + 2;
-  writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, '');
+  const copies = agriPipelineFormulaCopies_(sheet, props, rows, formulas, nextIndex);
+  if (!copies) throw new Error('Modèle de formules du pipeline absent ou incomplet.');
+  writeAgriPipelineCells_(sheet, spreadsheetId, nextIndex, cells, '', copies);
   return rowNumber;
 }
 
@@ -224,7 +239,24 @@ function agriPipelineTargetIsFree_(rows, formulas, index, cells) {
   );
 }
 
-function writeAgriPipelineCells_(sheet, spreadsheetId, index, cells, possibleDuplicate) {
+function agriPipelineFormulaCopies_(sheet, props, rows, formulas, index) {
+  const missing = AGRI_PIPELINE_FORMULA_COLUMNS.filter(column => !formulas[index][column]);
+  if (!missing.length) return [];
+  const source = Number(props.getProperty('CONTACT_PIPELINE_FORMULA_TEMPLATE_ROW')) - 2;
+  if (!Number.isInteger(source) || source < 0 || source >= index || !formulas[source] ||
+      missing.some(column => !formulas[source][column] || rows[index][column] !== '')) return null;
+  const range = (row, column) => ({
+    sheetId: sheet.getSheetId(), startRowIndex: row + 1, endRowIndex: row + 2,
+    startColumnIndex: column, endColumnIndex: column + 1
+  });
+  // Sheets adjusts relative references. Copy each formula without values or formatting.
+  return missing.map(column => ({ copyPaste: {
+    source: range(source, column), destination: range(index, column),
+    pasteType: 'PASTE_FORMULA', pasteOrientation: 'NORMAL'
+  } }));
+}
+
+function writeAgriPipelineCells_(sheet, spreadsheetId, index, cells, possibleDuplicate, copies) {
   const requests = Object.keys(cells).map(Number).map(column => {
     const value = cells[column];
     const typed = typeof value === 'number' ? { numberValue: value } :
@@ -237,7 +269,7 @@ function writeAgriPipelineCells_(sheet, spreadsheetId, index, cells, possibleDup
       fields: column === AGRI_UUID_COLUMN ? 'userEnteredValue,note' : 'userEnteredValue'
     } };
   });
-  Sheets.Spreadsheets.batchUpdate({ requests }, spreadsheetId);
+  Sheets.Spreadsheets.batchUpdate({ requests: [...requests, ...copies] }, spreadsheetId);
 }
 
 function agriSynced_(id, dossierId, possibleDuplicateId) {
