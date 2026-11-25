@@ -10,7 +10,17 @@ const navbar = html => html.match(/<nav class="navbar"[\s\S]*?<\/nav>/)?.[0];
 test('les pages publiques utilisent la navigation générée', () => {
   execFileSync(process.execPath, [new URL('scripts/sync-navbar.mjs', root).pathname, '--check']);
   const home = navbar(read('index.html'));
-  assert.match(home, /href="projets\.html">Projets<\/a>/);
+  const links = home.match(/<div class="nav-links" id="navLinks">([\s\S]*?)<\/div>/)[1];
+  assert.deepEqual([...links.matchAll(/<a href="([^"]+)"(?: aria-current="page")?>([^<]+)<\/a>/g)]
+    .map(([, href, label]) => [href, label]), [
+    ['index.html', 'Accueil'],
+    ['services.html', 'Services'],
+    ['formations.html', 'Formations'],
+    ['projets.html', 'Projets'],
+    ['actualites.html', 'Actualités'],
+    ['index.html#leadForm', 'Contact']
+  ]);
+  assert.equal([...links.matchAll(/<a\b/g)].length, 6);
   for (const file of readdirSync(root).filter(file => file.endsWith('.html') && !['admin.html', 'projet.html'].includes(file))) {
     assert.ok(navbar(read(file)), `Navbar manquante dans ${file}`);
     const stripActive = markup => markup.replace(/ aria-current="[^"]+"/g, '');
