@@ -176,8 +176,11 @@
 }
 
 .home-project-intro #homeProjectsPending {
-  margin-top: 12px;
   font-size: .9rem;
+}
+
+.home-project-intro #homeProjectsPending:not(:empty) {
+  margin-top: 12px;
 }
 
 .home-project-grid {
@@ -229,6 +232,10 @@
   object-fit: cover;
 }
 
+.home-project-image:not(.is-loaded) {
+  visibility: hidden;
+}
+
 .home-project-placeholder[hidden] {
   display: none;
 }
@@ -269,7 +276,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .home-project-grid.has-project-photos img {
+  .home-project-image.is-loaded {
     animation: project-photo-in .5s ease-out backwards;
   }
 

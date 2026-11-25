@@ -5,7 +5,7 @@ import { services } from './data/services.js';
 import { courses } from './data/formations.js';
 import { testimonials } from './data/testimonials.js';
 import { renderCourses } from './components/render-formations.js';
-import { renderFilters, renderServices } from './components/render-services.js';
+import { renderServices } from './components/render-services.js';
 import { renderTestimonials } from './components/render-testimonials.js';
 import { getPublishedArticles, renderArticleCards } from './components/render-articles.js';
 import { clampCarouselIndex } from './components/carousel.js';
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
     partnershipDots: document.querySelector('#partnershipDots'),
     prevBtn: document.querySelector('#prevBtn'),
     nextBtn: document.querySelector('#nextBtn'),
-    filters: document.querySelector('#filters'),
     needSelect: document.querySelector('#need'),
     form: document.querySelector('#leadForm'),
     messageField: document.querySelector('#messageField'),
@@ -57,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   const partnershipNeed = PARTNERSHIP_NEED;
   const featuredServices = services.slice(0, 3);
   const featuredCourses = courses.slice(0, 3);
-  const categories = ['Tous', ...new Set(featuredServices.map((service) => service.category))];
   let testimonialIndex = 0;
   let testimonialTimer = null;
   let partnershipIndex = 0;
@@ -476,19 +474,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   function setupEvents() {
-    if (elements.filters) {
-      elements.filters.addEventListener('click', (event) => {
-        const button = event.target.closest('.filter-btn');
-        if (!button) return;
-
-        elements.filters.querySelectorAll('.filter-btn').forEach((item) => {
-          item.classList.toggle('active', item === button);
-          item.setAttribute('aria-pressed', String(item === button));
-        });
-        renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, category: button.dataset.category, setupScrollReveal });
-      });
-    }
-
     document.addEventListener('click', (event) => {
       const link = event.target.closest('[data-need]');
       if (!link) return;
@@ -603,7 +588,6 @@ document.addEventListener('DOMContentLoaded', function initAgriTechSite() {
   }
 
   renderProjects(document.querySelector('#homeProjectGrid'), document.querySelector('#homeProjectsPending'));
-  renderFilters({ filters: elements.filters, categories });
   renderServices({ serviceGrid: elements.serviceGrid, services: featuredServices, setupScrollReveal });
   renderCourses({ courseGrid: elements.courseGrid, courses: featuredCourses, setupScrollReveal, updateCourseCarousel });
   renderTestimonials({ testimonialTrack: elements.testimonialTrack, testimonialDots: elements.testimonialDots, testimonials, updateTestimonialCarousel });

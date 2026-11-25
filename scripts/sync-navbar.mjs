@@ -6,9 +6,6 @@ const links = [
   ['formations.html', 'Formations'],
   ['projets.html', 'Projets'],
   ['actualites.html', 'Actualités'],
-  ['a-propos.html', 'À propos'],
-  ['index.html#processus', 'Méthode'],
-  ['index.html#temoignages', 'Témoignages'],
   ['index.html#leadForm', 'Contact']
 ];
 
