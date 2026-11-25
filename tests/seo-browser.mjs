@@ -74,6 +74,15 @@ try {
   mode = 'published';
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 800 });
+    await page.goto(origin + '/a-propos.html');
+    const aboutCta = page.getByRole('region', { name: 'Vous avez un projet agricole en tête ?' });
+    const opacity = () => aboutCta.evaluate(element => getComputedStyle(element).opacity);
+    assert.equal(await opacity(), '1');
+    await aboutCta.scrollIntoViewIfNeeded();
+    assert.equal(await opacity(), '1');
+    await aboutCta.getByRole('link', { name: 'Découvrir nos services' }).click();
+    await page.waitForURL(origin + '/services.html');
+
     const listURL = origin + '/actualites.html';
     await page.goto(listURL + '?category=production+++vegetale&page=2');
     await page.waitForSelector('#articlesGrid .article-card');
