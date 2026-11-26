@@ -223,9 +223,18 @@
 .article-content .ag-align-left { text-align: left; }
 .article-content .ag-align-center { text-align: center; }
 .article-content .ag-align-right { text-align: right; }
-.article-content .ag-align-justify { text-align: justify; text-justify: inter-word; hyphens: auto; }
+.article-content .ag-align-justify {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: none;
+  overflow-wrap: anywhere;
+}
 
 @media (max-width: 640px) {
+  .article-content p.ag-align-justify {
+    text-align: left;
+  }
+
   .article-content,
   .rich-content {
     display: block;

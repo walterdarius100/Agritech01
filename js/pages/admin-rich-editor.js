@@ -107,7 +107,7 @@ export async function initArticleEditor({ imagesUploadHandler = null, onUploadEr
       .ag-align-left { text-align: left; }
       .ag-align-center { text-align: center; }
       .ag-align-right { text-align: right; }
-      .ag-align-justify { text-align: justify; text-justify: inter-word; hyphens: auto; }
+      .ag-align-justify { text-align: justify; text-justify: inter-word; hyphens: none; overflow-wrap: anywhere; }
     `,
     setup(editor) {
       editor.on('change keyup undo redo setcontent', () => editor.save());
