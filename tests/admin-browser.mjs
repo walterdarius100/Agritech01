@@ -148,6 +148,27 @@ try {
   const search = page.locator('#articleSearchInput');
   const filter = name => page.locator(`[data-article-filter="${name}"]`);
   const firstTitle = () => cards.first().locator('h4').textContent();
+  const pageLabel = page.locator('#adminArticlesPage');
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    await pagination.scrollIntoViewIfNeeded();
+    assert.equal(await cards.count(), 10);
+    assert.equal(await pageLabel.textContent(), 'Page 1 sur 2');
+    const listBounds = await page.locator('#articlesList').boundingBox();
+    const controlsBounds = await pagination.boundingBox();
+    assert.ok(controlsBounds.y >= listBounds.y + listBounds.height);
+    assert.ok(controlsBounds.x >= 0 && controlsBounds.x + controlsBounds.width <= width);
+    assert.equal(await pagination.evaluate(nav => getComputedStyle(nav).display), 'flex');
+    for (const control of [previous, next]) assert.equal(await control.isVisible(), true);
+    if (process.env.ADMIN_SCREENSHOTS_DIR) {
+      await page.screenshot({ path: resolve(process.env.ADMIN_SCREENSHOTS_DIR, `admin-articles-${width}.png`) });
+    }
+    await next.click();
+    assert.equal(await cards.count(), 2);
+    assert.equal(await pageLabel.textContent(), 'Page 2 sur 2');
+    await previous.click();
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
   assert.equal(await cards.count(), 10);
   assert.equal(await previous.isDisabled(), true);
   await next.click();

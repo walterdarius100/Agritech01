@@ -79,19 +79,19 @@ try {
   const active = page.locator('#projectsPagination [aria-current="page"]');
   const previous = page.getByLabel('Page précédente', { exact: true });
   const next = page.getByLabel('Page suivante', { exact: true });
-  for (projectCount of [0, 1, 2, 3, 4, 5, 8, 9]) {
+  for (projectCount of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
     await page.goto(origin + '/projets.html');
     await page.waitForFunction(() => !document.querySelector('#projectsStatus').textContent.startsWith('Chargement'));
-    assert.equal(await cards.count(), Math.min(projectCount, 4));
-    assert.equal(await dots.count(), projectCount <= 4 ? 0 : Math.ceil(projectCount / 4));
-    assert.equal(await page.locator('#projectsPagination').isHidden(), projectCount <= 4);
-    assert.deepEqual(await page.evaluate(() => projectRanges), projectCount ? [[0, 3]] : []);
+    assert.equal(await cards.count(), Math.min(projectCount, 2));
+    assert.equal(await dots.count(), projectCount <= 2 ? 0 : Math.ceil(projectCount / 2));
+    assert.equal(await page.locator('#projectsPagination').isHidden(), projectCount <= 2);
+    assert.deepEqual(await page.evaluate(() => projectRanges), projectCount ? [[0, 1]] : []);
     if (!projectCount) assert.match(await page.locator('#projectsStatus').textContent(), /Aucun projet/);
   }
 
   await page.goto(origin + '/projets.html?page=1#projet-' + id(1));
-  await active.getAttribute('aria-label').then(label => assert.equal(label, 'Page 3 actuelle'));
-  assert.deepEqual(await page.evaluate(() => projectRanges), [[8, 11]]);
+  await active.getAttribute('aria-label').then(label => assert.equal(label, 'Page 5 actuelle'));
+  assert.deepEqual(await page.evaluate(() => projectRanges), [[8, 9]]);
   assert.equal(await cards.first().getAttribute('id'), 'projet-' + id(1));
   await page.waitForFunction(() => {
     const photo = document.querySelector('.portfolio-project img');
@@ -99,15 +99,17 @@ try {
   });
   assert.equal(await next.getAttribute('aria-disabled'), 'true');
   await previous.click();
-  await active.getAttribute('aria-label').then(label => assert.equal(label, 'Page 2 actuelle'));
+  assert.equal(await active.getAttribute('aria-label'), 'Page 4 actuelle');
+  assert.deepEqual(await page.evaluate(() => projectRanges), [[6, 7]]);
+  assert.deepEqual(await cards.locator('h2').allTextContents(), ['Projet 3', 'Projet 2']);
   await next.click();
-  await active.getAttribute('aria-label').then(label => assert.equal(label, 'Page 3 actuelle'));
+  await active.getAttribute('aria-label').then(label => assert.equal(label, 'Page 5 actuelle'));
   await page.goBack();
-  assert.equal(await active.getAttribute('aria-label'), 'Page 2 actuelle');
+  assert.equal(await active.getAttribute('aria-label'), 'Page 4 actuelle');
   await page.goBack();
   assert.equal(await cards.first().getAttribute('id'), 'projet-' + id(1));
   await page.goForward();
-  assert.equal(await active.getAttribute('aria-label'), 'Page 2 actuelle');
+  assert.equal(await active.getAttribute('aria-label'), 'Page 4 actuelle');
 
   for (const width of [1280, 375]) {
     await page.setViewportSize({ width, height: 800 });

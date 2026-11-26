@@ -4,7 +4,7 @@ import { countPublishedProjects, findPublishedProjectOffset, listPublishedProjec
 import { handleUnavailableProjectPhotos, projectPhotoMarkup } from '../components/render-projects.js';
 import { escapeHtml } from '../utils/sanitize.js';
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 2;
 const status = document.querySelector('#projectsStatus');
 const list = document.querySelector('#projectsList');
 const pagination = document.querySelector('#projectsPagination');
