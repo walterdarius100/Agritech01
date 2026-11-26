@@ -467,7 +467,12 @@
   gap: clamp(16px, 2.5vw, 36px);
   padding-inline: clamp(28px, 5vw, 72px) clamp(12px, 2vw, 28px);
   border-radius: var(--radius-xl);
-  background: var(--green-900);
+  background: linear-gradient(
+    125deg,
+    #092b21 0%,
+    #0f3d2e 48%,
+    #176b48 100%
+  );
   color: #fff;
 }
 
