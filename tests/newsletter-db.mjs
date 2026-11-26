@@ -175,8 +175,19 @@ try {
   const welcome = providerCalls.find(call => call.kind === 'welcome').payload;
   assert.equal(welcome.subject, 'Bienvenue chez Agri-tech !');
   assert.doesNotMatch(welcome.html, /<img|Découvrir Agri-tech|mailto:/);
-  assert.match(welcome.text, /Walter Darius\nDirecteur général d'Agri-tech\n\nVous n'êtes pas à l'origine de cette inscription \?\n\nSe désinscrire : https:/);
-  assert.match(welcome.html, /<strong>Walter Darius<\/strong><br>Directeur général d&#39;Agri-tech/);
+  const unsubscribeUrl = `${origin}/newsletter/#unsubscribe=${unsubscribe}`;
+  assert.ok(welcome.html.includes(`href="${unsubscribeUrl}"`));
+  assert.equal(welcome.text, [
+    'Bonjour,',
+    'Merci pour votre inscription à la newsletter Agri-tech.',
+    'Vous recevrez désormais nos articles, conseils pratiques, actualités agricoles et informations sur nos formations.',
+    'Notre objectif est de partager avec vous des informations utiles, accessibles et adaptées aux réalités agricoles en Haïti.',
+    'À bientôt,',
+    "Walter Darius\nDirecteur général d'Agri-tech",
+    '---',
+    'Vous avez reçu cet e-mail parce que vous êtes abonné à la newsletter Agri-tech.',
+    `Se désinscrire : ${unsubscribeUrl}`
+  ].join('\n\n'));
   assert.doesNotMatch(welcome.html, /Confirmer mon inscription|#confirm=/);
   assert.equal((await select(`select id ${messages} and status = 'accepted' and provider_id is not null`)).length, 2);
   assert.equal(providerAccepted.size, 5); // Two new messages plus three historical sends.
@@ -236,7 +247,9 @@ try {
         send(value) { html = value; }
       });
       assert.equal(status, env === 'preview' ? 200 : 404);
-      if (env === 'preview') assert.match(html, /<h1[^>]+color:#fff/);
+      if (env === 'preview') {
+        assert.match(html, kind === 'welcome' ? /<h1[^>]+color:#0f3d2e/ : /<h1[^>]+color:#fff/);
+      }
     }
   }
   delete process.env.VERCEL_ENV;

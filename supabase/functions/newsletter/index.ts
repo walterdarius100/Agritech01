@@ -208,18 +208,28 @@ export function renderNewsletterEmail(details: EmailDetails) {
   ];
   const name = 'Walter Darius';
   const role = "Directeur général d'Agri-tech";
-  const footer = "Vous n'êtes pas à l'origine de cette inscription ?";
+  const footer = 'Vous avez reçu cet e-mail parce que vous êtes abonné à la newsletter Agri-tech.';
+  const content = paragraphs.map(paragraph => `<p style="margin:0 0 16px">${escapeHtml(paragraph)}</p>`).join('');
   return {
     subject,
-    text: `${paragraphs.join('\n\n')}\n\n${name}\n${role}\n\n${footer}\n\nSe désinscrire : ${details.unsubscribe}`,
-    html: simpleEmail(subject,
-      paragraphs.map(paragraph => `<p style="margin:0 0 14px">${escapeHtml(paragraph)}</p>`).join('') +
-      `<p style="margin:0"><strong>${name}</strong><br>${escapeHtml(role)}</p>`,
-      `<tr><td bgcolor="#f6f7f5" style="padding:16px 24px;border-radius:0 0 14px 14px;font-size:14px;line-height:1.5">
-<p style="margin:0 0 6px">${escapeHtml(footer)}</p>
-<a class="welcome-unsubscribe" href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;text-decoration:underline;text-underline-offset:2px">Se désinscrire</a>
-</td></tr>`,
-      '<style>.welcome-unsubscribe:focus{outline:none;text-decoration-thickness:3px!important}</style>')
+    text: `${paragraphs.join('\n\n')}\n\n${name}\n${role}\n\n---\n\n${footer}\n\nSe désinscrire : ${details.unsubscribe}`,
+    html: `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title>
+<style>.welcome-unsubscribe:focus{outline:none;text-decoration-thickness:3px!important}</style></head>
+<body style="margin:0;padding:0;background:#f6f7f5">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f6f7f5" style="background:#f6f7f5">
+<tr><td align="center" style="padding:24px 12px">
+<!--[if mso]><table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-radius:8px;border-collapse:separate;font-family:Arial,sans-serif;text-align:left">
+<tr><td bgcolor="#0f3d2e" style="background:#0f3d2e;border-radius:8px 8px 0 0;padding:20px 24px;color:#ffffff;font-size:22px;font-weight:bold">Agri-tech</td></tr>
+<tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 8px 8px;padding:24px;color:#162f26;font-size:16px;line-height:1.6">
+<h1 style="margin:0 0 20px;color:#0f3d2e;font-size:26px;line-height:1.25">${escapeHtml(subject)}</h1>
+${content}
+<p style="margin:0"><strong style="color:#0f3d2e">${escapeHtml(name)}</strong><br><em>${escapeHtml(role)}</em></p>
+<p style="margin:22px 0 0;padding-top:16px;border-top:1px solid #dce4df;color:#5b6962;font-size:13px;line-height:1.5"><em>${escapeHtml(footer)}</em></p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.5"><a class="welcome-unsubscribe" href="${escapeHtml(details.unsubscribe)}" style="color:#0f3d2e;font-weight:bold;text-decoration:underline;text-underline-offset:2px">Se désinscrire</a></p>
+</td></tr></table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table></body></html>`
   };
 }
 

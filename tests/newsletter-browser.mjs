@@ -400,8 +400,19 @@ try {
           'Notre objectif est de partager avec vous des informations utiles, accessibles et adaptées aux réalités agricoles en Haïti.',
           'À bientôt,',
           "Walter Darius\nDirecteur général d'Agri-tech",
-          "Vous n'êtes pas à l'origine de cette inscription ?"
+          'Vous avez reçu cet e-mail parce que vous êtes abonné à la newsletter Agri-tech.',
+          'Se désinscrire'
         ]);
+        const banner = mail.getByText('Agri-tech', { exact: true });
+        assert.equal(await banner.evaluate(element => getComputedStyle(element).backgroundColor), 'rgb(15, 61, 46)');
+        const signature = mail.locator('strong').filter({ hasText: 'Walter Darius' });
+        assert.equal(await signature.evaluate(element => getComputedStyle(element).color), 'rgb(15, 61, 46)');
+        assert.equal(await signature.locator('..').locator('em').innerText(), "Directeur général d'Agri-tech");
+        const footer = mail.locator('p').filter({ hasText: 'Vous avez reçu cet e-mail' });
+        assert.deepEqual(await footer.evaluate(element => {
+          const style = getComputedStyle(element);
+          return [style.borderTopWidth, style.color, style.fontSize];
+        }), ['1px', 'rgb(91, 105, 98)', '13px']);
         const link = mail.getByRole('link', { name: 'Se désinscrire' });
         await mail.keyboard.press('Tab');
         assert.equal(await link.evaluate(element => element === document.activeElement), true);
