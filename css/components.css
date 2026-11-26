@@ -12,6 +12,7 @@
 .service-card{background:rgba(255,255,255,.82);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--content-card-radius)}
 .hero-card{padding:28px}
 .card-top{display:flex;align-items:center;gap:8px;color:var(--green-700);font-weight:900;margin-bottom:20px}
+.card-top-inset{padding-inline-start:18px}
 .status-dot{width:10px;height:10px;background:#2fd17c;border-radius:50%;box-shadow:0 0 0 6px rgba(47,209,124,.12)}
 .hero-card ul{padding-left:20px;color:var(--muted)}
 .logos-strip{padding-top:0;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}

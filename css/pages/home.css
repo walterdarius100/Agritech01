@@ -232,7 +232,7 @@
   object-fit: cover;
 }
 
-.home-project-image:not(.is-loaded) {
+.project-photo img:not(.is-loaded) {
   visibility: hidden;
 }
 
