@@ -39,6 +39,10 @@ const elements = {
   adminSections: document.querySelectorAll('[data-admin-section]'),
   openEditorButtons: document.querySelectorAll('[data-open-editor]'),
   articleFilterButtons: document.querySelectorAll('[data-article-filter]'),
+  articlesPagination: document.querySelector('#adminArticlesPagination'),
+  articlesPrevious: document.querySelector('#adminArticlesPrevious'),
+  articlesNext: document.querySelector('#adminArticlesNext'),
+  articlesPage: document.querySelector('#adminArticlesPage'),
   articleSearchInput: document.querySelector('#articleSearchInput'),
   articlesList: document.querySelector('#articlesList'),
   articleFormPanel: document.querySelector('#articleFormPanel'),
@@ -105,6 +109,8 @@ let articles = [];
 let slugTouched = false;
 let activeArticleFilter = 'all';
 let articleSearchTerm = '';
+let articlePage = 1;
+const ARTICLES_PER_PAGE = 10;
 let previewObjectUrl = '';
 let editorDraftStorageKey = `draft-${Date.now()}`;
 
@@ -234,6 +240,14 @@ function renderArticles() {
   updateOverview();
 
   const filteredArticles = getFilteredArticles();
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / ARTICLES_PER_PAGE));
+  articlePage = Math.max(1, Math.min(articlePage, totalPages));
+  elements.articlesPagination.hidden = totalPages <= 1;
+  elements.articlesPrevious.disabled = articlePage === 1;
+  elements.articlesNext.disabled = articlePage === totalPages;
+  elements.articlesPage.textContent = `Page ${articlePage} sur ${totalPages}`;
+
+  const offset = (articlePage - 1) * ARTICLES_PER_PAGE;
   if (!articles.length) {
     elements.articlesList.innerHTML = '<p class="empty-state">Aucun article pour le moment.</p>';
     return;
@@ -243,7 +257,7 @@ function renderArticles() {
     return;
   }
 
-  elements.articlesList.innerHTML = filteredArticles.map((article) => `
+  elements.articlesList.innerHTML = filteredArticles.slice(offset, offset + ARTICLES_PER_PAGE).map((article) => `
     <article class="admin-article-item">
       <div>
         <div class="article-item-meta">
@@ -591,14 +605,27 @@ function bindEvents() {
 
   elements.articleFilterButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      activeArticleFilter = button.dataset.articleFilter || 'all';
+      const filter = button.dataset.articleFilter || 'all';
+      if (filter !== activeArticleFilter) articlePage = 1;
+      activeArticleFilter = filter;
       elements.articleFilterButtons.forEach((item) => item.classList.toggle('is-active', item === button));
       renderArticles();
     });
   });
 
   elements.articleSearchInput?.addEventListener('input', () => {
-    articleSearchTerm = elements.articleSearchInput.value.trim().toLowerCase();
+    const term = elements.articleSearchInput.value.trim().toLowerCase();
+    if (term !== articleSearchTerm) articlePage = 1;
+    articleSearchTerm = term;
+    renderArticles();
+  });
+
+  elements.articlesPrevious.addEventListener('click', () => {
+    articlePage -= 1;
+    renderArticles();
+  });
+  elements.articlesNext.addEventListener('click', () => {
+    articlePage += 1;
     renderArticles();
   });
 
