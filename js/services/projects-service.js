@@ -23,8 +23,8 @@ async function requireClient() {
   return client;
 }
 
-function publishedQuery(client, fields) {
-  return client.from('projects').select(fields).not('published_at', 'is', null);
+function publishedQuery(client, fields, options) {
+  return client.from('projects').select(fields, options).not('published_at', 'is', null);
 }
 
 export async function listPublishedProjects({ limit = 12, offset = 0, coversOnly = false, includeDetails = false } = {}) {
@@ -35,6 +35,34 @@ export async function listPublishedProjects({ limit = 12, offset = 0, coversOnly
     .order('id', { ascending: false }).range(offset, offset + limit - 1);
   if (error) throw error;
   return data;
+}
+
+function publishedCountQuery(client) {
+  return publishedQuery(client, 'id', { count: 'exact', head: true });
+}
+
+async function readProjectCount(query) {
+  const { count, error } = await query;
+  if (error) throw error;
+  if (!Number.isSafeInteger(count)) throw new Error('Nombre de projets indisponible.');
+  return count;
+}
+
+export async function countPublishedProjects() {
+  return readProjectCount(publishedCountQuery(await requireClient()));
+}
+
+export async function findPublishedProjectOffset(id) {
+  if (!PROJECT_ID.test(id)) return null;
+  const client = await requireClient();
+  const { data, error } = await publishedQuery(client, 'published_at').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+
+  // Match both sort keys used by listPublishedProjects, including tied dates.
+  return readProjectCount(publishedCountQuery(client).or(
+    `published_at.gt.${data.published_at},and(published_at.eq.${data.published_at},id.gt.${id})`
+  ));
 }
 
 export function projectPhotoSlot(photo, index) {

@@ -31,7 +31,7 @@ try {
     const url = new URL(route.request().url());
     if (url.origin === origin && url.pathname === '/js/services/supabase-client.js') {
       await route.fulfill({ contentType: 'text/javascript', body: `
-        const rows = [{
+        const rows = JSON.parse(sessionStorage.getItem('paginationFixture')) || [{
           id: 'legacy', title: 'Article historique', slug: 'historique', category: 'Ancien libellé',
           status: 'published', content: '<p>Contenu historique.</p>', excerpt: 'Résumé historique',
           featured: true, published_at: '2026-05-03T05:27:51.123Z'
@@ -40,12 +40,16 @@ try {
         const client = {
           auth: { getSession: async () => ({data:{session:{user:{email:'simulation@example.invalid'}}}}), onAuthStateChange() {} },
           from() {
-            let payload, id;
+            let payload, id, deleting;
             const q = {
               select() {return q}, order() {return q}, single() {return q},
               eq(key, value) {if(key === 'id') id=value; return q},
-              insert(value) {payload=value; return q}, update(value) {payload=value; return q},
+              insert(value) {payload=value; return q}, update(value) {payload=value; return q}, delete() {deleting=true; return q},
               async then(resolve) {
+                if (deleting) {
+                  rows.splice(rows.findIndex(row => row.id === id), 1);
+                  return resolve({});
+                }
                 if (!payload) return resolve({data:rows});
                 window.mockWrites.push({id, payload});
                 if (window.failWrite) return resolve({error:{code:'XX000',message:'database test failure'}});
@@ -124,6 +128,75 @@ try {
   assert.deepEqual(await page.evaluate(() => mockWrites.at(-1).payload), { category: ARTICLE_CATEGORIES[0] });
   assert.deepEqual(await page.evaluate(() => mockRows.find(({id}) => id === 'legacy')), { ...before, category: ARTICLE_CATEGORIES[0] });
   assert.equal(await page.locator('#articleCategoryNotice').isHidden(), true);
+  await page.locator('[data-admin-tab="articles"]').click();
+  const pagination = page.locator('#adminArticlesPagination');
+  assert.equal(await pagination.isHidden(), true);
+  await page.evaluate(async ({ category, count }) => {
+    // Reload through the ordinary admin entry point using a fresh fixture.
+    sessionStorage.setItem('paginationFixture', JSON.stringify(Array.from({ length: count }, (_, index) => ({
+      id: 'fixture-' + index, title: 'Essai ' + index, slug: 'essai-' + index,
+      category, status: index < 11 ? 'published' : 'draft', featured: index === 0,
+      content: '<p>Contenu paginé.</p>', excerpt: 'Résumé.'
+    }))));
+  }, { category: ARTICLE_CATEGORIES[0], count: 12 });
+  await page.reload();
+  await page.locator('[data-admin-tab="articles"]').click();
+  await pagination.waitFor({ state: 'visible' });
+  const cards = page.locator('#articlesList article');
+  const next = page.locator('#adminArticlesNext');
+  const previous = page.locator('#adminArticlesPrevious');
+  const search = page.locator('#articleSearchInput');
+  const filter = name => page.locator(`[data-article-filter="${name}"]`);
+  const firstTitle = () => cards.first().locator('h4').textContent();
+  assert.equal(await cards.count(), 10);
+  assert.equal(await previous.isDisabled(), true);
+  await next.click();
+  assert.equal(await cards.count(), 2);
+  assert.equal(await firstTitle(), 'Essai 10');
+  assert.equal(await next.isDisabled(), true);
+  await previous.click();
+  assert.equal(await firstTitle(), 'Essai 0');
+
+  await next.click();
+  await filter('published').click();
+  assert.equal(await firstTitle(), 'Essai 0');
+  await next.click();
+  await search.fill('essai');
+  assert.equal(await firstTitle(), 'Essai 0');
+  await search.fill('essai 1');
+  assert.equal(await cards.count(), 2);
+  assert.equal(await pagination.isHidden(), true);
+  await filter('draft').click();
+  assert.equal(await firstTitle(), 'Essai 11');
+  await filter('featured').click();
+  assert.equal(await cards.count(), 0);
+  await search.clear();
+  assert.equal(await firstTitle(), 'Essai 0');
+
+  await filter('published').click();
+  await next.click();
+  await cards.getByRole('button', { name: 'Modifier' }).click();
+  assert.match(await page.evaluate(() => tinymce.get('articleContentField').getContent({ format: 'text' })), /Contenu paginé/);
+  await page.locator('#articleTitle').fill('Essai 10 modifié');
+  await page.locator('#updateButton').click();
+  await page.waitForFunction(() => mockRows[10].title === 'Essai 10 modifié');
+  await page.locator('[data-admin-tab="articles"]').click();
+  assert.equal(await firstTitle(), 'Essai 10 modifié');
+
+  page.on('dialog', dialog => dialog.accept());
+  await cards.getByRole('button', { name: 'Archiver' }).click();
+  await pagination.waitFor({ state: 'hidden' });
+  assert.equal(await cards.count(), 10);
+  assert.equal(await firstTitle(), 'Essai 0');
+  await filter('archived').click();
+  assert.equal(await firstTitle(), 'Essai 10 modifié');
+  await cards.getByRole('button', { name: 'Supprimer' }).click();
+  await cards.first().waitFor({ state: 'detached' });
+  await page.locator('[data-admin-tab="overview"]').click();
+  for (const [stat, count] of Object.entries({ Total: 11, Published: 10, Draft: 1, Archived: 0 })) {
+    assert.equal(await page.locator(`#stat${stat}Articles`).textContent(), String(count));
+  }
+  console.log('Chromium : pagination admin, filtres, recherche, édition, archivage, suppression et statistiques globales : OK.');
   assert.deepEqual(errors, []);
   console.log('Chromium : création, modification avec le même ID, échec Database, contenu conservé et bouton réactivé : OK (Supabase simulé, TinyMCE réel).');
 } finally {

@@ -351,8 +351,11 @@
 
 /* Portfolio public. */
 .projects-status:empty { margin: 0; }
+#projectsPagination[hidden] { display: none; }
+#projectsPagination .pagination-dots { flex-wrap: wrap; }
 
 .project-portfolio {
+  scroll-margin-top: 95px;
   display: grid;
   gap: clamp(34px, 6vw, 84px);
 }

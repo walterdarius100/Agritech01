@@ -198,3 +198,6 @@
 #adminSectionProjects .form-block { min-width: 0; }
 .project-admin-photo img { object-fit: cover; border-radius: var(--radius-sm); }
 .project-admin-photo input[type="file"] { min-width: 0; }
+
+#adminArticlesPagination[hidden] { display: none; }
+#adminArticlesPagination .pagination-arrow:disabled { opacity: .38; pointer-events: none; }
