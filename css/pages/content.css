@@ -416,7 +416,7 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: var(--card-featured-radius);
-  background: var(--green-100);
+  background: var(--cream);
   box-shadow: var(--shadow-soft);
 }
 
@@ -449,7 +449,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .portfolio-gallery.has-photos img { animation: project-photo-in .5s ease-out backwards; }
+  .portfolio-gallery img.is-loaded { animation: project-photo-in .5s ease-out backwards; }
   .portfolio-gallery .project-photo:nth-child(2) img { animation-delay: .07s; }
   .portfolio-gallery .project-photo:nth-child(3) img { animation-delay: .14s; }
 }

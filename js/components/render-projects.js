@@ -1,7 +1,7 @@
 import { listPublishedProjects, projectHref, selectHomeProjectPhotos, signProjectPhotos } from '../services/projects-service.js';
 import { escapeHtml } from '../utils/sanitize.js';
 
-export function projectPhotoMarkup(src, alt, className = '', loading = 'lazy', placeholder = 'Photo à venir') {
+export function projectPhotoMarkup(src, alt, className = '', loading = 'lazy', placeholder = 'Photo indisponible') {
   return `<div class="project-photo">
     <div class="home-project-placeholder"${src ? ' hidden' : ''}${placeholder ? '' : ' aria-hidden="true"'}>${escapeHtml(placeholder)}</div>
     ${src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"
@@ -9,18 +9,18 @@ export function projectPhotoMarkup(src, alt, className = '', loading = 'lazy', p
   </div>`;
 }
 
-export function handleUnavailableProjectPhotos(container, onUnavailable) {
+export function handleProjectPhotoEvents(container, onUnavailable) {
   const showPlaceholder = image => {
     image.previousElementSibling.hidden = false;
     image.remove();
     onUnavailable?.();
   };
+  container.addEventListener('load', ({ target }) => {
+    if (target.matches('.project-photo img')) target.classList.add('is-loaded');
+  }, true);
   container.addEventListener('error', ({ target }) => {
     if (target.matches('.project-photo img')) showPlaceholder(target);
   }, true);
-  container.querySelectorAll('.project-photo img').forEach(image => {
-    if (image.complete && !image.naturalWidth) showPlaceholder(image);
-  });
 }
 
 export function renderProjects(grid, status) {
@@ -61,10 +61,7 @@ export function renderProjects(grid, status) {
   }
 
   renderTiles();
-  handleUnavailableProjectPhotos(grid, showUnavailable);
-  grid.addEventListener('load', ({ target }) => {
-    if (target.matches('.home-project-image')) target.classList.add('is-loaded');
-  }, true);
+  handleProjectPhotoEvents(grid, showUnavailable);
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;

@@ -25,17 +25,26 @@ try {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   let projectCount = 0;
+  let photoScenario = false;
+  let releaseImages;
+  let imagesReady;
+  const visualFixtures = [
+    { ...fixtures[0], photos: ['cover', 'broken', 'unsigned'].map(key => ({ key, alt: key })) },
+    { ...fixtures[1], photos: [] }
+  ];
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.origin !== origin) return route.abort();
+    if (url.pathname === '/broken.png') return route.abort();
     if (url.pathname === '/photo.png') {
+      if (photoScenario) await imagesReady;
       return route.fulfill({ contentType: 'image/png', body: Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jL1sAAAAASUVORK5CYII=', 'base64'
       ) });
     }
     if (url.pathname === '/js/services/supabase-client.js') {
       return route.fulfill({ contentType: 'text/javascript', body: `
-        const rows = ${JSON.stringify(fixtures.slice(0, projectCount))};
+        const rows = ${JSON.stringify(photoScenario ? visualFixtures : fixtures.slice(0, projectCount))};
         window.projectRanges = [];
         const client = {
           from(table) {
@@ -43,6 +52,7 @@ try {
             const q = {
               select(fields, options) { head = options?.head; return q; },
               not() { return q; },
+              neq() { return q; },
               eq(key, value) { id = value; return q; },
               or(filter) { predecessorId = filter.match(/id\\.gt\\.([^)]*)/)[1]; return q; },
               order() { return q; },
@@ -57,7 +67,11 @@ try {
           },
           storage: { from: () => ({
             async createSignedUrls(paths) {
-              return { data: paths.map(path => ({ path, signedUrl: '/photo.png' })) };
+              if (${photoScenario}) await new Promise(resolve => { window.releaseSigning = resolve; });
+              return { data: paths.map(path => ({
+                path,
+                signedUrl: path.includes('/unsigned-') ? '' : path.includes('/broken-') ? '/broken.png' : '/photo.png'
+              })) };
             }
           }) }
         };
@@ -120,6 +134,53 @@ try {
     const photo = cards.first().locator('img');
     await photo.scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('.portfolio-project img')?.naturalWidth > 0);
+  }
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    photoScenario = true;
+    imagesReady = new Promise(resolve => { releaseImages = resolve; });
+    await page.goto(origin + '/projets.html');
+    const gallery = cards.first().locator('.portfolio-gallery');
+    await gallery.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => window.releaseSigning);
+    const slots = gallery.locator('.project-photo');
+    const dimensions = () => slots.evaluateAll(elements => elements.map(element => [element.offsetWidth, element.offsetHeight]));
+    const reserved = await dimensions();
+    assert.equal(reserved.length, 3);
+    assert.equal((await gallery.textContent()).trim(), '');
+    assert.match(await cards.nth(1).locator('.portfolio-gallery').textContent(), /Aucune photo disponible/);
+    await page.evaluate(() => { window.releaseSigning(); });
+    const image = slots.first().locator('img');
+    await image.waitFor({ state: 'attached' });
+    assert.equal(await image.isHidden(), true);
+    assert.equal(await slots.first().getByText('Photo indisponible').isHidden(), true);
+    await slots.nth(1).getByText('Photo indisponible').waitFor({ state: 'visible' });
+    assert.equal(await slots.nth(2).getByText('Photo indisponible').isVisible(), true);
+    releaseImages();
+    await image.waitFor({ state: 'visible' });
+    assert.ok(await image.evaluate(element => element.naturalWidth > 0));
+    assert.deepEqual(await dimensions(), reserved);
+
+    photoScenario = false;
+    projectCount = 3;
+    await page.goto(origin + '/index.html');
+    const homeGallery = page.locator('#homeProjectGrid');
+    await homeGallery.scrollIntoViewIfNeeded();
+    await homeGallery.locator('img').last().waitFor({ state: 'visible' });
+    assert.equal(await homeGallery.locator('img.is-loaded').count(), 3);
+    assert.equal(await homeGallery.getByText('Photo à venir').count(), 0);
+
+    for (const [path, label] of [['services.html', 'Accompagnement complet'], ['formations.html', 'Portail Academy']]) {
+      await page.goto(origin + '/' + path);
+      const cardTop = page.locator('.hero-card .card-top');
+      assert.equal(await cardTop.textContent(), label);
+      assert.equal(await cardTop.locator('.status-dot').count(), 0);
+      assert.deepEqual(await cardTop.evaluate(element => {
+        const style = getComputedStyle(element);
+        return [style.color, style.fontWeight, style.paddingInlineStart];
+      }), ['rgb(23, 107, 72)', '900', '18px']);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
   }
   assert.deepEqual(errors, []);
   console.log('Chromium : 0 à 9 projets selon les scénarios, liens directs, historique, photos et mise en page bureau/mobile : OK.');

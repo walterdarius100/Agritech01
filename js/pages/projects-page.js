@@ -1,7 +1,7 @@
 import { initMobileMenu } from './page-utils.js';
 import { countPublishedProjects, findPublishedProjectOffset, listPublishedProjects,
   projectAnchor, projectPhotos, signProjectPhotos } from '../services/projects-service.js';
-import { handleUnavailableProjectPhotos, projectPhotoMarkup } from '../components/render-projects.js';
+import { handleProjectPhotoEvents, projectPhotoMarkup } from '../components/render-projects.js';
 import { escapeHtml } from '../utils/sanitize.js';
 
 const PAGE_SIZE = 2;
@@ -28,7 +28,8 @@ function renderProject(project) {
           `<p>${escapeHtml(paragraph)}</p>`).join('')}</div>
       </div>
       <div class="portfolio-gallery" data-photo-count="${photos.length}">
-        ${photos.length ? photos.map(photo => projectPhotoMarkup('', photo.alt)).join('') : projectPhotoMarkup('')}
+        ${photos.length ? photos.map(() => '<div class="project-photo"></div>').join('')
+          : projectPhotoMarkup('', '', '', 'lazy', 'Aucune photo disponible')}
       </div>
     </article>`;
 }
@@ -41,7 +42,6 @@ function loadGalleries(projects) {
     const width = matchMedia('(min-width: 621px)').matches ? 1440 : 640;
     const urls = await signProjectPhotos(photos.map(photo => ({ id: project.id, photo })), width).catch(() => []);
     gallery.innerHTML = photos.map((photo, index) => projectPhotoMarkup(urls[index], photo.alt, '', 'eager')).join('');
-    gallery.classList.add('has-photos');
   }
 
   const observer = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
@@ -122,7 +122,7 @@ async function loadPortfolio() {
 }
 
 initMobileMenu();
-handleUnavailableProjectPhotos(list);
+handleProjectPhotoEvents(list);
 window.addEventListener('hashchange', ({ oldURL, newURL }) => {
   if ([oldURL, newURL].some(url => new URL(url).hash.startsWith('#projet-'))) void loadPortfolio();
 });
